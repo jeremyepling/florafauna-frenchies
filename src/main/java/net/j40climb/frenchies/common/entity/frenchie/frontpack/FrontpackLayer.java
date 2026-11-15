@@ -4,11 +4,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.j40climb.frenchies.Frenchies;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieVariant;
 import net.minecraft.client.model.geom.EntityModelSet;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.context.ContextKey;
 
@@ -22,8 +25,12 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
 
     static final ContextKey<FrenchieVariant> CARRIED_COAT = new ContextKey<>(
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_coat"));
+    static final ContextKey<Integer> FABRIC_TINT = new ContextKey<>(
+            Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_fabric_tint"));
+    private static final Identifier FABRIC = Identifier.withDefaultNamespace("textures/block/white_wool.png");
 
     private final FrontpackModel frontpackModel;
+    private final ModelPart carrier;
 
     // Variant-specific textures for the entire frontpack model
     private static final Identifier FAWN_TEXTURE =
@@ -41,6 +48,8 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
         this.frontpackModel = new FrontpackModel(
                 modelSet.bakeLayer(FrontpackModel.LAYER_LOCATION)
         );
+        this.carrier = modelSet.bakeLayer(FrontpackModel.LAYER_LOCATION).getChild("root");
+        this.carrier.getChild("frenchie").visible = false;
     }
 
     @Override
@@ -73,6 +82,12 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
                 0 // No outline
         );
 
+        Integer tint = renderState.getRenderData(FABRIC_TINT);
+        if (tint != null) {
+            nodeCollector.submitModelPart(carrier, poseStack, RenderTypes.entityCutout(FABRIC),
+                    packedLight, LivingEntityRenderer.getOverlayCoords(renderState, 0), null,
+                    false, false, tint, null, renderState.outlineColor);
+        }
         poseStack.popPose();
     }
 

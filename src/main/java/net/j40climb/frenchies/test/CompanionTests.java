@@ -41,6 +41,7 @@ public final class CompanionTests {
                 FrenchiePen.STRUCTURE, 1800, FrenchieDeliveryGameTests::unloadedHomeBed);
         registerTest(event, defaultEnv, "frenchie_frontpack_respawn_release", FrenchieGameTests::frontpackRespawnRelease);
         registerTest(event, defaultEnv, "frenchie_frontpack_appearance", FrenchieGameTests::frontpackAppearance);
+        registerTest(event, defaultEnv, "frenchie_frontpack_dye", FrontpackDyeGameTest::craftAndWash);
     }
 
     static void registerStructureTest(

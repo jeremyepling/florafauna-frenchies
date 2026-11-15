@@ -5,6 +5,10 @@ Standalone French bulldog companions for Minecraft 26.1 and NeoForge. Existing F
 
 Tame a Frenchie with a bone, feed it glow berries, and right-click with an empty hand to switch between Sit and Follow. Shift + right-click picks up an adult dog. Shift + right-click the air to put it down. Packing pauses a job until release.
 
+**Custom front packs.** To change the color of the pack your dog rides in, craft a Frenchie Front Pack at a crafting table. Place string in the left and right squares of one row and three leather in the row below. Combine the pack with any of the 16 dyes in a crafting grid. Multiple dyes blend together, including any color already on the pack. Use the dyed pack on a water cauldron to wash it back to its original color. Each wash uses one level of water.
+
+Place the pack in your chest slot or offhand, then pick up your Frenchie as usual. If you have a pack in both slots, the offhand pack sets the color. You can still carry your dog without crafting a pack.
+
 | Behavior | Player controls |
 | --- | --- |
 | Death Tracking | Use an ordinary compass on your dog. Follow the compass icon to your last death in this dimension. Your dog waits when you fall behind and signals when you reach the spot. |

@@ -4,8 +4,11 @@ import com.google.common.reflect.TypeToken;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.Mth;
 import net.minecraft.util.context.ContextKey;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.j40climb.frenchies.Frenchies;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.networking.PutDownFrenchiePayload;
@@ -30,6 +33,11 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 public class FrontpackClientEvents {
     static final ContextKey<Float> ALERT_YAW = new ContextKey<>(Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_alert_yaw"));
     private static final Identifier CREEPER_SPRITE = Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frenchie/creeper");
+
+    @SubscribeEvent
+    public static void registerItemTints(RegisterColorHandlersEvent.ItemTintSources event) {
+        event.register(Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "front_pack"), FrontpackTint.CODEC);
+    }
 
     @SubscribeEvent
     public static void registerWarningHud(RegisterGuiLayersEvent event) {
@@ -83,6 +91,10 @@ public class FrontpackClientEvents {
             state.setRenderData(ALERT_YAW, warning != null && warning.visible(avatar.level().getGameTime())
                     ? Mth.clamp(Mth.wrapDegrees(warning.bearing() - state.bodyRot), -60F, 60F) : null);
             state.setRenderData(FrontpackLayer.CARRIED_COAT, data == null ? null : data.carriedCoat());
+            var pack = avatar.getOffhandItem();
+            if (!pack.is(FrenchieRegistry.FRONT_PACK.get())) pack = avatar.getItemBySlot(EquipmentSlot.CHEST);
+            var dye = pack.is(FrenchieRegistry.FRONT_PACK.get()) ? pack.get(DataComponents.DYED_COLOR) : null;
+            state.setRenderData(FrontpackLayer.FABRIC_TINT, dye == null ? null : FrontpackTint.fabricColor(dye.rgb()));
         });
     }
 

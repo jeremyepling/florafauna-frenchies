@@ -3,21 +3,31 @@ package net.j40climb.frenchies.playtest;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieVariant;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
+import net.j40climb.frenchies.test.FrenchiePen;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.GameType;
-import net.j40climb.frenchies.test.FrenchiePen;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 
@@ -84,10 +94,40 @@ final class FrontpackPlaytest {
                     .read("UUID", UUIDUtil.CODEC).filter(DOG_ID::equals).isPresent());
             t.server("Return the carrier to the cleared plot", p ->
                     p.teleportTo(p.level().getServer().overworld(), 0.5, 201, 2.5, Set.of(), 180, 0, true));
+            t.server("Wear a red front pack before saving", p -> p.setItemSlot(EquipmentSlot.CHEST, dyedPack(DyeColor.RED)));
             return;
         }
+        t.awaitClient("Verify the red chest pack survived rejoin", mc ->
+                hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED));
+        framePlayer(t);
+        t.screenshot("frontpack-dyed-chest");
+        t.server("Hold a lime front pack with the red pack still equipped", p ->
+                p.setItemInHand(InteractionHand.OFF_HAND, dyedPack(DyeColor.LIME)));
+        t.awaitClient("Wait for the lime offhand pack", mc -> hasDye(mc.player.getOffhandItem(), DyeColor.LIME));
+        framePlayer(t);
+        t.screenshot("frontpack-dyed-offhand");
+        t.server("Wash the offhand pack at a water cauldron beside the player", p -> {
+            var pos = p.blockPosition().east();
+            var water = Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 2);
+            p.level().setBlockAndUpdate(pos, water);
+            p.gameMode.useItemOn(p, p.level(), p.getOffhandItem(), InteractionHand.OFF_HAND,
+                    new BlockHitResult(pos.getCenter(), Direction.UP, pos, false));
+            Playtest.require(p.level().getBlockState(pos).getValue(LayeredCauldronBlock.LEVEL) == 1, "Wash did not use one water level");
+        });
+        t.awaitClient("Wait for the undyed offhand pack", mc -> mc.player.getOffhandItem().is(FrenchieRegistry.FRONT_PACK.get())
+                && !mc.player.getOffhandItem().has(DataComponents.DYED_COLOR));
+        framePlayer(t);
+        t.screenshot("frontpack-washed");
+        t.server("Stow both front packs", p -> {
+            p.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+            p.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        });
+        t.awaitClient("Wait for the original carrier", mc -> mc.player.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
+                && mc.player.getOffhandItem().isEmpty());
         framePlayer(t);
         t.screenshot("frontpack-rejoined");
+        t.awaitClient("Check red and lime fabric pixels returned to the original carrier color after washing",
+                mc -> compareDyes(mc.gameDirectory.toPath().resolve("screenshots")));
         t.client("Crouch and aim at empty air", mc -> {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             mc.options.keyShift.setDown(true);
@@ -113,6 +153,51 @@ final class FrontpackPlaytest {
     private static boolean aimingAtAir(Minecraft mc) {
         return mc.player.isShiftKeyDown() && mc.player.getMainHandItem().isEmpty()
                 && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.MISS;
+    }
+
+    private static ItemStack dyedPack(DyeColor dye) {
+        var stack = new ItemStack(FrenchieRegistry.FRONT_PACK.get());
+        stack.set(DataComponents.DYED_COLOR, new DyedItemColor(dye.getTextureDiffuseColor() & 0xFFFFFF));
+        return stack;
+    }
+
+    private static boolean hasDye(ItemStack pack, DyeColor color) {
+        return pack.is(FrenchieRegistry.FRONT_PACK.get())
+                && DyedItemColor.getOrDefault(pack, 0) == color.getTextureDiffuseColor();
+    }
+
+    private static boolean compareDyes(Path screenshots) {
+        BufferedImage chest, offhand, washed, original;
+        try {
+            chest = ImageIO.read(screenshots.resolve("frontpack-dyed-chest.png").toFile());
+            offhand = ImageIO.read(screenshots.resolve("frontpack-dyed-offhand.png").toFile());
+            washed = ImageIO.read(screenshots.resolve("frontpack-washed.png").toFile());
+            original = ImageIO.read(screenshots.resolve("frontpack-rejoined.png").toFile());
+        } catch (IOException e) {
+            return false;
+        }
+        if (chest == null || offhand == null || washed == null || original == null) return false;
+        int w = chest.getWidth(), h = chest.getHeight();
+        int changed = 0;
+        // Restrict the sample to the torso so a tinted inventory/held icon cannot pass.
+        for (int y = h * 55 / 100; y < h * 66 / 100; y++) {
+            for (int x = w / 2 - h / 30; x < w / 2 + h / 30; x++) {
+                int redFrame = chest.getRGB(x, y), greenFrame = offhand.getRGB(x, y);
+                int plain = original.getRGB(x, y), clean = washed.getRGB(x, y);
+                if (channel(redFrame, 16) > channel(redFrame, 8) + 12
+                        && channel(greenFrame, 8) > channel(greenFrame, 16) + 12
+                        && channel(plain, 16) < 85
+                        && Math.abs(channel(plain, 16) - channel(clean, 16)) < 10
+                        && Math.abs(channel(plain, 8) - channel(clean, 8)) < 10
+                        && Math.abs(channel(plain, 0) - channel(clean, 0)) < 10) changed++;
+            }
+        }
+        Playtest.require(changed > Math.max(10, h * h / 6000), "Too few chest pixels went from red to lime to clean: " + changed);
+        return true;
+    }
+
+    private static int channel(int color, int shift) {
+        return (color >> shift) & 255;
     }
 
     private static int dogCount(ServerPlayer p) {

@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "florafauna:item/front_pack",
+    "tints": [
+      { "type": "florafauna:front_pack" }
+    ]
+  }
+}
