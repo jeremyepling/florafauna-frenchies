@@ -51,9 +51,9 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
 
         PartDefinition carrier = root.addOrReplaceChild("carrier", CubeListBuilder.create(), PartPose.offset(2.7F, -9.0F, -1.1F));
-        // One pixel of the pouch sits inside the chest. Scale the baked box to keep its original UVs.
-        carrier.addOrReplaceChild("pouch", CubeListBuilder.create().texOffs(44, 0).addBox(-6.2F, 2.0F, -3.0F, 7.0F, 6.0F, 3.0F),
-                PartPose.ZERO.scaled(1, 1, (1 + POUCH_PROJECTION) / 3).translated(0, 0, 0.1F));
+        // Anchor the top of the original six-pixel texture and extend the hem just below the rump.
+        carrier.addOrReplaceChild("pouch", CubeListBuilder.create().texOffs(44, 0).addBox(-6.2F, 0, -3.0F, 7.0F, 6.0F, 3.0F),
+                PartPose.ZERO.scaled(1, 6.75F / 6, (1 + POUCH_PROJECTION) / 3).translated(0, 2.0F, 0.1F));
 
         addShoulderStrap(carrier, "strap_left", 1);
         addShoulderStrap(carrier, "strap_right", -1);
@@ -92,7 +92,8 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
 
         PartDefinition chest = body.addOrReplaceChild("chest", CubeListBuilder.create().texOffs(1, 1).addBox(-3.5F, -4.25F, -5.5F, 7.0F, 7.0F, 11.0F, new CubeDeformation(0.0F)), PartPose.offset(0.5F, 1.25F, 1.5F));
 
-        chest.addOrReplaceChild("tail", CubeListBuilder.create().texOffs(30, 8).addBox(-1.0F, -0.5F, 0.25F, 2.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -2.75F, 5.25F));
+        // In the upright pose the nub emerges under the pouch, clear of the player's torso.
+        chest.addOrReplaceChild("tail", CubeListBuilder.create().texOffs(30, 8).addBox(-1.0F, -0.5F, 0.25F, 2.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 2.0F, 5.25F));
 
         body.addOrReplaceChild("leg_front_left", CubeListBuilder.create().texOffs(21, 21).addBox(-1.0F, 1.0F, -1.0F, 2.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(3.0F, 3.0F, -2.0F));
 
