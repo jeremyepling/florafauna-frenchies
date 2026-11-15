@@ -1,12 +1,12 @@
 package net.j40climb.frenchies.test;
 
+import net.minecraft.world.entity.EntityTypes;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieAwareness;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
@@ -19,7 +19,7 @@ final class FrenchieAwarenessGameTests {
         var dog = h.spawnWithNoFreeWill(FrenchieRegistry.FRENCHIE.get(), 1, 1, 1);
         dog.tame(h.makeMockPlayer(GameType.SURVIVAL));
         dog.sitDown();
-        var creeper = h.spawnWithNoFreeWill(EntityType.CREEPER, 3, 1, 1);
+        var creeper = h.spawnWithNoFreeWill(EntityTypes.CREEPER, 3, 1, 1);
         h.setBlock(2, 1, 1, Blocks.STONE);
         h.setBlock(2, 2, 1, Blocks.STONE);
         h.assertTrue(FrenchieAwareness.findCreeper(h.getLevel(), dog) == null, "A solid wall must block the warning");
@@ -47,11 +47,11 @@ final class FrenchieAwarenessGameTests {
         h.assertTrue(!dog.isBedtimeBuddy(), "The icon should require an occupied owner bed");
         var bed = new BlockPos(2, 1, 1);
         var head = h.absolutePos(bed);
-        var state = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
+        var state = Blocks.BED.red().defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
         h.getLevel().setBlock(head.south(), state.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
         h.getLevel().setBlock(head, state.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
         owner.startSleeping(head);
-        h.assertTrue(h.getLevel().getBlockState(head).is(Blocks.RED_BED), "Bed disappeared: " + h.getLevel().getBlockState(head));
+        h.assertTrue(h.getLevel().getBlockState(head).is(Blocks.BED.red()), "Bed disappeared: " + h.getLevel().getBlockState(head));
         h.assertTrue(h.getLevel().getBlockState(head).getValue(BedBlock.OCCUPIED), "Bed isn't occupied");
         h.assertTrue(dog.getOwner() == owner && owner.isSleeping(), "Dog did not resolve its sleeping owner");
         dog.tick();

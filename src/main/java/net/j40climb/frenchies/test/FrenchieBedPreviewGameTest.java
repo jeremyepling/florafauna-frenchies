@@ -33,7 +33,7 @@ final class FrenchieBedPreviewGameTest {
             BlockPos first = dog.blockPosition().east();
             BlockPos second = first.south();
             var level = owner.level();
-            var bed = Blocks.BLUE_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
+            var bed = Blocks.BED.blue().defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
             for (var head : new BlockPos[]{first, second}) {
                 level.setBlock(head.west(), bed.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
                 level.setBlock(head, bed.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);

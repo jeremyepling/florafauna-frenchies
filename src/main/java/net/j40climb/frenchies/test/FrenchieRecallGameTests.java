@@ -1,5 +1,6 @@
 package net.j40climb.frenchies.test;
 
+import net.minecraft.world.phys.Vec3;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
@@ -36,7 +37,7 @@ final class FrenchieRecallGameTests {
         for (var floor : BlockPos.betweenClosed(bed.offset(-2, -1, -2), bed.offset(2, -1, 2))) {
             level.setBlockAndUpdate(floor, Blocks.STONE.defaultBlockState());
         }
-        var state = Blocks.BLUE_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
+        var state = Blocks.BED.blue().defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
         level.setBlock(bed.west(), state.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
         level.setBlock(bed, state.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
         owner.setRespawnPosition(new ServerPlayer.RespawnConfig(
@@ -47,7 +48,7 @@ final class FrenchieRecallGameTests {
                 .thenWaitUntil(() -> h.assertTrue(level.getEntity(id) == null, "Dog never departed"))
                 .thenWaitUntil(() -> h.assertTrue(level.getEntity(id) instanceof FrenchieEntity parked
                                 && parked.isGoingHome() && parked.isOrderedToSit()
-                                && parked.position().distanceToSqr(bed.getBottomCenter()) < 16,
+                                && parked.position().distanceToSqr(Vec3.atBottomCenterOf(bed)) < 16,
                         "Dog did not park beside the owner's bed"))
                 .thenWaitUntil(() -> h.assertTrue(!level.hasChunkAt(bed) && level.getEntity(id) == null,
                         "Waiting dog kept its bed loaded"))
@@ -75,7 +76,7 @@ final class FrenchieRecallGameTests {
             dog.tame(owner);
             dog.sitDown();
             var bed = dog.blockPosition().east(2);
-            var state = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
+            var state = Blocks.BED.red().defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
             level.setBlock(bed.west(), state.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
             level.setBlock(bed, state.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
             owner.setRespawnPosition(new ServerPlayer.RespawnConfig(
@@ -83,7 +84,7 @@ final class FrenchieRecallGameTests {
             owner.snapTo(dog.position().add(1, 0, -1), 0, 0);
             owner.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
             owner.setShiftKeyDown(true);
-            var hit = new BlockHitResult(bed.west().getCenter(), Direction.UP, bed.west(), false);
+            var hit = new BlockHitResult(Vec3.atCenterOf(bed.west()), Direction.UP, bed.west(), false);
             owner.gameMode.useItemOn(owner, level, owner.getMainHandItem(), InteractionHand.MAIN_HAND, hit);
             h.assertTrue(dog.isGoingHome() && !dog.isDelivering() && !owner.isSleeping(),
                     "Sneak-use on the foot of the owner's bed did not send the unladen Frenchie home");

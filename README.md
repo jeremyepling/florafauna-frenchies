@@ -1,6 +1,6 @@
 # FloraFauna Frenchies
 
-Standalone French bulldog companions for Minecraft 26.1 and NeoForge. Existing Frenchie entities, eggs, carried dogs, and saved courier trips keep their original identifiers.
+Standalone French bulldog companions for Minecraft 26.3 and NeoForge. Existing Frenchie entities, eggs, carried dogs, and saved courier trips keep their original identifiers.
 
 
 Tame a Frenchie with a bone, feed it glow berries, and right-click with an empty hand to switch between Sit and Follow. Shift + right-click picks up an adult dog. Shift + right-click the air to put it down. Packing pauses a job until release.

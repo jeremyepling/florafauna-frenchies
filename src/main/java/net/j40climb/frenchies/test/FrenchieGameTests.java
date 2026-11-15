@@ -1,5 +1,6 @@
 package net.j40climb.frenchies.test;
 
+import net.minecraft.world.phys.Vec3;
 import io.netty.buffer.Unpooled;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieVariant;
@@ -53,7 +54,7 @@ final class FrenchieGameTests {
         dog.setCustomName(Component.literal("Pip"));
         UUID id = dog.getUUID();
         owner.setShiftKeyDown(true);
-        FrontpackEvents.onEntityInteract(new PlayerInteractEvent.EntityInteract(owner, InteractionHand.MAIN_HAND, dog));
+        FrontpackEvents.onEntityInteract(new PlayerInteractEvent.EntityInteract(owner, InteractionHand.MAIN_HAND, dog, Vec3.ZERO));
         helper.assertTrue(dog.isRemoved(), "Pickup left the original dog in the level");
 
         var respawned = helper.makeMockPlayer(GameType.SURVIVAL);

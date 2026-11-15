@@ -35,7 +35,7 @@ public class FrontpackClientEvents {
     public static void registerWarningHud(RegisterGuiLayersEvent event) {
         event.registerAboveAll(Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_warning"), (gui, delta) -> {
             var mc = Minecraft.getInstance();
-            if (mc.player == null || mc.options.hideGui || !mc.options.getCameraType().isFirstPerson()) return;
+            if (mc.player == null || mc.gui.hud.isHidden() || !mc.options.getCameraType().isFirstPerson()) return;
             var warning = mc.player.getExistingDataOrNull(FrenchieRegistry.FRENCHIE_WARNING);
             long now = mc.player.level().getGameTime();
             if (warning == null || !warning.visible(now)) return;

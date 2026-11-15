@@ -27,6 +27,6 @@ public final class FrenchieClient {
     @SubscribeEvent
     public static void networking(RegisterClientPayloadHandlersEvent event) {
         event.register(DeliveryPopupPayload.TYPE, (data, context) ->
-                Minecraft.getInstance().setScreen(new DeliveryScreen(data)));
+                Minecraft.getInstance().gui.setScreen(new DeliveryScreen(data)));
     }
 }

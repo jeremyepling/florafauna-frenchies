@@ -16,6 +16,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.clock.ClockTimeMarker;
 import net.minecraft.world.clock.ClockTimeMarkers;
+import net.minecraft.world.clock.ServerClockManager;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.BedBlock;
@@ -121,7 +122,7 @@ final class FrenchiePlaytest {
             for (var pos : BlockPos.betweenClosed(bed.offset(-3, -1, -3), bed.offset(8, -1, 3))) {
                 level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
             }
-            var state = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
+            var state = Blocks.BED.red().defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
             level.setBlock(bed.south(), state.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
             level.setBlock(bed, state.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
             p.teleportTo(level, 4.5, 220, 0.5, Set.of(), -90, 0, true);
@@ -136,11 +137,11 @@ final class FrenchiePlaytest {
         t.server("Stand within reach of the bed", p -> p.teleportTo(p.level(), -1.5, 220, 0.5, Set.of(), -90, 20, true));
         useBed(t, bed);
         t.awaitClient("See the seated dog reach the pillow and settle", mc ->
-                mc.screen instanceof InBedChatScreen && mc.level.getEntity(id[0]) instanceof FrenchieEntity dog
+                mc.gui.screen() instanceof InBedChatScreen && mc.level.getEntity(id[0]) instanceof FrenchieEntity dog
                         && dog.isFrenchieSleeping() && dog.isBedtimeBuddy()
                         && CompanionIconsPlaytest.shows(mc, dog, "sleep")
                         && dog.position().distanceToSqr(Vec3.atBottomCenterOf(bed)) <= 2.25);
-        t.client("Leave the bed early", mc -> mc.screen.onClose());
+        t.client("Leave the bed early", mc -> mc.gui.screen().onClose());
         t.awaitServer("Early waking restores sitting without granting Well Rested", p ->
                 !p.isSleeping() && dog(p, id[0]).isOrderedToSit() && !dog(p, id[0]).isBedtimeBuddy()
                         && !p.hasEffect(FrenchieRegistry.WELL_RESTED));
@@ -154,7 +155,7 @@ final class FrenchiePlaytest {
 
     private static void useBed(Playtest t, BlockPos bed) {
         t.awaitClient("Stand awake in reach of the pillow", mc ->
-                mc.screen == null && !mc.player.isSleeping() && mc.player.position().distanceToSqr(bed.getCenter()) < 12);
+                mc.gui.screen() == null && !mc.player.isSleeping() && mc.player.position().distanceToSqr(Vec3.atCenterOf(bed)) < 12);
         t.client("Right-click the bed", mc -> {
             Vec3 point = Vec3.atBottomCenterOf(bed).add(0, 0.55, 0);
             mc.player.lookAt(Anchor.EYES, point);
@@ -172,7 +173,8 @@ final class FrenchiePlaytest {
 
     private static void setTime(ServerLevel level, ResourceKey<ClockTimeMarker> marker) {
         var clock = level.dimensionType().defaultClock().orElseThrow();
-        Playtest.require(level.getServer().clockManager().moveToTimeMarker(clock, marker), "Overworld lacks time marker " + marker);
+        var result = level.getServer().clockManager().moveToTimeMarker(clock, marker);
+        Playtest.require(result != ServerClockManager.MoveResult.NO_TIME_MARKER_FOUND, "Overworld lacks time marker " + marker);
     }
 
     private static void toggleSit(Minecraft mc, int id) {

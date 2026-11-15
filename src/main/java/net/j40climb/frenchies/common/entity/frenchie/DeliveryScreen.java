@@ -191,7 +191,7 @@ public final class DeliveryScreen extends Screen {
 
     private void respond(String command) {
         if (minecraft.player != null) minecraft.player.connection.sendCommand("frenchiedelivery " + data.dog() + " " + command);
-        minecraft.setScreen(null);
+        minecraft.gui.setScreen(null);
     }
 
     @Override

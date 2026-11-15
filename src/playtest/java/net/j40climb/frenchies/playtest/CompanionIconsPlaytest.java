@@ -1,5 +1,6 @@
 package net.j40climb.frenchies.playtest;
 
+import net.minecraft.world.entity.EntityTypes;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +28,6 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.clock.ClockTimeMarkers;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -68,7 +68,7 @@ final class CompanionIconsPlaytest {
             dogId[0] = dog.getId();
         });
         t.client("Frame the dog in first person", mc -> {
-            mc.options.hideGui = false;
+            if (mc.gui.hud.isHidden()) mc.gui.hud.toggle();
             mc.options.setCameraType(CameraType.FIRST_PERSON);
         });
         clickDog(t, dogId, false);
@@ -171,7 +171,7 @@ final class CompanionIconsPlaytest {
     }
 
     private static int spawnCreeper(ServerLevel level, BlockPos pos) {
-        var creeper = EntityType.CREEPER.spawn(level, pos, EntitySpawnReason.COMMAND);
+        var creeper = EntityTypes.CREEPER.spawn(level, pos, EntitySpawnReason.COMMAND);
         Playtest.require(creeper != null, "Creeper did not spawn");
         creeper.setNoAi(true);
         return creeper.getId();
@@ -190,7 +190,7 @@ final class CompanionIconsPlaytest {
         if (flashVisible == null) return;
         Minecraft mc = Minecraft.getInstance();
         if (flashVisible.test(mc)) {
-            Screenshot.grab(mc.gameDirectory, flashScreenshot + ".png", mc.getMainRenderTarget(), 1, ignored -> {});
+            Screenshot.grab(mc.gameDirectory, flashScreenshot + ".png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
             flashVisible = null;
         }
     }

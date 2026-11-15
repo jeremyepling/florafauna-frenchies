@@ -77,7 +77,7 @@ final class FrontpackPlaytest {
         });
         if (phase == 1) {
             t.server("Kill the carrier while the Frenchie is packed", p -> p.kill(p.level()));
-            t.awaitClient("Wait for the carrier's death screen", mc -> mc.screen instanceof DeathScreen);
+            t.awaitClient("Wait for the carrier's death screen", mc -> mc.gui.screen() instanceof DeathScreen);
             t.client("Request vanilla respawn", mc -> mc.player.respawn());
             t.awaitServer("Verify respawn retained the same packed dog", p -> p.isAlive()
                     && p.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).frenchieNBT()
@@ -129,7 +129,7 @@ final class FrontpackPlaytest {
         int[] settle = new int[1];
         t.client("Frame the standing player's chest from the front", mc -> {
             mc.options.keyShift.setDown(false);
-            mc.options.hideGui = true;
+            if (!mc.gui.hud.isHidden()) mc.gui.hud.toggle();
             mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
             mc.player.setXRot(0);
             mc.player.setYRot(180);

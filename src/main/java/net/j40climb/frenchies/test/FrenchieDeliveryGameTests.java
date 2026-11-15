@@ -159,7 +159,7 @@ final class FrenchieDeliveryGameTests {
         var barks = new AtomicInteger();
         Consumer<PlayLevelSoundEvent.AtPosition> onBark = sound -> {
             if (sound.getLevel() == level && bark.equals(sound.getSound())
-                    && sound.getPosition().distanceToSqr(moved.getBottomCenter()) < 36) barks.incrementAndGet();
+                    && sound.getPosition().distanceToSqr(Vec3.atBottomCenterOf(moved)) < 36) barks.incrementAndGet();
         };
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, PlayLevelSoundEvent.AtPosition.class, onBark);
         recipient.snapTo(address, 0, 0);
@@ -348,9 +348,13 @@ final class FrenchieDeliveryGameTests {
         // Keep both the bed and its landing floor in a previously untouched chunk.
         BlockPos bed = ChunkPos.containing(start.east(640)).getMiddleBlockPosition(start.getY() + 12);
         var chunk = ChunkPos.containing(bed);
-        level.getChunkAt(bed);
+        // Entity ticking needs a fully generated two-chunk border. Build that terrain before the
+        // accelerated test starts so background world generation does not consume its tick budget.
+        for (var nearby : ChunkPos.rangeClosed(chunk, 2).toList()) {
+            level.getChunk(nearby.x(), nearby.z());
+        }
         platform(h, bed);
-        var bedState = Blocks.BLUE_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
+        var bedState = Blocks.BED.blue().defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
         level.setBlock(bed.west(), bedState.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
         level.setBlock(bed, bedState.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
         owner.getInventory().clearContent();
@@ -382,7 +386,7 @@ final class FrenchieDeliveryGameTests {
                     owner.snapTo(bed.north(2), 0, 0);
                 })
                 .thenWaitUntil(() -> h.assertTrue(level.getEntity(id) instanceof FrenchieEntity waiting
-                                && waiting.isDelivering() && waiting.position().distanceToSqr(bed.getBottomCenter()) < 36,
+                                && waiting.isDelivering() && waiting.position().distanceToSqr(Vec3.atBottomCenterOf(bed)) < 36,
                         "No waiting courier at the distant bed after the owner's visit"))
                 .thenExecute(() -> {
                     var waiting = (FrenchieEntity) level.getEntity(id);
@@ -407,7 +411,7 @@ final class FrenchieDeliveryGameTests {
             dog.standUp();
             var id = dog.getUUID();
             BlockPos bed = dog.blockPosition().east();
-            var bedState = Blocks.BLUE_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
+            var bedState = Blocks.BED.blue().defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
             level.setBlock(bed.west(), bedState.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
             level.setBlock(bed, bedState.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
             dog.snapTo(bed.north(), 0, 0);

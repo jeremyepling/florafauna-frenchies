@@ -75,11 +75,11 @@ public final class DeliveryMultiplayerClient {
                 if (DeliveryPlaytest.pressLabel(mc, "FFVisitor")) step = Step.PREVIEW;
             }
             case PREVIEW -> {
-                if (!(mc.screen instanceof DeliveryScreen) || !mc.screen.getNarrationMessage().getString().contains("FFVisitor")
-                        || !mc.screen.getNarrationMessage().getString().contains(Component.translatable("dimension.minecraft.overworld").getString())
-                        || !mc.screen.getNarrationMessage().getString().contains(DeliveryPlaytest.eta(DeliveryMultiplayerServer.ETA))
+                if (!(mc.gui.screen() instanceof DeliveryScreen) || !mc.gui.screen().getNarrationMessage().getString().contains("FFVisitor")
+                        || !mc.gui.screen().getNarrationMessage().getString().contains(Component.translatable("dimension.minecraft.overworld").getString())
+                        || !mc.gui.screen().getNarrationMessage().getString().contains(DeliveryPlaytest.eta(DeliveryMultiplayerServer.ETA))
                         || ++frames < 5) return;
-                Screenshot.grab(mc.gameDirectory, "courier-envelope.png", mc.getMainRenderTarget(), 1, ignored -> {});
+                Screenshot.grab(mc.gameDirectory, "courier-envelope.png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
                 step = Step.CONFIRM;
             }
             case CONFIRM -> {
@@ -96,7 +96,7 @@ public final class DeliveryMultiplayerClient {
                 step = Step.CAPTURE;
             }
             case CAPTURE -> {
-                Screenshot.grab(mc.gameDirectory, "courier-arrival.png", mc.getMainRenderTarget(), 1, ignored -> {});
+                Screenshot.grab(mc.gameDirectory, "courier-arrival.png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
                 step = Step.ACCEPT;
             }
             case ACCEPT -> {
@@ -109,7 +109,7 @@ public final class DeliveryMultiplayerClient {
     }
 
     private static boolean aim(Minecraft mc, FrenchieEntity dog) {
-        if (dog == null || mc.screen != null) return false;
+        if (dog == null || mc.gui.screen() != null) return false;
         mc.player.lookAt(Anchor.EYES, dog.getEyePosition());
         return mc.hitResult instanceof EntityHitResult hit && hit.getEntity() == dog;
     }
