@@ -19,8 +19,17 @@ import org.jetbrains.annotations.Nullable;
 public record FrontpackData(
     boolean hasCarriedFrenchie,
     CompoundTag frenchieNBT,
-    long pickupTimestamp
+    long pickupTimestamp,
+    boolean releasePending
 ) {
+    public FrontpackData(boolean hasCarriedFrenchie, CompoundTag frenchieNBT, long pickupTimestamp) {
+        this(hasCarriedFrenchie, frenchieNBT, pickupTimestamp, false);
+    }
+
+    public FrontpackData withReleasePending(boolean pending) {
+        return new FrontpackData(hasCarriedFrenchie, frenchieNBT, pickupTimestamp, pending);
+    }
+
     /**
      * Codec for NBT persistence (disk save/load).
      */
@@ -28,7 +37,8 @@ public record FrontpackData(
         builder.group(
             Codec.BOOL.fieldOf("hasCarriedFrenchie").forGetter(FrontpackData::hasCarriedFrenchie),
             CompoundTag.CODEC.fieldOf("frenchieNBT").forGetter(FrontpackData::frenchieNBT),
-            Codec.LONG.fieldOf("pickupTimestamp").forGetter(FrontpackData::pickupTimestamp)
+            Codec.LONG.fieldOf("pickupTimestamp").forGetter(FrontpackData::pickupTimestamp),
+            Codec.BOOL.optionalFieldOf("releasePending", false).forGetter(FrontpackData::releasePending)
         ).apply(builder, FrontpackData::new)
     );
 

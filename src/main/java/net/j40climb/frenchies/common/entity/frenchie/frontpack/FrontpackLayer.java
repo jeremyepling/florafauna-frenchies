@@ -23,6 +23,8 @@ import net.minecraft.util.context.ContextKey;
  */
 public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> {
 
+    static final ContextKey<Boolean> WORN = new ContextKey<>(
+            Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_worn"));
     static final ContextKey<FrenchieVariant> CARRIED_COAT = new ContextKey<>(
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_coat"));
     static final ContextKey<Integer> FABRIC_TINT = new ContextKey<>(
@@ -57,7 +59,7 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
                       int packedLight, AvatarRenderState renderState, float yRot, float xRot) {
 
         FrenchieVariant coat = renderState.getRenderData(CARRIED_COAT);
-        if (coat == null || renderState.isInvisible) return;
+        if (!Boolean.TRUE.equals(renderState.getRenderData(WORN)) || renderState.isInvisible) return;
 
         Identifier texture = coat == FrenchieVariant.BRINDLE ? BRINDLE_TEXTURE : FAWN_TEXTURE;
 

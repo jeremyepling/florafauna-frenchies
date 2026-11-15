@@ -27,6 +27,7 @@ public final class FrontpackStatusLabel {
         event.registerEntityModifier(new TypeToken<AvatarRenderer<?>>() {}, (avatar, state) -> {
             var pack = avatar.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
             if (pack == null || !pack.hasCarriedFrenchie() || state.isInvisible || !Minecraft.renderNames()) return;
+            if (FrontpackEquipment.wornBy(avatar).isEmpty()) return;
             var warning = avatar.getExistingDataOrNull(FrenchieRegistry.FRENCHIE_WARNING);
             var appearance = pack.frenchieNBT();
             FrenchieStatusIcon icon;

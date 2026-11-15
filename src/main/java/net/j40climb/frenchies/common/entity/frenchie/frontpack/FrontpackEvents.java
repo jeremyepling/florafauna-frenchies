@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionResult;
@@ -21,12 +22,13 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
  * Event handler for Frenchie frontpack pickup/putdown interactions.
  *
  * Pickup: Shift-right-click on tamed Frenchie (owned by you)
- * Put down: Shift-right-click air while carrying a Frenchie
+ * Put down: Shift-right-click air, or remove the last equipped front pack.
  */
 @EventBusSubscriber(modid = Frenchies.MOD_ID)
 public class FrontpackEvents {
@@ -45,6 +47,18 @@ public class FrontpackEvents {
         if (!frenchie.isTame()) return;
         if (!frenchie.isOwnedBy(player)) return;
         if (frenchie.isBaby()) return;
+        if (FrontpackEquipment.wornBy(player).isEmpty()) {
+            var held = player.getItemInHand(event.getHand());
+            if (held.isEmpty() || held.is(FrenchieRegistry.FRONT_PACK.get())) {
+                // Keep a failed pickup from toggling Sit or canceling the dog's current job.
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+                if (!player.level().isClientSide()) {
+                    player.sendOverlayMessage(Component.translatable("frenchie.florafauna.frontpack.equip_first"));
+                }
+            }
+            return;
+        }
 
         // Check if already carrying a Frenchie
         FrontpackData currentData = player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
@@ -85,6 +99,27 @@ public class FrontpackEvents {
         event.setCancellationResult(InteractionResult.SUCCESS);
     }
 
+    @SubscribeEvent
+    public static void releaseWhenUnequipped(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !player.isAlive()) return;
+        var data = player.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
+        if (data == null || !data.hasCarriedFrenchie()) return;
+        if (!FrontpackEquipment.wornBy(player).isEmpty()) {
+            if (data.releasePending()) player.setData(FrenchieRegistry.FRENCH_FRONTPACK_DATA, data.withReleasePending(false));
+            return;
+        }
+        if (data.releasePending() && player.tickCount % 10 != 0) return;
+        if (!releaseNearby(player, data) && !data.releasePending()) {
+            player.setData(FrenchieRegistry.FRENCH_FRONTPACK_DATA, data.withReleasePending(true));
+            player.sendOverlayMessage(Component.translatable("frenchie.florafauna.frontpack.wait_for_ground"));
+        }
+    }
+
+    private static boolean releaseNearby(ServerPlayer player, FrontpackData data) {
+        var position = CourierTrips.findLanding(player.level(), player.blockPosition(), player);
+        return position != null && releaseAt(player, player.level(), data, position);
+    }
+
     public static void putDown(Player player) {
         if (!(player.level() instanceof ServerLevel level)) return;
         FrontpackData data = player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
@@ -96,16 +131,19 @@ public class FrontpackEvents {
         BlockPos target = BlockPos.containing(player.position().add(forward.scale(2)));
         if (!level.isInWorldBounds(target)) return;
         Vec3 position = DismountHelper.findSafeDismountLocation(type, level, target, true);
-        if (position == null) return;
+        if (position != null) releaseAt(player, level, data, position);
+    }
 
-        var dog = type.create(level, EntitySpawnReason.TRIGGERED);
-        if (dog == null) return;
+    private static boolean releaseAt(Player player, ServerLevel level, FrontpackData data, Vec3 position) {
+        var dog = FrenchieRegistry.FRENCHIE.get().create(level, EntitySpawnReason.TRIGGERED);
+        if (dog == null) return false;
         dog.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), data.frenchieNBT()));
         dog.snapTo(position, player.getYRot(), 0);
-        if (!level.noCollision(dog, dog.getBoundingBox()) || !level.addFreshEntity(dog)) return;
+        if (!level.noCollision(dog, dog.getBoundingBox()) || !level.addFreshEntity(dog)) return false;
 
         player.setData(FrenchieRegistry.FRENCH_FRONTPACK_DATA, FrontpackData.DEFAULT);
         if (dog.hasCompanionJob()) player.sendOverlayMessage(Component.translatable("frenchie.florafauna.order.resumed"));
         player.playSound(SoundEvents.ARMOR_EQUIP_LEATHER.value(), 1.0f, 1.0f);
+        return true;
     }
 }

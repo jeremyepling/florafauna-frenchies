@@ -27,7 +27,7 @@ public record FrontpackWarning(long start, float bearing) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         var pack = player.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
         var previous = player.getExistingDataOrNull(FrenchieRegistry.FRENCHIE_WARNING);
-        if (pack == null || !pack.hasCarriedFrenchie() || player.isSleeping()) {
+        if (pack == null || !pack.hasCarriedFrenchie() || player.isSleeping() || FrontpackEquipment.wornBy(player).isEmpty()) {
             if (previous != null) player.removeData(FrenchieRegistry.FRENCHIE_WARNING);
             return;
         }

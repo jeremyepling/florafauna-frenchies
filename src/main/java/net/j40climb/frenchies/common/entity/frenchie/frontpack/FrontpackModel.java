@@ -118,6 +118,7 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
     public void setupAnim(AvatarRenderState renderState) {
         super.setupAnim(renderState);
         root.getChild("carrier").visible = renderState.getRenderData(FrontpackLayer.FABRIC_TINT) == null;
+        root.getChild("carried_dog").visible = renderState.getRenderData(FrontpackLayer.CARRIED_COAT) != null;
 
         // Apply the idle animation (static pose that's always active)
         // Using the KeyframeAnimation.apply() method like in FrenchieModel

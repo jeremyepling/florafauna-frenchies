@@ -6,7 +6,6 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.context.ContextKey;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
@@ -95,11 +94,10 @@ public class FrontpackClientEvents {
             var warning = avatar.getExistingDataOrNull(FrenchieRegistry.FRENCHIE_WARNING);
             state.setRenderData(ALERT_YAW, warning != null && warning.visible(avatar.level().getGameTime())
                     ? Mth.clamp(Mth.wrapDegrees(warning.bearing() - state.bodyRot), -60F, 60F) : null);
-            state.setRenderData(FrontpackLayer.CARRIED_COAT, data == null ? null : data.carriedCoat());
-            var pack = avatar.getOffhandItem();
-            if (!pack.is(FrenchieRegistry.FRONT_PACK.get())) pack = avatar.getItemBySlot(EquipmentSlot.CHEST);
-            state.setRenderData(FrontpackLayer.FABRIC_TINT,
-                    pack.is(FrenchieRegistry.FRONT_PACK.get()) ? FrontpackTint.dyedFabric(pack) : null);
+            var pack = FrontpackEquipment.wornBy(avatar);
+            state.setRenderData(FrontpackLayer.WORN, !pack.isEmpty());
+            state.setRenderData(FrontpackLayer.CARRIED_COAT, data == null || pack.isEmpty() ? null : data.carriedCoat());
+            state.setRenderData(FrontpackLayer.FABRIC_TINT, pack.isEmpty() ? null : FrontpackTint.dyedFabric(pack));
         });
     }
 

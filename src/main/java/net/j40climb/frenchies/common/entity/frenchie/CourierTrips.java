@@ -242,7 +242,7 @@ public final class CourierTrips extends SavedData {
         }
     }
 
-    private static @Nullable Vec3 findLanding(ServerLevel level, BlockPos target, @Nullable ServerPlayer player) {
+    public static @Nullable Vec3 findLanding(ServerLevel level, BlockPos target, @Nullable ServerPlayer player) {
         Vec3 fallback = null;
         for (BlockPos pos : BlockPos.withinManhattan(target, 2, 2, 2)) {
             if (!level.isInWorldBounds(pos) || !level.hasChunkAt(pos) || !level.getFluidState(pos).isEmpty()) continue;

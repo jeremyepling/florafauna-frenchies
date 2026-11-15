@@ -6,6 +6,8 @@
   "frenchie.florafauna.order.sit": "%s will sit here.",
   "frenchie.florafauna.order.follow": "%s will follow you.",
   "frenchie.florafauna.order.packed": "Job paused. Put your dog down to continue.",
+  "frenchie.florafauna.frontpack.wait_for_ground": "Your Frenchie will hop down when there's safe ground nearby.",
+  "frenchie.florafauna.frontpack.equip_first": "Wear a front pack to pick up your Frenchie.",
   "frenchie.florafauna.order.resumed": "Back on the job.",
   "frenchie.florafauna.order.cancel": "Trail canceled. %s will sit here.",
   "frenchie.florafauna.order.busy": "%s has a job. Use an empty hand to cancel.",
@@ -53,7 +55,7 @@
   "frenchie.florafauna.bedtime.rested": "Well Rested: mine 10%% faster for 2 minutes.",
   "item.florafauna.frenchie_spawn_egg": "Frenchie Spawn Egg",
   "item.florafauna.front_pack": "Frenchie Front Pack",
-  "item.florafauna.front_pack.equip": "Use the chest slot or offhand while carrying a Frenchie.",
+  "item.florafauna.front_pack.equip": "Wear in your chest slot or a compatible body slot to carry your Frenchie.",
   "item.florafauna.front_pack.dye": "Color with dyes in a crafting grid. Wash in a water cauldron.",
   "entity.florafauna.frenchie": "Frenchie"
 }
