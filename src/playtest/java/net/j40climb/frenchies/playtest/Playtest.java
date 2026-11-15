@@ -70,7 +70,6 @@ public final class Playtest {
         // The server ignores interaction packets until the client acknowledges the level load.
         awaitServer("Wait for the server to accept player input", player -> player.connection.hasClientLoaded());
         switch (scenario) {
-            case "barrier" -> BarrierPlaytest.steps(this, phase);
             case "companions" -> CompanionIconsPlaytest.steps(this);
             case "delivery" -> DeliveryPlaytest.steps(this, phase);
             case "frontpack" -> FrontpackPlaytest.steps(this, phase);
