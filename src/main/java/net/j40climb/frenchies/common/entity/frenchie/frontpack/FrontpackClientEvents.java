@@ -4,12 +4,12 @@ import com.google.common.reflect.TypeToken;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.Mth;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
 import net.j40climb.frenchies.Frenchies;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.networking.PutDownFrenchiePayload;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
@@ -37,6 +37,11 @@ public class FrontpackClientEvents {
     @SubscribeEvent
     public static void registerItemTints(RegisterColorHandlersEvent.ItemTintSources event) {
         event.register(Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "front_pack"), FrontpackTint.CODEC);
+    }
+
+    @SubscribeEvent
+    public static void registerItemModels(RegisterSpecialModelRendererEvent event) {
+        event.register(Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "front_pack"), FrontpackItemRenderer.Unbaked.CODEC);
     }
 
     @SubscribeEvent
@@ -93,8 +98,8 @@ public class FrontpackClientEvents {
             state.setRenderData(FrontpackLayer.CARRIED_COAT, data == null ? null : data.carriedCoat());
             var pack = avatar.getOffhandItem();
             if (!pack.is(FrenchieRegistry.FRONT_PACK.get())) pack = avatar.getItemBySlot(EquipmentSlot.CHEST);
-            var dye = pack.is(FrenchieRegistry.FRONT_PACK.get()) ? pack.get(DataComponents.DYED_COLOR) : null;
-            state.setRenderData(FrontpackLayer.FABRIC_TINT, dye == null ? null : FrontpackTint.fabricColor(dye.rgb()));
+            state.setRenderData(FrontpackLayer.FABRIC_TINT,
+                    pack.is(FrenchieRegistry.FRONT_PACK.get()) ? FrontpackTint.dyedFabric(pack) : null);
         });
     }
 

@@ -27,13 +27,13 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_coat"));
     static final ContextKey<Integer> FABRIC_TINT = new ContextKey<>(
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_fabric_tint"));
-    private static final Identifier FABRIC = Identifier.withDefaultNamespace("textures/block/white_wool.png");
+    static final Identifier FABRIC = Identifier.withDefaultNamespace("textures/block/white_wool.png");
 
     private final FrontpackModel frontpackModel;
     private final ModelPart carrier;
 
     // Variant-specific textures for the entire frontpack model
-    private static final Identifier FAWN_TEXTURE =
+    static final Identifier FAWN_TEXTURE =
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE,
                     "textures/entity/frenchie/frenchie_fawn_texture.png");
 

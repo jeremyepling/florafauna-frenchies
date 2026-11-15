@@ -14,15 +14,17 @@ enum FrontpackTint implements ItemTintSource {
 
     static final MapCodec<FrontpackTint> CODEC = MapCodec.unit(INSTANCE);
 
-    static int fabricColor(int dye) {
-        int color = ARGB.opaque(dye);
+    static @Nullable Integer dyedFabric(ItemStack stack) {
+        var dye = stack.get(DataComponents.DYED_COLOR);
+        if (dye == null) return null;
+        int color = ARGB.opaque(dye.rgb());
         return ARGB.srgbLerp(0.25F, color, ARGB.greyscale(color));
     }
 
     @Override
     public int calculate(ItemStack stack, @Nullable ClientLevel level, @Nullable LivingEntity owner) {
-        var dye = stack.get(DataComponents.DYED_COLOR);
-        return dye == null ? 0xFF393939 : fabricColor(dye.rgb());
+        Integer tint = dyedFabric(stack);
+        return tint == null ? 0xFF393939 : tint;
     }
 
     @Override
