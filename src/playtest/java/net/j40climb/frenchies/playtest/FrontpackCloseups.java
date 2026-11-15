@@ -91,7 +91,7 @@ final class FrontpackCloseups {
         // The dog's muzzle occludes the straps in the close-up. The normal third-person
         // camera sees both outer edges all the way down to the pouch.
         String redFrame = front ? "frontpack-dyed-chest.png" : "frontpack-red-back.png";
-        String limeFrame = front ? "frontpack-dyed-offhand.png" : "frontpack-lime-back.png";
+        String limeFrame = front ? "frontpack-dyed-lime.png" : "frontpack-lime-back.png";
         var red = ImageIO.read(screenshots.resolve(redFrame).toFile());
         var lime = ImageIO.read(screenshots.resolve(limeFrame).toFile());
         if (red == null || lime == null) return false;

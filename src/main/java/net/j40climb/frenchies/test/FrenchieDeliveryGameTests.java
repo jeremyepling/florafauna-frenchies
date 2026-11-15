@@ -15,12 +15,16 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.animal.wolf.WolfSoundVariants;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
@@ -32,6 +36,7 @@ import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
@@ -45,6 +50,81 @@ import java.util.function.Consumer;
 
 final class FrenchieDeliveryGameTests {
     private static final InteractionHand HAND = InteractionHand.MAIN_HAND;
+
+    static void unequipPackedCourier(GameTestHelper h) {
+        var owner = networkedPlayer(h);
+        var recipient = networkedPlayer(h);
+        var level = h.getLevel();
+        var dog = h.spawnWithNoFreeWill(FrenchieRegistry.FRENCHIE.get(), 2, 1, 2);
+        var parcel = prepareDelivery(owner, recipient, dog).copy();
+        dog.setCustomName(Component.literal("Pip"));
+        var id = dog.getUUID();
+        var feet = owner.blockPosition();
+        platform(h, feet);
+        owner.snapTo(feet, 0, 0);
+        // Suspend the player above the arena. There is no safe footing in any direction
+        // until we build the platform under them.
+        var release = feet.above(12);
+        var chest = namedPack("Pip's carrier", 0x9E3145);
+        var offhand = namedPack("Spare carrier", 0x497487);
+        owner.setItemSlot(EquipmentSlot.CHEST, chest.copy());
+        owner.setItemInHand(InteractionHand.OFF_HAND, offhand.copy());
+        var carried = FrenchieRegistry.FRENCH_FRONTPACK_DATA;
+        // The embedded GameTest connection has no network tick loop to drive ServerPlayer.doTick().
+        h.onEachTick(owner::doTick);
+        h.startSequence().thenExecuteAfter(4, () -> {
+            confirm(owner, recipient, dog);
+            h.assertTrue(dog.isDelivering() && owner.getMainHandItem().isEmpty(), "Courier did not accept the marked parcel");
+            owner.setShiftKeyDown(true);
+            click(owner, dog);
+            h.assertTrue(owner.getData(carried).hasCarriedFrenchie() && dog.isRemoved(), "Courier was not packed");
+            owner.inventoryMenu.clicked(InventoryMenu.SHIELD_SLOT, 2, ContainerInput.SWAP, owner);
+        }).thenExecuteAfter(8, () -> {
+            h.assertTrue(owner.getData(carried).hasCarriedFrenchie() && level.getEntity(id) == null
+                            && ItemStack.matches(chest, owner.getItemBySlot(EquipmentSlot.CHEST))
+                            && ItemStack.matches(offhand, owner.getInventory().getItem(2)) && owner.getOffhandItem().isEmpty(),
+                    "Removing the spare pack changed custody while the chest pack was still equipped");
+            owner.setNoGravity(true);
+            owner.snapTo(release, 0, 0);
+            owner.setDeltaMovement(Vec3.ZERO);
+            owner.inventoryMenu.clicked(InventoryMenu.SHIELD_SLOT, 2, ContainerInput.SWAP, owner);
+            owner.inventoryMenu.clicked(InventoryMenu.ARMOR_SLOT_START + 1, 1, ContainerInput.SWAP, owner);
+        }).thenExecuteAfter(15, () -> {
+            h.assertTrue(owner.getData(carried).hasCarriedFrenchie() && owner.getData(carried).releasePending()
+                            && level.getEntity(id) == null,
+                    "A blocked release lost the carried dog or spawned it in midair");
+            h.assertTrue(owner.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
+                            && ItemStack.matches(chest, owner.getInventory().getItem(1))
+                            && ItemStack.matches(offhand, owner.getOffhandItem()),
+                    "Blocked release changed the removed chest pack");
+            platform(h, release);
+        }).thenWaitUntil(() -> h.assertTrue(!owner.getData(carried).hasCarriedFrenchie() && level.getEntity(id) instanceof FrenchieEntity,
+                "Clearing the obstruction did not release the original dog")).thenExecute(() -> {
+            var restored = (FrenchieEntity) level.getEntity(id);
+            h.assertTrue(restored.isOwnedBy(owner) && restored.getName().getString().equals("Pip") && restored.isDelivering(),
+                    "Released courier lost its owner, name or parcel");
+            owner.setShiftKeyDown(false);
+            click(owner, restored);
+        }).thenExecuteAfter(12, () -> {
+            h.assertTrue(level.getEntitiesOfClass(FrenchieEntity.class, new AABB(release).inflate(5), d -> d.isOwnedBy(owner)).size() == 1
+                            && !owner.getData(carried).hasCarriedFrenchie() && ItemStack.matches(parcel, owner.getMainHandItem())
+                            && owner.getInventory().countItem(Items.BUNDLE) == 1 && recipient.getInventory().countItem(Items.BUNDLE) == 0,
+                    "Repeated release lost or duplicated the courier or its named bundle and contents");
+            h.assertTrue(owner.getInventory().countItem(FrenchieRegistry.FRONT_PACK.get()) == 2
+                            && ItemStack.matches(chest, owner.getInventory().getItem(1))
+                            && ItemStack.matches(offhand, owner.getOffhandItem()),
+                    "Release must retain the stowed chest pack and held spare, with the original name and dye");
+            disconnect(recipient);
+            disconnect(owner);
+        }).thenSucceed();
+    }
+
+    private static ItemStack namedPack(String name, int color) {
+        var stack = new ItemStack(FrenchieRegistry.FRONT_PACK.get());
+        stack.set(DataComponents.CUSTOM_NAME, Component.literal(name));
+        stack.set(DataComponents.DYED_COLOR, new DyedItemColor(color));
+        return stack;
+    }
 
     static void compassOrders(GameTestHelper h) {
         var owner = networkedPlayer(h);
@@ -130,6 +210,7 @@ final class FrenchieDeliveryGameTests {
             h.assertTrue(dog.isDelivering() && !dog.isDeathTracking(), "Compass interrupted the active delivery");
 
             owner.setItemInHand(HAND, ItemStack.EMPTY);
+            owner.setItemSlot(EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
             owner.setShiftKeyDown(true);
             click(owner, dog);
             var pack = FrenchieRegistry.FRENCH_FRONTPACK_DATA;

@@ -8,23 +8,29 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -52,6 +58,8 @@ final class FrontpackPlaytest {
                 p.teleportTo(level, 0.5, 201, 2.5, Set.of(), 180, 0, true);
                 p.setGameMode(GameType.SURVIVAL);
                 p.getInventory().clearContent();
+                level.getGameRules().set(GameRules.KEEP_INVENTORY, true, level.getServer());
+                p.setItemSlot(EquipmentSlot.CHEST, dyedPack(DyeColor.RED));
                 var dog = FrenchieRegistry.FRENCHIE.get().create(level, EntitySpawnReason.COMMAND);
                 Playtest.require(dog != null, "Could not create Frenchie");
                 var tag = new CompoundTag();
@@ -63,18 +71,8 @@ final class FrontpackPlaytest {
                 dog.snapTo(0.5, 201, 0.5, 0, 0);
                 Playtest.require(level.addFreshEntity(dog), "Could not add Frenchie to plot");
             });
-            t.client("Crouch in first person", mc -> {
-                mc.options.setCameraType(CameraType.FIRST_PERSON);
-                mc.options.keyShift.setDown(true);
-            });
-            t.awaitClient("Aim the empty hand at the player's brindle Frenchie", mc -> {
-                if (!(mc.level.getEntity(DOG_ID) instanceof FrenchieEntity dog)) return false;
-                mc.player.lookAt(Anchor.EYES, dog.getEyePosition());
-                return mc.player.isShiftKeyDown() && dog.isOwnedBy(mc.player) && dog.getVariant() == COAT
-                        && mc.player.getMainHandItem().isEmpty()
-                        && mc.hitResult instanceof EntityHitResult hit && hit.getEntity() == dog;
-            });
-            t.client("Right-click the dog to pick it up", mc -> KeyMapping.click(mc.options.keyUse.getKey()));
+            t.awaitClient("Verify the red pack is equipped before pickup", mc -> hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED));
+            pickUpDog(t);
         }
         t.awaitServer("Check the original dog is inside the pack and absent from the pen", p -> {
             var data = p.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
@@ -94,7 +92,6 @@ final class FrontpackPlaytest {
                     .read("UUID", UUIDUtil.CODEC).filter(DOG_ID::equals).isPresent());
             t.server("Return the carrier to the cleared plot", p ->
                     p.teleportTo(p.level().getServer().overworld(), 0.5, 201, 2.5, Set.of(), 180, 0, true));
-            t.server("Wear a red front pack before saving", p -> p.setItemSlot(EquipmentSlot.CHEST, dyedPack(DyeColor.RED)));
             return;
         }
         t.awaitClient("Verify the red chest pack survived rejoin", mc ->
@@ -106,10 +103,18 @@ final class FrontpackPlaytest {
                 p.setItemInHand(InteractionHand.OFF_HAND, dyedPack(DyeColor.LIME)));
         t.awaitClient("Wait for the lime offhand pack", mc -> hasDye(mc.player.getOffhandItem(), DyeColor.LIME));
         framePlayer(t);
-        t.screenshot("frontpack-dyed-offhand");
+        t.screenshot("frontpack-red-worn-lime-held");
+        swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, Inventory.SLOT_OFFHAND);
+        t.awaitClient("Wear the lime carrier with the red spare in hand", mc ->
+                hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.LIME) && hasDye(mc.player.getOffhandItem(), DyeColor.RED));
+        framePlayer(t);
+        t.screenshot("frontpack-dyed-lime");
         FrontpackCloseups.capture(t, "lime");
         t.awaitClient("See two straight straps meeting the pouch in front and the belt behind",
                 mc -> FrontpackCloseups.checkStraps(mc.gameDirectory.toPath().resolve("screenshots")));
+        swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, Inventory.SLOT_OFFHAND);
+        t.awaitServer("Return the lime pack to the offhand for washing", p ->
+                hasDye(p.getOffhandItem(), DyeColor.LIME) && hasDye(p.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED));
         t.server("Wash the offhand pack at a water cauldron beside the player", p -> {
             var pos = p.blockPosition().east();
             var water = Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 2);
@@ -120,20 +125,56 @@ final class FrontpackPlaytest {
         });
         t.awaitClient("Wait for the undyed offhand pack", mc -> mc.player.getOffhandItem().is(FrenchieRegistry.FRONT_PACK.get())
                 && !mc.player.getOffhandItem().has(DataComponents.DYED_COLOR));
+        swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, Inventory.SLOT_OFFHAND);
+        t.awaitClient("Wear the washed carrier", mc -> mc.player.getItemBySlot(EquipmentSlot.CHEST).is(FrenchieRegistry.FRONT_PACK.get())
+                && !mc.player.getItemBySlot(EquipmentSlot.CHEST).has(DataComponents.DYED_COLOR) && hasDye(mc.player.getOffhandItem(), DyeColor.RED));
         framePlayer(t);
         t.screenshot("frontpack-washed");
-        t.server("Stow both front packs", p -> {
-            p.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
-            p.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        t.client("Open the inventory to stow the packs", mc -> {
+            mc.options.hideGui = false;
+            mc.setScreen(new InventoryScreen(mc.player));
         });
-        t.awaitClient("Wait for the original carrier", mc -> mc.player.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
-                && mc.player.getOffhandItem().isEmpty());
+        swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, 2);
+        t.awaitServer("Removing the worn pack releases the original dog even with a spare in the offhand", p ->
+                isRestored(p) && p.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && hasDye(p.getOffhandItem(), DyeColor.RED)
+                        && p.getInventory().getItem(2).is(FrenchieRegistry.FRONT_PACK.get()));
+        swapHotbar(t, InventoryMenu.SHIELD_SLOT, 1);
+        t.awaitServer("Stowing the held pack preserves both packs and leaves exactly one dog", p ->
+                isRestored(p) && p.getItemBySlot(EquipmentSlot.CHEST).isEmpty() && p.getOffhandItem().isEmpty()
+                        && hasDye(p.getInventory().getItem(1), DyeColor.RED)
+                        && p.getInventory().getItem(2).is(FrenchieRegistry.FRONT_PACK.get())
+                        && !p.getInventory().getItem(2).has(DataComponents.DYED_COLOR)
+                        && p.getInventory().countItem(FrenchieRegistry.FRONT_PACK.get()) == 2);
+        t.awaitClient("Show dyed and plain packs side by side in the inventory", mc -> mc.screen instanceof InventoryScreen
+                && hasDye(mc.player.getInventory().getItem(1), DyeColor.RED)
+                && mc.player.getInventory().getItem(2).is(FrenchieRegistry.FRONT_PACK.get()));
+        t.screenshot("frontpack-inventory-dyed-and-plain");
+        int[] dyedSlot = new int[3];
+        t.client("Locate the red pack's inventory icon", mc -> {
+            var inventory = (InventoryScreen) mc.screen;
+            var slot = inventory.getMenu().getSlot(InventoryMenu.USE_ROW_SLOT_START + 1);
+            int scale = mc.getWindow().getGuiScale();
+            dyedSlot[0] = (inventory.getGuiLeft() + slot.x) * scale;
+            dyedSlot[1] = (inventory.getGuiTop() + slot.y) * scale;
+            dyedSlot[2] = scale;
+        });
+        t.client("Close the inventory", mc -> mc.player.closeContainer());
+        heldPack(t, 1, "dyed");
+        heldPack(t, 2, "plain");
+        t.awaitClient("See the dyed pouch in the middle of its slot and in the player's hand",
+                mc -> visibleItem(mc.gameDirectory.toPath().resolve("screenshots"), dyedSlot));
+        t.client("Select an empty hand", mc -> selectSlot(mc, 0));
+        swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, 2);
+        t.awaitClient("Verify the washed pack is equipped before pickup", mc ->
+                mc.player.getItemBySlot(EquipmentSlot.CHEST).is(FrenchieRegistry.FRONT_PACK.get()));
+        pickUpDog(t);
+        t.awaitClient("Wait for the washed carrier after putting it on and picking up the dog", mc ->
+                mc.player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).carriedCoat() == COAT);
         framePlayer(t);
         t.screenshot("frontpack-rejoined");
         t.awaitClient("Check red and lime fabric pixels returned to the original carrier color after washing",
                 mc -> compareDyes(mc.gameDirectory.toPath().resolve("screenshots")));
-        t.server("Wear the red chest pack for the first-person comparison",
-                p -> p.setItemSlot(EquipmentSlot.CHEST, dyedPack(DyeColor.RED)));
+        swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, 1);
         firstPersonViews(t, true);
         t.client("Crouch and aim at empty air", mc -> {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
@@ -158,14 +199,87 @@ final class FrontpackPlaytest {
         framePlayer(t);
         t.screenshot("frontpack-empty");
         FrontpackCloseups.checkEarsAfterRelease(t);
-        t.awaitClient("Check the dark carrier was visible on the chest only while carrying", mc ->
+        swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, 3);
+        t.awaitClient("Stow the red pack after setting the dog down", mc -> mc.player.getItemBySlot(EquipmentSlot.CHEST).isEmpty());
+        framePlayer(t);
+        t.screenshot("frontpack-unworn");
+        t.awaitClient("Check the empty red carrier is visible only while worn", mc ->
                 compareChest(mc.gameDirectory.toPath().resolve("screenshots")));
         t.server("Verify the repeat click left exactly one Frenchie", p -> Playtest.require(isRestored(p), "Dog was duplicated or lost"));
+        AccessoryFrontpackPlaytest.addInstalledProviders(t);
     }
 
     private static boolean aimingAtAir(Minecraft mc) {
         return mc.player.isShiftKeyDown() && mc.player.getMainHandItem().isEmpty()
                 && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.MISS;
+    }
+
+    static void pickUpDog(Playtest t) {
+        t.client("Crouch in first person", mc -> {
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.options.keyShift.setDown(true);
+        });
+        t.awaitClient("Aim the empty hand at the player's brindle Frenchie", mc -> {
+            if (!(mc.level.getEntity(DOG_ID) instanceof FrenchieEntity dog)) return false;
+            mc.player.lookAt(Anchor.EYES, dog.getEyePosition());
+            return mc.player.isShiftKeyDown() && dog.isOwnedBy(mc.player) && dog.getVariant() == COAT
+                    && mc.player.getMainHandItem().isEmpty()
+                    && mc.hitResult instanceof EntityHitResult hit && hit.getEntity() == dog;
+        });
+        t.client("Right-click the dog to pick it up", mc -> KeyMapping.click(mc.options.keyUse.getKey()));
+    }
+
+    private static void swapHotbar(Playtest t, int equipmentSlot, int hotbarSlot) {
+        t.client("Swap equipment with hotbar slot " + hotbarSlot, mc ->
+                mc.gameMode.handleContainerInput(mc.player.inventoryMenu.containerId, equipmentSlot, hotbarSlot, ContainerInput.SWAP, mc.player));
+    }
+
+    private static void selectSlot(Minecraft mc, int slot) {
+        mc.player.getInventory().setSelectedSlot(slot);
+        mc.player.connection.send(new ServerboundSetCarriedItemPacket(slot));
+    }
+
+    private static void heldPack(Playtest t, int slot, String name) {
+        int[] settle = new int[1];
+        t.client("Hold the " + name + " pack in first person", mc -> {
+            selectSlot(mc, slot);
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.player.setXRot(8);
+            mc.player.setYRot(180);
+            settle[0] = mc.player.tickCount + 16;
+        });
+        t.awaitClient("Wait for the held pack", mc -> mc.screen == null && mc.player.tickCount >= settle[0]
+                && mc.player.getMainHandItem().is(FrenchieRegistry.FRONT_PACK.get()));
+        t.screenshot("frontpack-held-" + name);
+    }
+
+    private static boolean visibleItem(Path shots, int[] slot) {
+        BufferedImage inventory, dyed, plain;
+        try {
+            inventory = ImageIO.read(shots.resolve("frontpack-inventory-dyed-and-plain.png").toFile());
+            dyed = ImageIO.read(shots.resolve("frontpack-held-dyed.png").toFile());
+            plain = ImageIO.read(shots.resolve("frontpack-held-plain.png").toFile());
+        } catch (IOException e) {
+            return false;
+        }
+        if (inventory == null || dyed == null || plain == null) return false;
+        int scale = slot[2], iconPixels = 0;
+        for (int y = 4 * scale; y < 13 * scale; y++) {
+            for (int x = 3 * scale; x < 13 * scale; x++) {
+                int color = inventory.getRGB(slot[0] + x, slot[1] + y);
+                if (channel(color, 16) - channel(color, 8) > 14) iconPixels++;
+            }
+        }
+        Playtest.require(iconPixels >= 8 * scale * scale, "Dyed pack clipped outside the inventory slot: " + iconPixels);
+        int w = dyed.getWidth(), h = dyed.getHeight(), handPixels = 0;
+        for (int y = h / 3; y < h * 9 / 10; y++) {
+            for (int x = w / 2; x < w * 97 / 100; x++) {
+                int a = dyed.getRGB(x, y), b = plain.getRGB(x, y);
+                if (channel(a, 16) - channel(a, 8) > channel(b, 16) - channel(b, 8) + 14) handPixels++;
+            }
+        }
+        Playtest.require(handPixels >= h * h / 500, "Dyed pack clipped outside the hand view: " + handPixels);
+        return true;
     }
 
     private static void firstPersonViews(Playtest t, boolean packed) {
@@ -226,30 +340,32 @@ final class FrontpackPlaytest {
         return stack;
     }
 
-    private static boolean hasDye(ItemStack pack, DyeColor color) {
+    static boolean hasDye(ItemStack pack, DyeColor color) {
         return pack.is(FrenchieRegistry.FRONT_PACK.get())
                 && DyedItemColor.getOrDefault(pack, 0) == color.getTextureDiffuseColor();
     }
 
     private static boolean compareDyes(Path screenshots) {
-        BufferedImage chest, offhand, washed, original;
+        BufferedImage chest, heldSpare, lime, washed, original;
         try {
             chest = ImageIO.read(screenshots.resolve("frontpack-dyed-chest.png").toFile());
-            offhand = ImageIO.read(screenshots.resolve("frontpack-dyed-offhand.png").toFile());
+            heldSpare = ImageIO.read(screenshots.resolve("frontpack-red-worn-lime-held.png").toFile());
+            lime = ImageIO.read(screenshots.resolve("frontpack-dyed-lime.png").toFile());
             washed = ImageIO.read(screenshots.resolve("frontpack-washed.png").toFile());
             original = ImageIO.read(screenshots.resolve("frontpack-rejoined.png").toFile());
         } catch (IOException e) {
             return false;
         }
-        if (chest == null || offhand == null || washed == null || original == null) return false;
+        if (chest == null || heldSpare == null || lime == null || washed == null || original == null) return false;
         int w = chest.getWidth(), h = chest.getHeight();
         int changed = 0;
         // Restrict the sample to the torso so a tinted inventory/held icon cannot pass.
         for (int y = h * 55 / 100; y < h * 66 / 100; y++) {
             for (int x = w / 2 - h / 30; x < w / 2 + h / 30; x++) {
-                int redFrame = chest.getRGB(x, y), greenFrame = offhand.getRGB(x, y);
+                int redFrame = chest.getRGB(x, y), spareFrame = heldSpare.getRGB(x, y), greenFrame = lime.getRGB(x, y);
                 int plain = original.getRGB(x, y), clean = washed.getRGB(x, y);
                 if (channel(redFrame, 16) > channel(redFrame, 8) + 12
+                        && channel(spareFrame, 16) > channel(spareFrame, 8) + 12
                         && channel(greenFrame, 8) > channel(greenFrame, 16) + 12
                         && channel(plain, 16) < 85
                         && Math.abs(channel(plain, 16) - channel(clean, 16)) < 10
@@ -269,13 +385,13 @@ final class FrontpackPlaytest {
         return p.level().getEntitiesOfClass(FrenchieEntity.class, TEST_AREA).size();
     }
 
-    private static boolean isRestored(ServerPlayer p) {
+    static boolean isRestored(ServerPlayer p) {
         return !p.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).hasCarriedFrenchie()
                 && p.level().getEntity(DOG_ID) instanceof FrenchieEntity dog && dog.isOwnedBy(p)
                 && dog.getVariant() == COAT && dog.getBoundingBox().intersects(TEST_AREA) && dogCount(p) == 1;
     }
 
-    private static void framePlayer(Playtest t) {
+    static void framePlayer(Playtest t) {
         int[] settle = new int[1];
         t.client("Frame the standing player's chest from the front", mc -> {
             mc.options.keyShift.setDown(false);
@@ -290,29 +406,29 @@ final class FrontpackPlaytest {
     }
 
     private static boolean compareChest(Path screenshots) {
-        BufferedImage packed, empty;
+        BufferedImage worn, unworn;
         try {
-            packed = ImageIO.read(screenshots.resolve("frontpack-rejoined.png").toFile());
-            empty = ImageIO.read(screenshots.resolve("frontpack-empty.png").toFile());
+            worn = ImageIO.read(screenshots.resolve("frontpack-empty.png").toFile());
+            unworn = ImageIO.read(screenshots.resolve("frontpack-unworn.png").toFile());
         } catch (IOException e) {
             return false; // The screenshot writer may still be encoding the last frame.
         }
-        if (packed == null || empty == null) return false;
-        int w = packed.getWidth(), h = packed.getHeight();
-        Playtest.require(w == empty.getWidth() && h == empty.getHeight(), "Viewport changed during frontpack test");
+        if (worn == null || unworn == null) return false;
+        int w = worn.getWidth(), h = worn.getHeight();
+        Playtest.require(w == unworn.getWidth() && h == unworn.getHeight(), "Viewport changed during frontpack test");
         int carrierPixels = 0;
         // At the default FOV the front-facing avatar's chest is just below the center of the frame.
         for (int y = h * 55 / 100; y < h * 65 / 100; y++) {
             for (int x = w / 2 - h / 30; x < w / 2 + h / 30; x++) {
-                int a = packed.getRGB(x, y), b = empty.getRGB(x, y);
+                int a = worn.getRGB(x, y), b = unworn.getRGB(x, y);
                 int r = a >> 16 & 255, g = a >> 8 & 255, blue = a & 255;
-                if (r < 85 && Math.abs(r - g) < 12 && Math.abs(r - blue) < 12
+                if (r > g + 12 && r > blue + 12
                         && Math.abs(r - (b >> 16 & 255)) + Math.abs(g - (b >> 8 & 255)) + Math.abs(blue - (b & 255)) > 60) {
                     carrierPixels++;
                 }
             }
         }
-        Playtest.require(carrierPixels > Math.max(10, h * h / 5000), "Expected dark carrier on chest, changed pixels=" + carrierPixels);
+        Playtest.require(carrierPixels > Math.max(10, h * h / 5000), "Expected empty red carrier on chest, changed pixels=" + carrierPixels);
         return true;
     }
 }

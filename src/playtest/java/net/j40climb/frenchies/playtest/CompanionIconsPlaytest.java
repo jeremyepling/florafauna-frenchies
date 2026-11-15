@@ -121,8 +121,11 @@ final class CompanionIconsPlaytest {
                 mc.level.getEntity(dogId[0]) instanceof FrenchieEntity dog && dog.isDeathTracking());
         t.server("Stand beside Pip to lift the tracking dog", p -> {
             var dog = (FrenchieEntity)p.level().getEntity(dogId[0]);
+            p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
             p.teleportTo(p.level(), dog.getX() - 1.5, dog.getY(), dog.getZ() + 1, Set.of(), 100, 15, true);
         });
+        t.awaitClient("Verify the owner is wearing the carrier", mc ->
+                mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).is(FrenchieRegistry.FRONT_PACK.get()));
         clickDog(t, dogId, true);
         t.awaitClient("Verify the packed dog kept its tracking icon and name", mc -> {
             var pack = mc.player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA);

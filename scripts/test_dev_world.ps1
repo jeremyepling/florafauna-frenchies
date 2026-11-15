@@ -8,6 +8,7 @@ param(
     [Parameter(ParameterSetName = 'Full')]
     [switch]$All,
     [string]$SourceWorld,
+    [Alias('CuriosJar')][string[]]$AccessoryJar,
     [switch]$Offline
 )
 
@@ -23,6 +24,7 @@ if (!$SourceWorld) {
     $SourceWorld = Join-Path $checkout "run/client-$(Split-Path $checkout -Leaf)/saves/dev"
 }
 $world = (Resolve-Path -LiteralPath $SourceWorld).Path
+$accessories = @($AccessoryJar | Where-Object { $_ } | ForEach-Object { (Resolve-Path -LiteralPath $_).Path })
 $level = Join-Path $world 'level.dat'
 if (!(Test-Path -LiteralPath $level -PathType Leaf)) { throw "Missing level.dat in $world" }
 if (@($Scenario | Sort-Object -Unique).Count -ne $Scenario.Count) { throw 'Select each scenario only once.' }
@@ -54,6 +56,10 @@ try {
             $gameDir = Join-Path $runRoot $name
             $copy = Join-Path $gameDir 'saves/playtest'
             [IO.Directory]::CreateDirectory($copy) | Out-Null
+            if ($accessories.Count) {
+                $mods = [IO.Directory]::CreateDirectory((Join-Path $gameDir 'mods'))
+                Copy-Item -LiteralPath $accessories -Destination $mods.FullName
+            }
             & robocopy $world $copy /E /XJ /XF session.lock /R:0 /W:0 /NFL /NDL /NJH /NJS /NP | Out-Null
             if ($LASTEXITCODE -ge 8) { throw "Could not copy $world into $copy (robocopy exit $LASTEXITCODE)." }
             if ((Get-FileHash -LiteralPath (Join-Path $copy 'level.dat')).Hash -ne $hash) {
