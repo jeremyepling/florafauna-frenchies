@@ -104,6 +104,8 @@ public class FrontpackClientEvents {
     @SubscribeEvent
     public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
         Player player = event.getEntity();
+        // Minecraft checks the empty main hand before it tries to equip the offhand pack.
+        if (player.getOffhandItem().is(FrenchieRegistry.FRONT_PACK.get())) return;
         var data = player.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
         if (player.isShiftKeyDown() && data != null && data.hasCarriedFrenchie()) {
             ClientPacketDistributor.sendToServer(PutDownFrenchiePayload.INSTANCE);

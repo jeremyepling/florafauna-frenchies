@@ -42,6 +42,7 @@ public final class CompanionTests {
         registerTest(event, defaultEnv, "frenchie_frontpack_respawn_release", FrenchieGameTests::frontpackRespawnRelease);
         registerTest(event, defaultEnv, "frenchie_frontpack_unequip_release", FrenchieDeliveryGameTests::unequipPackedCourier);
         registerTest(event, defaultEnv, "frenchie_frontpack_appearance", FrenchieGameTests::frontpackAppearance);
+        registerTest(event, defaultEnv, "frenchie_frontpack_right_click_equip", FrontpackEquipGameTest::equipFromHand);
         registerTest(event, defaultEnv, "frenchie_frontpack_dye", FrontpackDyeGameTest::craftAndWash);
     }
 

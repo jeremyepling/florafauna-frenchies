@@ -51,7 +51,7 @@ public final class FrenchieRegistry {
             new SpawnEggItem(properties.spawnEgg(FRENCHIE.get())));
 
     public static final DeferredItem<Item> FRONT_PACK = ITEMS.registerSimpleItem("front_pack",
-            new Item.Properties().stacksTo(1).equippableUnswappable(EquipmentSlot.CHEST)
+            new Item.Properties().stacksTo(1).equippable(EquipmentSlot.CHEST)
                     .component(DataComponents.LORE, new ItemLore(List.of(
                             Component.translatable("item.florafauna.front_pack.equip"),
                             Component.translatable("item.florafauna.front_pack.dye")))));

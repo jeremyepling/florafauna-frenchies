@@ -7,7 +7,7 @@ Tame a Frenchie with a bone, feed it glow berries, and right-click with an empty
 
 **Custom front packs.** To change the color of the pack your dog rides in, craft a Frenchie Front Pack at a crafting table. Place string in the left and right squares of one row and three leather in the row below. Combine the pack with any of the 16 dyes in a crafting grid. Multiple dyes blend together, including any color already on the pack. Use the dyed pack on a water cauldron to wash it back to its original color. Each wash uses one level of water.
 
-Equip the pack in your chest armor slot. To wear it with a chestplate, use the **Body** slot from Curios or Baubles 2, or the **Cape** slot from Trinkets Updated. If you wear two packs, the chest armor slot sets the visible color. Taking off the last worn pack sets your Frenchie down beside you. If you’re in midair or there’s no room for the dog, it waits until there’s safe ground nearby.
+Hold the pack and right-click the air to equip it in your chest armor slot. This also works while crouching. In Survival, a chestplate you swap out goes into the same hand. To wear it with a chestplate, use the **Body** slot from Curios or Baubles 2, or the **Cape** slot from Trinkets Updated. If you wear two packs, the chest armor slot sets the visible color. Taking off the last worn pack sets your Frenchie down beside you. If you’re in midair or there’s no room for the dog, it waits until there’s safe ground nearby.
 
 For Minecraft 26.1 with NeoForge 26.1.0.19-beta, use Trinkets Updated 4.0.0-alpha.9+26.1. Later Trinkets releases use a newer NeoForge client event.
 

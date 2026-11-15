@@ -59,7 +59,7 @@ final class FrontpackPlaytest {
                 p.setGameMode(GameType.SURVIVAL);
                 p.getInventory().clearContent();
                 level.getGameRules().set(GameRules.KEEP_INVENTORY, true, level.getServer());
-                p.setItemSlot(EquipmentSlot.CHEST, dyedPack(DyeColor.RED));
+                p.setItemInHand(InteractionHand.MAIN_HAND, dyedPack(DyeColor.RED));
                 var dog = FrenchieRegistry.FRENCHIE.get().create(level, EntitySpawnReason.COMMAND);
                 Playtest.require(dog != null, "Could not create Frenchie");
                 var tag = new CompoundTag();
@@ -71,7 +71,9 @@ final class FrontpackPlaytest {
                 dog.snapTo(0.5, 201, 0.5, 0, 0);
                 Playtest.require(level.addFreshEntity(dog), "Could not add Frenchie to plot");
             });
-            t.awaitClient("Verify the red pack is equipped before pickup", mc -> hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED));
+            usePackInAir(t, InteractionHand.MAIN_HAND, DyeColor.RED, false);
+            t.awaitClient("Equip the held red pack before picking up the dog", mc ->
+                    hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED) && mc.player.getMainHandItem().isEmpty());
             pickUpDog(t);
         }
         t.awaitServer("Check the original dog is inside the pack and absent from the pen", p -> {
@@ -104,7 +106,11 @@ final class FrontpackPlaytest {
         t.awaitClient("Wait for the lime offhand pack", mc -> hasDye(mc.player.getOffhandItem(), DyeColor.LIME));
         framePlayer(t);
         t.screenshot("frontpack-red-worn-lime-held");
-        swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, Inventory.SLOT_OFFHAND);
+        usePackInAir(t, InteractionHand.OFF_HAND, DyeColor.LIME, true);
+        t.awaitServer("Swap the held pack without releasing the Frenchie to the empty main hand", p ->
+                hasDye(p.getItemBySlot(EquipmentSlot.CHEST), DyeColor.LIME) && hasDye(p.getOffhandItem(), DyeColor.RED)
+                        && p.getMainHandItem().isEmpty() && p.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).hasCarriedFrenchie()
+                        && p.level().getEntity(DOG_ID) == null && p.getInventory().countItem(FrenchieRegistry.FRONT_PACK.get()) == 2);
         t.awaitClient("Wear the lime carrier with the red spare in hand", mc ->
                 hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.LIME) && hasDye(mc.player.getOffhandItem(), DyeColor.RED));
         framePlayer(t);
@@ -207,6 +213,18 @@ final class FrontpackPlaytest {
                 compareChest(mc.gameDirectory.toPath().resolve("screenshots")));
         t.server("Verify the repeat click left exactly one Frenchie", p -> Playtest.require(isRestored(p), "Dog was duplicated or lost"));
         AccessoryFrontpackPlaytest.addInstalledProviders(t);
+    }
+
+    private static void usePackInAir(Playtest t, InteractionHand hand, DyeColor dye, boolean crouching) {
+        t.awaitClient("Aim the held " + dye + " pack into open sky", mc -> {
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.options.keyShift.setDown(crouching);
+            mc.player.setXRot(-80);
+            return hasDye(mc.player.getItemInHand(hand), dye) && mc.player.isShiftKeyDown() == crouching
+                    && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.MISS;
+        });
+        t.awaitServer("Synchronize the carrier's crouch input before equipping", p -> p.isShiftKeyDown() == crouching);
+        t.client("Right-click the " + hand + " front pack into the chest slot", mc -> KeyMapping.click(mc.options.keyUse.getKey()));
     }
 
     private static boolean aimingAtAir(Minecraft mc) {
