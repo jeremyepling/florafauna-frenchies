@@ -101,11 +101,15 @@ final class FrontpackPlaytest {
                 hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED));
         framePlayer(t);
         t.screenshot("frontpack-dyed-chest");
+        FrontpackCloseups.capture(t, "red");
         t.server("Hold a lime front pack with the red pack still equipped", p ->
                 p.setItemInHand(InteractionHand.OFF_HAND, dyedPack(DyeColor.LIME)));
         t.awaitClient("Wait for the lime offhand pack", mc -> hasDye(mc.player.getOffhandItem(), DyeColor.LIME));
         framePlayer(t);
         t.screenshot("frontpack-dyed-offhand");
+        FrontpackCloseups.capture(t, "lime");
+        t.awaitClient("See dyed straps on the chest, over the shoulder and down the back",
+                mc -> FrontpackCloseups.checkStraps(mc.gameDirectory.toPath().resolve("screenshots")));
         t.server("Wash the offhand pack at a water cauldron beside the player", p -> {
             var pos = p.blockPosition().east();
             var water = Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 2);
@@ -145,6 +149,7 @@ final class FrontpackPlaytest {
         t.client("Right-click empty air a second time", mc -> KeyMapping.click(mc.options.keyUse.getKey()));
         framePlayer(t);
         t.screenshot("frontpack-empty");
+        FrontpackCloseups.checkEarsAfterRelease(t);
         t.awaitClient("Check the dark carrier was visible on the chest only while carrying", mc ->
                 compareChest(mc.gameDirectory.toPath().resolve("screenshots")));
         t.server("Verify the repeat click left exactly one Frenchie", p -> Playtest.require(isRestored(p), "Dog was duplicated or lost"));

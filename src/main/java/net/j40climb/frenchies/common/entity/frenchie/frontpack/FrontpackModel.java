@@ -45,33 +45,28 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
 
         PartDefinition carrier = root.addOrReplaceChild("carrier", CubeListBuilder.create().texOffs(44, 0).addBox(-6.2F, 2.0F, -2.9F, 7.0F, 6.0F, 3.0F, new CubeDeformation(0.0F)), PartPose.offset(2.7F, -9.0F, -1.1F));
 
-        carrier.addOrReplaceChild("strap_left", CubeListBuilder.create().texOffs(49, 2).addBox(-1.0F, -2.6F, -0.45F, 1.0F, 5.1F, 0.2F, new CubeDeformation(0.0F))
-                .texOffs(47, 1).addBox(-1.0F, -2.8F, -0.2F, 1.0F, 0.2F, 4.6F, new CubeDeformation(0.0F))
-                .texOffs(55, 0).addBox(-1.0F, -3.1F, 4.2F, 1.0F, 9.1F, 0.2F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+        addShoulderStrap(carrier, "strap_left", 1);
+        addShoulderStrap(carrier, "strap_right", -1);
 
-        carrier.addOrReplaceChild("strap_right", CubeListBuilder.create().texOffs(49, 2).addBox(-1.2F, -2.6F, -0.7F, 1.0F, 5.1F, 0.2F, new CubeDeformation(0.0F))
-                .texOffs(47, 1).addBox(-1.2F, -2.8F, -0.2F, 1.0F, 0.2F, 4.6F, new CubeDeformation(0.0F))
-                .texOffs(55, 0).addBox(-1.2F, -3.1F, 4.2F, 1.0F, 9.1F, 0.2F, new CubeDeformation(0.0F)), PartPose.offset(-4.2F, 0.0F, 0.0F));
-
-        carrier.addOrReplaceChild("strap_waist", CubeListBuilder.create().texOffs(47, 1).addBox(-0.2F, -1.0F, -3.3F, 0.2F, 1.0F, 4.6F, new CubeDeformation(0.0F))
+        carrier.addOrReplaceChild("strap_waist", CubeListBuilder.create().texOffs(47, 1).addBox(-0.2F, -1.0F, -3.3F, 0.2F, 1.0F, 3.75F, new CubeDeformation(0.0F))
                 .texOffs(58, 5).addBox(0.0F, -1.0F, -3.3F, 1.1F, 1.0F, 0.2F, new CubeDeformation(0.0F))
-                .texOffs(46, 7).addBox(0.0F, -1.0F, 1.1F, 8.2F, 1.0F, 0.2F, new CubeDeformation(0.0F))
+                .texOffs(46, 7).addBox(0.0F, -1.0F, 0.25F, 8.2F, 1.0F, 0.2F, new CubeDeformation(0.0F))
                 .texOffs(58, 5).mirror().addBox(7.1F, -1.0F, -3.3F, 1.1F, 1.0F, 0.2F, new CubeDeformation(0.0F)).mirror(false)
-                .texOffs(47, 1).addBox(8.2F, -1.0F, -3.3F, 0.2F, 1.0F, 4.6F, new CubeDeformation(0.0F)), PartPose.offset(-6.8F, 7.0F, 3.1F));
+                .texOffs(47, 1).addBox(8.2F, -1.0F, -3.3F, 0.2F, 1.0F, 3.75F, new CubeDeformation(0.0F)), PartPose.offset(-6.8F, 7.0F, 3.1F));
 
         PartDefinition frenchie = root.addOrReplaceChild("frenchie", CubeListBuilder.create(), PartPose.offsetAndRotation(-0.5F, -6.0F, 0.0F, -1.4835F, 0.0F, 0.0F));
 
         PartDefinition body = frenchie.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
         PartDefinition head = body.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 29).addBox(-2.983F, -3.3875F, -3.875F, 6.0F, 6.0F, 4.0F, new CubeDeformation(0.0F))
-                .texOffs(30, 21).addBox(-1.983F, -0.3875F, -4.875F, 4.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.483F, 1.3761F, -4.3865F, 1.0908F, 0.0F, 0.0F));
+                .texOffs(30, 21).addBox(-1.983F, -0.3875F, -4.875F, 4.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.483F, 3.1261F, -4.3865F, 1.0908F, 0.0F, 0.0F));
 
-        PartDefinition earR = head.addOrReplaceChild("earR", CubeListBuilder.create(), PartPose.offset(-2.733F, -3.0498F, -3.8337F));
+        PartDefinition earR = head.addOrReplaceChild("earR", CubeListBuilder.create(), PartPose.offset(-2.733F, -3.0498F, -5.8337F));
 
         earR.addOrReplaceChild("earR_behind_r1", CubeListBuilder.create().texOffs(1, 21).mirror().addBox(-1.0F, -2.8377F, 2.9587F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)).mirror(false)
                 .texOffs(1, 24).mirror().addBox(-1.0F, -2.8377F, 2.9087F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -0.2618F));
 
-        PartDefinition earL = head.addOrReplaceChild("earL", CubeListBuilder.create(), PartPose.offset(0.767F, -3.3498F, -3.8337F));
+        PartDefinition earL = head.addOrReplaceChild("earL", CubeListBuilder.create(), PartPose.offset(0.767F, -3.3498F, -5.8337F));
 
         earL.addOrReplaceChild("earL_behind_r1", CubeListBuilder.create().texOffs(1, 21).addBox(0.0F, -2.8377F, 2.9587F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F))
                 .texOffs(1, 24).addBox(0.0F, -2.8377F, 2.9087F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.2618F));
@@ -93,6 +88,20 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         body.addOrReplaceChild("leg_back_right", CubeListBuilder.create().texOffs(21, 31).addBox(-1.0F, 1.0F, -1.0F, 2.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(-2.0F, 3.0F, 5.0F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
+    }
+
+    private static void addShoulderStrap(PartDefinition carrier, String name, int side) {
+        // The jacket reaches Z ±2.25 and Y -0.25. Run the band just outside it,
+        // over the shoulder beside the head, then angle the ends in to the pack and belt.
+        PartDefinition strap = carrier.addOrReplaceChild(name, CubeListBuilder.create()
+                        .texOffs(47, 1).addBox(-0.55F, -0.1F, -2.46F, 1.1F, 0.35F, 4.92F),
+                PartPose.offset(side * 4.8F - 2.7F, -2.45F, 1.1F));
+        strap.addOrReplaceChild("front", CubeListBuilder.create()
+                        .texOffs(49, 2).addBox(-0.55F, 0, -2.45F, 1.1F, 5.2F, 0.2F),
+                PartPose.offsetAndRotation(0, 0.05F, 0, 0, 0, side * (float) Math.toRadians(20)));
+        strap.addOrReplaceChild("back", CubeListBuilder.create()
+                        .texOffs(55, 0).addBox(-0.55F, 0, 2.24F, 1.1F, 8.9F, 0.2F),
+                PartPose.offsetAndRotation(0, 0.05F, 0, 0, 0, side * (float) Math.toRadians(10)));
     }
 
     @Override
