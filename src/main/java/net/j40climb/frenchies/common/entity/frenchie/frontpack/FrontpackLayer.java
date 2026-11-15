@@ -49,7 +49,7 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
                 modelSet.bakeLayer(FrontpackModel.LAYER_LOCATION)
         );
         this.carrier = modelSet.bakeLayer(FrontpackModel.LAYER_LOCATION).getChild("root");
-        this.carrier.getChild("frenchie").visible = false;
+        this.carrier.getChild("carried_dog").visible = false;
     }
 
     @Override

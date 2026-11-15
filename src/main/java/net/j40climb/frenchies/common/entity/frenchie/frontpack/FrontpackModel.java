@@ -24,11 +24,18 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
     private final KeyframeAnimation idlingAnimation;
     private final AnimationState idleAnimationState = new AnimationState();
 
+    // Model pixels in front of the player's chest. The original pouch projected 2 pixels.
+    private static final float POUCH_PROJECTION = 4.0F;
+    // Restore some of the packed pose's 0.6 depth scale along the player's front-to-back axis.
+    private static final float DOG_DEPTH_SCALE = 0.8F / 0.6F;
+
     private final ModelPart root;
+    private final ModelPart head;
 
     public FrontpackModel(ModelPart root) {
         super(root);
         this.root = root.getChild("root");
+        this.head = this.root.getChild("carried_dog").getChild("frenchie").getChild("body").getChild("head");
 
         // Bake the idle animation - converts the AnimationDefinition to a KeyframeAnimation
         this.idlingAnimation = FrontpackAnimations.ANIM_IDLE.bake(root);
@@ -43,7 +50,10 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
 
         PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
 
-        PartDefinition carrier = root.addOrReplaceChild("carrier", CubeListBuilder.create().texOffs(44, 0).addBox(-6.2F, 2.0F, -2.9F, 7.0F, 6.0F, 3.0F, new CubeDeformation(0.0F)), PartPose.offset(2.7F, -9.0F, -1.1F));
+        PartDefinition carrier = root.addOrReplaceChild("carrier", CubeListBuilder.create(), PartPose.offset(2.7F, -9.0F, -1.1F));
+        // One pixel of the pouch sits inside the chest. Scale the baked box to keep its original UVs.
+        carrier.addOrReplaceChild("pouch", CubeListBuilder.create().texOffs(44, 0).addBox(-6.2F, 2.0F, -3.0F, 7.0F, 6.0F, 3.0F),
+                PartPose.ZERO.scaled(1, 1, (1 + POUCH_PROJECTION) / 3).translated(0, 0, 0.1F));
 
         addShoulderStrap(carrier, "strap_left", 1);
         addShoulderStrap(carrier, "strap_right", -1);
@@ -54,7 +64,12 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
                 .texOffs(58, 5).mirror().addBox(7.1F, -1.0F, -3.3F, 1.1F, 1.0F, 0.2F, new CubeDeformation(0.0F)).mirror(false)
                 .texOffs(47, 1).addBox(8.2F, -1.0F, -3.3F, 0.2F, 1.0F, 3.75F, new CubeDeformation(0.0F)), PartPose.offset(-6.8F, 7.0F, 3.1F));
 
-        PartDefinition frenchie = root.addOrReplaceChild("frenchie", CubeListBuilder.create(), PartPose.offsetAndRotation(-0.5F, -6.0F, 0.0F, -1.4835F, 0.0F, 0.0F));
+        // Map the old pouch front (Z = -4) onto the new one. The paws stay on its face
+        // as the dog's body fills out, independently of the upright tilt of its pose.
+        float pouchFrontZ = -2 - POUCH_PROJECTION;
+        PartDefinition carriedDog = root.addOrReplaceChild("carried_dog", CubeListBuilder.create(),
+                PartPose.ZERO.scaled(1, 1, DOG_DEPTH_SCALE).translated(0, 0, pouchFrontZ + 4 * DOG_DEPTH_SCALE));
+        PartDefinition frenchie = carriedDog.addOrReplaceChild("frenchie", CubeListBuilder.create(), PartPose.offsetAndRotation(-0.5F, -6.0F, 0.0F, -1.4835F, 0.0F, 0.0F));
 
         PartDefinition body = frenchie.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
@@ -109,7 +124,6 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         this.idlingAnimation.apply(this.idleAnimationState, renderState.ageInTicks, 1.0F);
         Float yaw = renderState.getRenderData(FrontpackClientEvents.ALERT_YAW);
         if (yaw != null) {
-            var head = root.getChild("frenchie").getChild("body").getChild("head");
             head.yRot += (float) Math.toRadians(yaw);
             head.getChild("earR").zRot -= 0.2F;
             head.getChild("earL").zRot += 0.2F;
