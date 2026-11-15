@@ -161,18 +161,20 @@ final class FrenchieDeliveryGameTests {
         var recipient = networkedPlayer(h);
         var stranger = networkedPlayer(h);
         var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 3, 16, 2);
-        var expected = prepareDelivery(owner, recipient, dog).copy();
         var id = dog.getUUID();
         var level = h.getLevel();
-        var start = dog.position();
-        // An open lane above the pen gives the departure walk enough room to pathfind.
-        var feet = dog.blockPosition();
-        for (var pos : BlockPos.betweenClosed(feet.offset(-2, -1, -2), feet.offset(2, -1, 14))) {
+        // Keep the owner, both recipients' positions and their landing pads in the same
+        // test-loaded chunk. Adjacent terrain may still be generating in accelerated CI.
+        BlockPos feet = ChunkPos.containing(dog.blockPosition()).getMiddleBlockPosition(dog.getBlockY());
+        for (var pos : BlockPos.betweenClosed(feet.offset(-7, -1, -7), feet.offset(7, -1, 7))) {
             level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
         }
-        // The landings are high above the departure point, with no walkable connection.
-        BlockPos address = dog.blockPosition().above(96).south(12);
-        BlockPos moved = address.south(12);
+        dog.snapTo(feet, 0, 0);
+        var expected = prepareDelivery(owner, recipient, dog).copy();
+        var start = dog.position();
+        // The 96-block height difference requires a timed trip without a walkable connection.
+        BlockPos address = feet.above(96).east(4);
+        BlockPos moved = feet.above(96).west(4);
         platform(h, address);
         platform(h, moved);
         var bark = level.registryAccess().lookupOrThrow(Registries.WOLF_SOUND_VARIANT)
@@ -231,7 +233,7 @@ final class FrenchieDeliveryGameTests {
                 .thenExecuteFor(80, () -> h.assertTrue(level.getEntity(id) == null, "Return journey skipped the timer"))
                 .thenWaitUntil(() -> h.assertTrue(level.getEntity(id) instanceof FrenchieEntity returned
                                 && !returned.isDelivering() && returned.isOwnedBy(owner) && returned.distanceToSqr(owner) < 36,
-                        "The same dog should return to its owner after the handoff"))
+                        "Expected the courier beside its owner at " + owner.blockPosition() + ", found " + level.getEntity(id)))
                 .thenExecute(() -> {
                     h.assertTrue(recipient.getInventory().countItem(Items.BUNDLE) == 1
                                     && owner.getInventory().countItem(Items.BUNDLE) == 0,
