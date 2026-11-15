@@ -87,36 +87,43 @@ final class FrontpackCloseups {
     }
 
     private static boolean checkView(Path screenshots, String angle) throws IOException {
-        var red = ImageIO.read(screenshots.resolve("frontpack-red-" + angle + ".png").toFile());
-        var lime = ImageIO.read(screenshots.resolve("frontpack-lime-" + angle + ".png").toFile());
+        boolean front = angle.equals("front");
+        // The dog's muzzle occludes the straps in the close-up. The normal third-person
+        // camera sees both outer edges all the way down to the pouch.
+        String redFrame = front ? "frontpack-dyed-chest.png" : "frontpack-red-back.png";
+        String limeFrame = front ? "frontpack-dyed-offhand.png" : "frontpack-lime-back.png";
+        var red = ImageIO.read(screenshots.resolve(redFrame).toFile());
+        var lime = ImageIO.read(screenshots.resolve(limeFrame).toFile());
         if (red == null || lime == null) return false;
         int h = red.getHeight(), center = red.getWidth() / 2;
-        boolean front = angle.equals("front");
-        int top = h * 42 / 100;
-        int aboveJoin = h * (front ? 52 : 64) / 100;
-        int belowJoin = h * (front ? 56 : 68) / 100;
+        int top = h * (front ? 55 : 42) / 100;
+        int aboveJoin = h * (front ? 58 : 64) / 100;
+        int belowJoin = h * (front ? 60 : 68) / 100;
+        int inner = h / 50, outer = h / (front ? 15 : 5);
         for (int side : new int[]{-1, 1}) {
             int minEdge = h, maxEdge = 0;
-            // Follow the inside edge. Scanning outward skips the arms and the offhand pack.
+            // The front outer edge stays clear of the face. Behind, the inside edge stays clear of the arms.
             for (int y = top; y <= aboveJoin; y++) {
-                int edge = h / 50;
-                while (edge < h / 5 && !changesDye(red, lime, center + side * edge, y)) edge++;
+                int edge = front ? outer : inner;
+                while (edge >= inner && edge <= outer && !changesDye(red, lime, center + side * edge, y)) {
+                    edge += front ? -1 : 1;
+                }
                 minEdge = Math.min(minEdge, edge);
                 maxEdge = Math.max(maxEdge, edge);
             }
-            Playtest.require(maxEdge - minEdge <= h / 70, "Strap angles outward in the " + angle
+            Playtest.require(maxEdge - minEdge <= h / (front ? 200 : 70), "Strap angles outward in the " + angle
                     + " view on side " + side + ": edge shifts " + (maxEdge - minEdge) + " pixels");
 
             // Follow a vertical strip of fabric from shoulder height into the pouch or waist belt.
             int columns = 0;
-            for (int dx = h / 40; dx < h / 5; dx++) {
+            for (int dx = inner; dx < outer; dx++) {
                 int y = top;
                 while (y <= belowJoin && changesDye(red, lime, center + side * dx, y)) {
                     y++;
                 }
                 if (y > belowJoin) columns++;
             }
-            Playtest.require(columns >= Math.max(2, h / 180), "Strap does not run continuously into its attachment in the "
+            Playtest.require(columns >= Math.max(2, h / (front ? 270 : 180)), "Strap does not run continuously into its attachment in the "
                     + angle + " view on side " + side + ": " + columns + " dyed columns");
         }
         return true;
