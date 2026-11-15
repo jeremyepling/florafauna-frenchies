@@ -38,7 +38,7 @@ foreach ($role in 'Owner', 'Visitor') {
 Push-Location -LiteralPath $checkout
 try {
     Write-Host "Multiplayer test world and logs: $root"
-    $options = @('--console=plain', '--max-workers=4')
+    $options = @('--console=plain')
     if ($Offline) { $options += '--offline' }
     & .\gradlew.bat @options "-PdeliveryTestId=$runId" "-PdeliveryTestPort=$port" playtestClasses `
         createDeliveryServerLaunchScript createDeliveryOwnerLaunchScript createDeliveryVisitorLaunchScript *> (Join-Path $root 'prepare.log')
