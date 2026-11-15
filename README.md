@@ -25,3 +25,5 @@ The Frenchie appears beside the recipient and barks. The recipient must right-cl
 Use Java 25. Run `./gradlew build runGameTestServer` to package the mod and run its dedicated-server behavior tests. The spawn egg models and other runtime resources are checked in. The jar is in `build/libs`.
 
 On Windows with PowerShell 7, run `./scripts/test_dev_world.ps1 -All -SourceWorld <closed-save-directory>` to check sleep, frontpack persistence, status icons and delivery with a real client. Run `./scripts/test_delivery_multiplayer.ps1` to verify courier handoff between two real clients and a dedicated server. Both scripts isolate their worlds in `.tmp/`.
+
+To play with all three mods, run `./gradlew -PdevMods=all :26.3-neoforge:runClient` from the FloraFauna checkout. [FloraFauna development setup](https://github.com/jeremyepling/florafauna#play-with-the-hammer-and-frenchies)
