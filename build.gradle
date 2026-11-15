@@ -17,6 +17,14 @@ group = mod_group_id
 repositories {
     mavenLocal()
     mavenCentral()
+    exclusiveContent {
+        forRepository { maven { url = 'https://maven.theillusivec4.top' } }
+        filter { includeGroup 'top.theillusivec4.curios' }
+    }
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
 }
 
 base {
@@ -146,6 +154,9 @@ tasks.named('test') {
 }
 
 dependencies {
+    compileOnly 'top.theillusivec4.curios:curios-neoforge:15.0.0-beta.1+26.1:api'
+    compileOnly 'maven.modrinth:XaT8sLP6:XkGsalta' // Trinkets Updated 4.0.1+26.1
+    compileOnly 'maven.modrinth:DHpbnc1G:t4UkCgZP' // Baubles 2, version 1.0
     testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 

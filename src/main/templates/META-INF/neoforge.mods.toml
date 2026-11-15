@@ -19,6 +19,24 @@ description='''${mod_description}'''
     side="BOTH"
 
 [[dependencies.${mod_id}]]
+    modId="curios"
+    type="optional"
+    versionRange="[15.0.0-beta.1,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.${mod_id}]]
+    modId="trinkets_updated"
+    type="optional"
+    versionRange="[4.0.0-alpha.9,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.${mod_id}]]
+    modId="baubles"
+    type="optional"
+    versionRange="[1.0,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.${mod_id}]]
     modId="florafauna"
     type="incompatible"
     versionRange="[0,0.0.2)"
