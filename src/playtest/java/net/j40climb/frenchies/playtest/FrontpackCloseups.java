@@ -80,12 +80,18 @@ final class FrontpackCloseups {
         }
         if (occupied == null || empty == null) return false;
         int h = empty.getHeight(), center = empty.getWidth() / 2;
-        int hem = 0;
+        // From below, the shaded underside projects behind the tail. Find the lower edge
+        // of the lit front face before measuring how much fur is visible beneath it.
+        int strongestRed = 0, hem = 0;
         for (int y = h / 3; y < h * 3 / 4; y++) {
             int rgb = empty.getRGB(center, y);
-            if ((rgb >> 16 & 255) - (rgb >> 8 & 255) > 18 && (rgb >> 16 & 255) - (rgb & 255) > 18) hem = y;
+            strongestRed = Math.max(strongestRed, (rgb >> 16 & 255) - Math.max(rgb >> 8 & 255, rgb & 255));
         }
-        Playtest.require(hem > 0, "Could not locate the red pouch hem");
+        for (int y = h / 3; y < h * 3 / 4; y++) {
+            int rgb = empty.getRGB(center, y);
+            if ((rgb >> 16 & 255) - Math.max(rgb >> 8 & 255, rgb & 255) >= strongestRed * 3 / 4) hem = y;
+        }
+        Playtest.require(hem > 0 && strongestRed > 30, "Could not locate the red pouch hem");
         int tailPixels = 0, exposedRump = 0, depth = 0;
         // Sample between the hind paws. Only the narrow central nub should change the empty-pack silhouette.
         for (int dy = 1; dy <= h / 16; dy++) {
