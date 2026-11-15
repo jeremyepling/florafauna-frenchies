@@ -1,6 +1,5 @@
 package net.j40climb.frenchies.playtest;
 
-import eu.pb4.trinkets.api.TrinketSlotUtils;
 import eu.pb4.trinkets.api.TrinketsApi;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.component.DataComponents;
@@ -153,7 +152,8 @@ final class AccessoryFrontpackPlaytest {
         public ItemStack get(Player p) { return TrinketsApi.getAttachment(p).getSlotAccess("chest/cape", 0).get(); }
         public void set(Player p, ItemStack stack) {
             var slot = TrinketsApi.getAttachment(p).getSlotAccess("chest/cape", 0);
-            Playtest.require((stack.isEmpty() || TrinketSlotUtils.mayPlace(slot, stack)) && slot.set(stack), "Trinkets cape rejected the slot change");
+            Playtest.require(slot.isValid() && (stack.isEmpty() || slot.slotType().validatorCheck(stack, slot, p))
+                    && slot.set(stack), "Trinkets cape rejected the slot change");
         }
     }
 }

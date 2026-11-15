@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import javax.imageio.ImageIO;
 import net.j40climb.frenchies.Frenchies;
@@ -28,6 +29,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.clock.ClockTimeMarkers;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -45,7 +47,7 @@ final class CompanionIconsPlaytest {
     private static Predicate<Minecraft> flashVisible;
 
     static void steps(Playtest t) {
-        int[] dogId = new int[1];
+        UUID[] dogId = new UUID[1];
         int[] creeperId = new int[1];
         t.server("Give the owner a compass and record a death at the end of the path", p -> {
             var level = p.level();
@@ -60,12 +62,17 @@ final class CompanionIconsPlaytest {
             p.getInventory().clearContent();
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.COMPASS));
             p.setLastDeathLocation(Optional.of(GlobalPos.of(level.dimension(), START.east(26))));
+        });
+        t.awaitClient("Arrive at the arena and load the dog's chunk", mc -> mc.player.blockPosition().equals(START.south(2))
+                && mc.level.getBlockState(START.below()).is(Blocks.SMOOTH_STONE));
+        t.server("Spawn and tame Pip in the tracked arena", p -> {
+            var level = p.level();
             var dog = FrenchieRegistry.FRENCHIE.get().spawn(level, START, EntitySpawnReason.COMMAND);
             Playtest.require(dog != null, "Frenchie did not spawn");
             dog.tame(p);
             dog.sitDown();
             dog.setCustomName(Component.literal("Pip"));
-            dogId[0] = dog.getId();
+            dogId[0] = dog.getUUID();
         });
         t.client("Frame the dog in first person", mc -> {
             mc.options.hideGui = false;
@@ -121,11 +128,11 @@ final class CompanionIconsPlaytest {
                 mc.level.getEntity(dogId[0]) instanceof FrenchieEntity dog && dog.isDeathTracking());
         t.server("Stand beside Pip to lift the tracking dog", p -> {
             var dog = (FrenchieEntity)p.level().getEntity(dogId[0]);
-            p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
+            p.setItemSlot(EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
             p.teleportTo(p.level(), dog.getX() - 1.5, dog.getY(), dog.getZ() + 1, Set.of(), 100, 15, true);
         });
         t.awaitClient("Verify the owner is wearing the carrier", mc ->
-                mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).is(FrenchieRegistry.FRONT_PACK.get()));
+                mc.player.getItemBySlot(EquipmentSlot.CHEST).is(FrenchieRegistry.FRONT_PACK.get()));
         clickDog(t, dogId, true);
         t.awaitClient("Verify the packed dog kept its tracking icon and name", mc -> {
             var pack = mc.player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
@@ -163,7 +170,7 @@ final class CompanionIconsPlaytest {
                 : tag.getSiblings().isEmpty();
     }
 
-    private static void clickDog(Playtest t, int[] id, boolean crouch) {
+    private static void clickDog(Playtest t, UUID[] id, boolean crouch) {
         t.client("Set the owner's crouch state", mc -> mc.options.keyShift.setDown(crouch));
         t.awaitClient("Aim at the Frenchie within interaction reach", mc -> {
             if (!(mc.level.getEntity(id[0]) instanceof FrenchieEntity dog)) return false;

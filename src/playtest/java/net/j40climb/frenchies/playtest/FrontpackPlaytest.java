@@ -296,12 +296,15 @@ final class FrontpackPlaytest {
                 mc.player.setXRot(pitch);
                 settle[0] = mc.player.tickCount + 16;
             });
-            t.awaitClient("Wait for the standing player's " + label + " view", mc ->
-                    mc.player.tickCount >= settle[0] && !mc.player.isCrouching()
+            t.awaitClient("Wait for the standing player's " + label + " view", mc -> {
+                mc.player.setYRot(180);
+                mc.player.setXRot(pitch);
+                return mc.player.tickCount >= settle[0] && !mc.player.isCrouching()
                             && mc.getCameraEntity() == mc.player && Math.abs(mc.gameRenderer.getMainCamera().xRot() - pitch) < 0.1
                             && hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED)
                             && mc.player.getMainHandItem().isEmpty() && mc.player.getOffhandItem().isEmpty()
-                            && mc.player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).hasCarriedFrenchie() == packed);
+                            && mc.player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).hasCarriedFrenchie() == packed;
+            });
             t.screenshot("frontpack-first-person-" + label + "-" + angle);
         }
     }
