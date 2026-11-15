@@ -2,7 +2,6 @@ package net.j40climb.frenchies.common.entity.frenchie.frontpack;
 
 import eu.pb4.trinkets.api.TrinketSlotAccess;
 import eu.pb4.trinkets.api.TrinketsApi;
-import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
@@ -25,7 +24,7 @@ public final class FrontpackAccessorySlots {
             var slots = CuriosApi.getCuriosInventoryOrNull(entity);
             if (slots == null) return ItemStack.EMPTY;
             // The predicate overload sees equips and removals immediately, including in the same tick.
-            return slots.findFirstCurio(stack -> stack.is(FrenchieRegistry.FRONT_PACK.get()))
+            return slots.findFirstCurio(stack -> stack.is(FrontpackEquipment.PACKS))
                     .map(SlotResult::stack).orElse(ItemStack.EMPTY);
         }
     }
@@ -35,7 +34,7 @@ public final class FrontpackAccessorySlots {
             var slots = TrinketsApi.getAttachment(entity);
             if (slots == null) return ItemStack.EMPTY;
             // Limit matches to slots that can apply effects, so cosmetic packs do not count as equipment.
-            return slots.findFirst(FrenchieRegistry.FRONT_PACK.get(), true)
+            return slots.findFirst(FrontpackEquipment.PACKS, true)
                     .map(TrinketSlotAccess::get).orElse(ItemStack.EMPTY);
         }
     }

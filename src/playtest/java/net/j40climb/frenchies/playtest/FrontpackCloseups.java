@@ -28,6 +28,12 @@ final class FrontpackCloseups {
         photograph(t, label, "front", new Vec3(0, 1.32, -1.35), 1.20);
     }
 
+    static void wingedPack(Playtest t) {
+        front(t, "winged");
+        photograph(t, "winged", "back", new Vec3(0, 1.22, 1.45), 1.22);
+        restoreCamera(t);
+    }
+
     private static void hem(Playtest t, String label) {
         photograph(t, label, "hem", new Vec3(0, 0.50, -1.40), 0.86);
     }

@@ -49,7 +49,7 @@ public class FrontpackEvents {
         if (frenchie.isBaby()) return;
         if (FrontpackEquipment.wornBy(player).isEmpty()) {
             var held = player.getItemInHand(event.getHand());
-            if (held.isEmpty() || held.is(FrenchieRegistry.FRONT_PACK.get())) {
+            if (held.isEmpty() || held.is(FrontpackEquipment.PACKS)) {
                 // Keep a failed pickup from toggling Sit or canceling the dog's current job.
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.SUCCESS);

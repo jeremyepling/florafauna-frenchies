@@ -213,6 +213,7 @@ final class FrontpackPlaytest {
                 compareChest(mc.gameDirectory.toPath().resolve("screenshots")));
         t.server("Verify the repeat click left exactly one Frenchie", p -> Playtest.require(isRestored(p), "Dog was duplicated or lost"));
         AccessoryFrontpackPlaytest.addInstalledProviders(t);
+        FrontpackFlightPlaytest.steps(t, DOG_ID);
     }
 
     private static void usePackInAir(Playtest t, InteractionHand hand, DyeColor dye, boolean crouching) {

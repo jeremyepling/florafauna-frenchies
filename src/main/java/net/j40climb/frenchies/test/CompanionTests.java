@@ -44,6 +44,7 @@ public final class CompanionTests {
         registerTest(event, defaultEnv, "frenchie_frontpack_appearance", FrenchieGameTests::frontpackAppearance);
         registerTest(event, defaultEnv, "frenchie_frontpack_right_click_equip", FrontpackEquipGameTest::equipFromHand);
         registerTest(event, defaultEnv, "frenchie_frontpack_dye", FrontpackDyeGameTest::craftAndWash);
+        registerTest(event, defaultEnv, "frenchie_frontpack_elytra", FrontpackElytraGameTest::craftAndRepair);
     }
 
     static void registerStructureTest(

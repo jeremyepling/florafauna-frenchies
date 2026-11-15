@@ -9,6 +9,8 @@ Tame a Frenchie with a bone, feed it glow berries, and right-click with an empty
 
 Hold the pack and right-click the air to equip it in your chest armor slot. This also works while crouching. In Survival, a chestplate you swap out goes into the same hand. To wear it with a chestplate, use the **Body** slot from Curios or Baubles 2, or the **Cape** slot from Trinkets Updated. If you wear two packs, the chest armor slot sets the visible color. Taking off the last worn pack sets your Frenchie down beside you. If you’re in midair or there’s no room for the dog, it waits until there’s safe ground nearby.
 
+**Winged Frenchie Front Pack.** Put one Frenchie Front Pack and one elytra anywhere in a crafting grid. Equip the result in your chest slot to glide with your Frenchie in front and the elytra wings on your back. The recipe keeps the pack’s dye, the elytra’s remaining durability and enchantments from both items. If both have the same enchantment, the higher level carries over. You can still dye or wash the pouch and repair the wings with a phantom membrane at an anvil.
+
 For Minecraft 26.1 with NeoForge 26.1.0.19-beta, use Trinkets Updated 4.0.0-alpha.9+26.1. Later Trinkets releases use a newer NeoForge client event.
 
 | Behavior | Player controls |

@@ -1,6 +1,5 @@
 package net.j40climb.frenchies.common.entity.frenchie.frontpack;
 
-import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.item.ItemStack;
 import tld.unknown.baubles.api.BaubleType;
@@ -9,6 +8,6 @@ import tld.unknown.baubles.api.Baubles;
 final class BaublesFrontpack {
     static ItemStack findEquipped(Avatar wearer) {
         var stack = Baubles.API.getBaublesInventory(wearer).getBaubleInSlot(BaubleType.BODY);
-        return stack.is(FrenchieRegistry.FRONT_PACK.get()) ? stack : ItemStack.EMPTY;
+        return stack.is(FrontpackEquipment.PACKS) ? stack : ItemStack.EMPTY;
     }
 }
