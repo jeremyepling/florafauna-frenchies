@@ -21,6 +21,7 @@ public final class CompanionTests {
         registerTest(event, defaultEnv, "frenchie_bedtime", FrenchieAwarenessGameTests::bedtime);
         registerTest(event, defaultEnv, "frenchie_owner_orders", FrenchieGameTests::ownerOrders);
         registerTest(event, defaultEnv, "frenchie_death_trail", FrenchieTrackingGameTests::trackDeath);
+        registerTest(event, defaultEnv, "frenchie_delivery_creative_parcel", FrenchieDeliveryGameTests::creativeParcel);
         registerTest(event, defaultEnv, "frenchie_compass_orders", FrenchieDeliveryGameTests::compassOrders);
         registerStructureTest(event, defaultEnv, "frenchie_home_recall",
                 FrenchiePen.STRUCTURE, 3000, FrenchieRecallGameTests::recallParkedDog);
