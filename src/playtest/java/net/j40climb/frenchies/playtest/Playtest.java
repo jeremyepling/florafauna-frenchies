@@ -76,9 +76,15 @@ public final class Playtest {
     }
 
     void screenshot(String stem) {
+        screenshot(stem, mc -> {});
+    }
+
+    void screenshot(String stem, Consumer<Minecraft> prepare) {
         String filename = stem + ".png";
-        client("Capture " + filename, mc ->
-                Screenshot.grab(mc.gameDirectory, filename, mc.getMainRenderTarget(), 1, ignored -> {}));
+        client("Capture " + filename, mc -> {
+            prepare.accept(mc);
+            Screenshot.grab(mc.gameDirectory, filename, mc.getMainRenderTarget(), 1, ignored -> {});
+        });
         awaitClient("Write " + filename, mc ->
                 Files.isRegularFile(directory.resolve("screenshots").resolve(filename)));
     }

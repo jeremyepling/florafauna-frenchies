@@ -14,7 +14,10 @@ final class FrontpackCloseups {
     static void capture(Playtest t, String dye) {
         // The player faces north throughout. An independent camera keeps the head and shoulders still.
         front(t, dye);
-        if (dye.equals("red")) hem(t, dye);
+        if (dye.equals("red")) {
+            FrontpackExpressionPlaytest.capture(t);
+            hem(t, dye);
+        }
         photograph(t, dye, "side", new Vec3(1.35, 1.26, 0), 1.26);
         photograph(t, dye, "shoulders", new Vec3(0.88, 2.25, 1.04), 1.36);
         photograph(t, dye, "back", new Vec3(0, 1.22, 1.45), 1.22);
@@ -42,7 +45,7 @@ final class FrontpackCloseups {
         restoreCamera(t);
         t.awaitClient("See a small centered tail below the hem with the rump inside the pouch",
                 mc -> checkTail(mc.gameDirectory.toPath().resolve("screenshots")));
-        t.awaitClient("See both ears above the carried dog's head", mc -> {
+        t.awaitClient("See raised ears and verify the unobscured front straps meet the pouch inside its rim", mc -> {
             var shots = mc.gameDirectory.toPath().resolve("screenshots");
             BufferedImage dog, empty;
             try {
@@ -52,7 +55,10 @@ final class FrontpackCloseups {
                 return false;
             }
             if (dog == null || empty == null) return false;
+            checkStrapInset(empty);
             int h = dog.getHeight(), center = dog.getWidth() / 2;
+            // Check the entire shoulder-to-pouch line once the dog's face is out of the way.
+            checkStrapLines(h, center, true, (x, y) -> redFabric(empty.getRGB(x, y)));
             // Each ear breaks the silhouette above the flat top of the dog's head.
             for (int side : new int[]{-1, 1}) {
                 int changed = 0;
@@ -68,6 +74,27 @@ final class FrontpackCloseups {
             }
             return true;
         });
+    }
+
+    private static void checkStrapInset(BufferedImage empty) {
+        int h = empty.getHeight(), center = empty.getWidth() / 2;
+        for (int side : new int[]{-1, 1}) {
+            int shoulder = 0, pouch = 0;
+            for (int dx = 1; dx < h / 5; dx++) {
+                int x = center + side * dx;
+                if (redFabric(empty.getRGB(x, h * 46 / 100))) shoulder = dx;
+                if (redFabric(empty.getRGB(x, h * 62 / 100))) pouch = dx;
+            }
+            // The pack front is closer to this fixed camera than the shoulder straps.
+            // A strap aligned with the pouch edge projects at about 82% of its half-width.
+            Playtest.require(shoulder > 0 && shoulder <= pouch * 86 / 100,
+                    "Shoulder strap extends past the pouch rim on side " + side + ": " + shoulder + " vs " + pouch);
+        }
+    }
+
+    private static boolean redFabric(int rgb) {
+        int r = rgb >> 16 & 255, g = rgb >> 8 & 255, b = rgb & 255;
+        return r > 51 && r > g * 1.9 && g - b < 13;
     }
 
     private static boolean checkTail(Path shots) {
@@ -124,40 +151,43 @@ final class FrontpackCloseups {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             mc.setCameraEntity(marker);
         });
-        t.awaitClient("Wait for the " + angle + " camera to reach its mark", mc ->
-                mc.gameRenderer.getMainCamera().position().distanceToSqr(mc.player.position().add(offset)) < 0.00001);
-        t.screenshot("frontpack-" + dye + "-" + angle);
+        t.awaitClient("Wait for the " + angle + " camera to reach its mark", mc -> {
+            FrontpackExpressionPlaytest.faceCamera(mc);
+            return mc.gameRenderer.getMainCamera().position().distanceToSqr(mc.player.position().add(offset)) < 0.00001;
+        });
+        if (dye.equals("red") && angle.equals("front")) FrontpackExpressionPlaytest.waitForRest(t);
+        t.screenshot("frontpack-" + dye + "-" + angle, FrontpackExpressionPlaytest::faceCamera);
     }
 
-    static boolean checkStraps(Path screenshots) {
+    static boolean checkBackStraps(Path screenshots) {
         try {
-            return checkView(screenshots, "front") && checkView(screenshots, "back");
+            var red = ImageIO.read(screenshots.resolve("frontpack-red-back.png").toFile());
+            var lime = ImageIO.read(screenshots.resolve("frontpack-lime-back.png").toFile());
+            if (red == null || lime == null) return false;
+            checkStrapLines(red.getHeight(), red.getWidth() / 2, false, (x, y) -> changesDye(red, lime, x, y));
+            return true;
         } catch (IOException e) {
             return false;
         }
     }
 
-    private static boolean checkView(Path screenshots, String angle) throws IOException {
-        boolean front = angle.equals("front");
-        // The dog's muzzle occludes the straps in the close-up. The normal third-person
-        // camera sees both outer edges all the way down to the pouch.
-        String redFrame = front ? "frontpack-dyed-chest.png" : "frontpack-red-back.png";
-        String limeFrame = front ? "frontpack-dyed-lime.png" : "frontpack-lime-back.png";
-        var red = ImageIO.read(screenshots.resolve(redFrame).toFile());
-        var lime = ImageIO.read(screenshots.resolve(limeFrame).toFile());
-        if (red == null || lime == null) return false;
-        int h = red.getHeight(), center = red.getWidth() / 2;
-        int top = h * (front ? 55 : 42) / 100;
-        int aboveJoin = h * (front ? 58 : 64) / 100;
+    private interface FabricMask {
+        boolean contains(int x, int y);
+    }
+
+    private static void checkStrapLines(int h, int center, boolean front, FabricMask fabric) {
+        String angle = front ? "front" : "back";
+        int top = h * (front ? 40 : 42) / 100;
+        int aboveJoin = h * (front ? 51 : 64) / 100;
         int belowJoin = h * (front ? 60 : 68) / 100;
-        int inner = h / 50, outer = h / (front ? 15 : 5);
+        int inner = h / 50, outer = h / 5;
         for (int side : new int[]{-1, 1}) {
             int minEdge = h, maxEdge = 0;
-            // The front outer edge stays clear of the face. Behind, the inside edge stays clear of the arms.
+            // The inside edge stays clear of the player's arms.
             for (int y = top; y <= aboveJoin; y++) {
-                int edge = front ? outer : inner;
-                while (edge >= inner && edge <= outer && !changesDye(red, lime, center + side * edge, y)) {
-                    edge += front ? -1 : 1;
+                int edge = inner;
+                while (edge <= outer && !fabric.contains(center + side * edge, y)) {
+                    edge++;
                 }
                 minEdge = Math.min(minEdge, edge);
                 maxEdge = Math.max(maxEdge, edge);
@@ -169,7 +199,7 @@ final class FrontpackCloseups {
             int columns = 0;
             for (int dx = inner; dx < outer; dx++) {
                 int y = top;
-                while (y <= belowJoin && changesDye(red, lime, center + side * dx, y)) {
+                while (y <= belowJoin && fabric.contains(center + side * dx, y)) {
                     y++;
                 }
                 if (y > belowJoin) columns++;
@@ -177,7 +207,6 @@ final class FrontpackCloseups {
             Playtest.require(columns >= Math.max(2, h / (front ? 270 : 180)), "Strap does not run continuously into its attachment in the "
                     + angle + " view on side " + side + ": " + columns + " dyed columns");
         }
-        return true;
     }
 
     private static boolean changesDye(BufferedImage red, BufferedImage lime, int x, int y) {

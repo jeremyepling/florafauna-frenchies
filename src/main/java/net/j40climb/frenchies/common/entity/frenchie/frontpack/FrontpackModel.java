@@ -86,14 +86,14 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         earL.addOrReplaceChild("earL_behind_r1", CubeListBuilder.create().texOffs(1, 21).addBox(0.0F, -2.8377F, 2.9587F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F))
                 .texOffs(1, 24).addBox(0.0F, -2.8377F, 2.9087F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.2618F));
 
-        PartDefinition tonge = head.addOrReplaceChild("tonge", CubeListBuilder.create(), PartPose.offset(-0.483F, 2.6125F, -5.875F));
-
-        tonge.addOrReplaceChild("cube_r1", CubeListBuilder.create().texOffs(0, 0).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 0.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, -0.4F, 0.9F, 0.6545F, 0.0F, 0.0F));
+        head.addOrReplaceChild("tongue", CubeListBuilder.create().texOffs(54, 56)
+                .addBox(-1, 0, -2, 2, 1, 2), PartPose.ZERO.scaled(0.78F, 0.55F, 1)
+                .translated(-0.483F, 2.25F, -2.55F));
 
         PartDefinition chest = body.addOrReplaceChild("chest", CubeListBuilder.create().texOffs(1, 1).addBox(-3.5F, -4.25F, -5.5F, 7.0F, 7.0F, 11.0F, new CubeDeformation(0.0F)), PartPose.offset(0.5F, 1.25F, 1.5F));
 
         // In the upright pose the nub emerges under the pouch, clear of the player's torso.
-        chest.addOrReplaceChild("tail", CubeListBuilder.create().texOffs(30, 8).addBox(-1.0F, -0.5F, 0.25F, 2.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 2.0F, 5.25F));
+        chest.addOrReplaceChild("tail", CubeListBuilder.create().texOffs(30, 8).addBox(-1.0F, -0.5F, 0.25F, 2.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 1.0F, 5.25F));
 
         body.addOrReplaceChild("leg_front_left", CubeListBuilder.create().texOffs(21, 21).addBox(-1.0F, 1.0F, -1.0F, 2.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(3.0F, 3.0F, -2.0F));
 
@@ -112,7 +112,7 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
                         .texOffs(47, 1).addBox(-0.55F, -0.1F, -2.46F, 1.1F, 0.35F, 4.92F)
                         .texOffs(49, 2).addBox(-0.55F, 0.25F, -2.45F, 1.1F, 4.5F, 0.2F)
                         .texOffs(55, 0).addBox(-0.55F, 0.25F, 2.24F, 1.1F, 8.25F, 0.2F),
-                PartPose.offset(side * 3.25F - 2.7F, -2.45F, 1.1F));
+                PartPose.offset(side * 2.85F - 2.7F, -2.45F, 1.1F));
     }
 
     @Override
@@ -124,6 +124,14 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         // Apply the idle animation (static pose that's always active)
         // Using the KeyframeAnimation.apply() method like in FrenchieModel
         this.idlingAnimation.apply(this.idleAnimationState, renderState.ageInTicks, 1.0F);
+        float phase = (renderState.ageInTicks + (renderState.id % 220) * 37) % 220;
+        float tilt = phase < 44 ? (float) Math.pow(Math.sin(Math.PI * phase / 44), 2) : 0;
+        // The dog's upright carrier pose points the parent's Y axis toward the viewer.
+        head.yRot += tilt * 0.34F;
+        var tongue = head.getChild("tongue");
+        tongue.visible = tilt > 0.35F;
+        tongue.z -= 1.6F * tilt;
+        tongue.xRot += 0.28F * tilt;
         Float yaw = renderState.getRenderData(FrontpackClientEvents.ALERT_YAW);
         if (yaw != null) {
             head.yRot += (float) Math.toRadians(yaw);

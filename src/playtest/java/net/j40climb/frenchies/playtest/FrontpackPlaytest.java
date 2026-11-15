@@ -110,8 +110,8 @@ final class FrontpackPlaytest {
         framePlayer(t);
         t.screenshot("frontpack-dyed-lime");
         FrontpackCloseups.capture(t, "lime");
-        t.awaitClient("See two straight straps meeting the pouch in front and the belt behind",
-                mc -> FrontpackCloseups.checkStraps(mc.gameDirectory.toPath().resolve("screenshots")));
+        t.awaitClient("See the two straight back straps meeting the belt",
+                mc -> FrontpackCloseups.checkBackStraps(mc.gameDirectory.toPath().resolve("screenshots")));
         swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, Inventory.SLOT_OFFHAND);
         t.awaitServer("Return the lime pack to the offhand for washing", p ->
                 hasDye(p.getOffhandItem(), DyeColor.LIME) && hasDye(p.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED));
