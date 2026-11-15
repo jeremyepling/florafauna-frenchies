@@ -14,7 +14,7 @@ final class FrontpackCloseups {
     static void capture(Playtest t, String dye) {
         // The player faces north throughout. An independent camera keeps the head and shoulders still.
         front(t, dye);
-        photograph(t, dye, "side", new Vec3(1.27, 1.45, -0.56), 1.23);
+        photograph(t, dye, "side", new Vec3(1.35, 1.26, 0), 1.26);
         photograph(t, dye, "shoulders", new Vec3(0.88, 2.25, 1.04), 1.36);
         photograph(t, dye, "back", new Vec3(0, 1.22, 1.45), 1.22);
         restoreCamera(t);

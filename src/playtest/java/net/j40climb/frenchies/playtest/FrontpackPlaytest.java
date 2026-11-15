@@ -132,6 +132,9 @@ final class FrontpackPlaytest {
         t.screenshot("frontpack-rejoined");
         t.awaitClient("Check red and lime fabric pixels returned to the original carrier color after washing",
                 mc -> compareDyes(mc.gameDirectory.toPath().resolve("screenshots")));
+        t.server("Wear the red chest pack for the first-person comparison",
+                p -> p.setItemSlot(EquipmentSlot.CHEST, dyedPack(DyeColor.RED)));
+        firstPersonViews(t, true);
         t.client("Crouch and aim at empty air", mc -> {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             mc.options.keyShift.setDown(true);
@@ -147,6 +150,11 @@ final class FrontpackPlaytest {
         t.client("Turn away from the released dog", mc -> mc.player.setYRot(0));
         t.awaitClient("Verify the second click will also hit empty air", FrontpackPlaytest::aimingAtAir);
         t.client("Right-click empty air a second time", mc -> KeyMapping.click(mc.options.keyUse.getKey()));
+        firstPersonViews(t, false);
+        t.awaitClient("Compare the first-person view with the dog inside and outside the pack", mc -> {
+            var shots = mc.gameDirectory.toPath().resolve("screenshots");
+            return unobstructed(shots, "level") && unobstructed(shots, "down");
+        });
         framePlayer(t);
         t.screenshot("frontpack-empty");
         FrontpackCloseups.checkEarsAfterRelease(t);
@@ -158,6 +166,58 @@ final class FrontpackPlaytest {
     private static boolean aimingAtAir(Minecraft mc) {
         return mc.player.isShiftKeyDown() && mc.player.getMainHandItem().isEmpty()
                 && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.MISS;
+    }
+
+    private static void firstPersonViews(Playtest t, boolean packed) {
+        String label = packed ? "packed" : "empty";
+        for (int pitch : new int[]{0, 85}) {
+            String angle = pitch == 0 ? "level" : "down";
+            int[] settle = new int[1];
+            t.client("Face north in first person looking " + angle, mc -> {
+                mc.options.keyShift.setDown(false);
+                mc.options.hideGui = false;
+                mc.options.setCameraType(CameraType.FIRST_PERSON);
+                mc.setCameraEntity(mc.player);
+                mc.player.setYRot(180);
+                mc.player.setXRot(pitch);
+                settle[0] = mc.player.tickCount + 16;
+            });
+            t.awaitClient("Wait for the standing player's " + label + " view", mc ->
+                    mc.player.tickCount >= settle[0] && !mc.player.isCrouching()
+                            && mc.getCameraEntity() == mc.player && Math.abs(mc.gameRenderer.getMainCamera().xRot() - pitch) < 0.1
+                            && hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED)
+                            && mc.player.getMainHandItem().isEmpty() && mc.player.getOffhandItem().isEmpty()
+                            && mc.player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).hasCarriedFrenchie() == packed);
+            t.screenshot("frontpack-first-person-" + label + "-" + angle);
+        }
+    }
+
+    private static boolean unobstructed(Path screenshots, String angle) {
+        BufferedImage packed, empty;
+        try {
+            packed = ImageIO.read(screenshots.resolve("frontpack-first-person-packed-" + angle + ".png").toFile());
+            empty = ImageIO.read(screenshots.resolve("frontpack-first-person-empty-" + angle + ".png").toFile());
+        } catch (IOException e) {
+            return false;
+        }
+        if (packed == null || empty == null) return false;
+        int w = packed.getWidth(), h = packed.getHeight();
+        int changed = 0, sampled = 0;
+        // Compare the ground ahead and the space below the crosshair. Skip moving clouds,
+        // the hand on the right, and the HUD at the bottom; all remain in the saved images.
+        int top = angle.equals("level") ? h * 53 / 100 : h / 8;
+        for (int y = top; y < h * 87 / 100; y++) {
+            for (int x = w / 5; x < w * 7 / 10; x++) {
+                int a = packed.getRGB(x, y), b = empty.getRGB(x, y);
+                int delta = Math.abs(channel(a, 16) - channel(b, 16)) + Math.abs(channel(a, 8) - channel(b, 8))
+                        + Math.abs(channel(a, 0) - channel(b, 0));
+                if (delta > 60) changed++;
+                sampled++;
+            }
+        }
+        Playtest.require(changed < sampled / 100, "Packed Frenchie obstructs the first-person " + angle
+                + " view: " + changed + " of " + sampled + " sampled pixels changed");
+        return true;
     }
 
     private static ItemStack dyedPack(DyeColor dye) {
