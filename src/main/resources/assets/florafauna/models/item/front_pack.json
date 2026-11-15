@@ -4,6 +4,6 @@
     "particle": "minecraft:block/gray_wool"
   },
   "display": {
-    "gui": { "rotation": [12, 26, 0], "scale": [1, 1, 1] }
+    "gui": { "rotation": [12, 26, 0], "scale": [0.9, 0.9, 0.9] }
   }
 }
