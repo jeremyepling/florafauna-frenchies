@@ -1,4 +1,4 @@
-# FloraFauna Frenchies
+# Frenchies
 
 Standalone French bulldog companions for Minecraft 26.1 and NeoForge. Existing Frenchie entities, eggs, carried dogs, and saved courier trips keep their original identifiers.
 
