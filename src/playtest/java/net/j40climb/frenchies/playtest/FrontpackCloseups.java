@@ -14,6 +14,7 @@ final class FrontpackCloseups {
     static void capture(Playtest t, String dye) {
         // The player faces north throughout. An independent camera keeps the head and shoulders still.
         front(t, dye);
+        if (dye.equals("red")) hem(t, dye);
         photograph(t, dye, "side", new Vec3(1.35, 1.26, 0), 1.26);
         photograph(t, dye, "shoulders", new Vec3(0.88, 2.25, 1.04), 1.36);
         photograph(t, dye, "back", new Vec3(0, 1.22, 1.45), 1.22);
@@ -22,6 +23,10 @@ final class FrontpackCloseups {
 
     private static void front(Playtest t, String label) {
         photograph(t, label, "front", new Vec3(0, 1.32, -1.35), 1.20);
+    }
+
+    private static void hem(Playtest t, String label) {
+        photograph(t, label, "hem", new Vec3(0, 0.50, -1.40), 0.86);
     }
 
     private static void restoreCamera(Playtest t) {
@@ -33,7 +38,10 @@ final class FrontpackCloseups {
 
     static void checkEarsAfterRelease(Playtest t) {
         front(t, "empty");
+        hem(t, "empty");
         restoreCamera(t);
+        t.awaitClient("See a small centered tail below the hem with the rump inside the pouch",
+                mc -> checkTail(mc.gameDirectory.toPath().resolve("screenshots")));
         t.awaitClient("See both ears above the carried dog's head", mc -> {
             var shots = mc.gameDirectory.toPath().resolve("screenshots");
             BufferedImage dog, empty;
@@ -60,6 +68,43 @@ final class FrontpackCloseups {
             }
             return true;
         });
+    }
+
+    private static boolean checkTail(Path shots) {
+        BufferedImage occupied, empty;
+        try {
+            occupied = ImageIO.read(shots.resolve("frontpack-red-hem.png").toFile());
+            empty = ImageIO.read(shots.resolve("frontpack-empty-hem.png").toFile());
+        } catch (IOException e) {
+            return false;
+        }
+        if (occupied == null || empty == null) return false;
+        int h = empty.getHeight(), center = empty.getWidth() / 2;
+        int hem = 0;
+        for (int y = h / 3; y < h * 3 / 4; y++) {
+            int rgb = empty.getRGB(center, y);
+            if ((rgb >> 16 & 255) - (rgb >> 8 & 255) > 18 && (rgb >> 16 & 255) - (rgb & 255) > 18) hem = y;
+        }
+        Playtest.require(hem > 0, "Could not locate the red pouch hem");
+        int tailPixels = 0, exposedRump = 0, depth = 0;
+        // Sample between the hind paws. Only the narrow central nub should change the empty-pack silhouette.
+        for (int dy = 1; dy <= h / 16; dy++) {
+            for (int dx = -h / 14; dx <= h / 14; dx++) {
+                int dog = occupied.getRGB(center + dx, hem + dy), background = empty.getRGB(center + dx, hem + dy);
+                int difference = Math.abs((dog >> 16 & 255) - (background >> 16 & 255))
+                        + Math.abs((dog >> 8 & 255) - (background >> 8 & 255)) + Math.abs((dog & 255) - (background & 255));
+                if (difference < 30) continue;
+                if (Math.abs(dx) <= h / 23) {
+                    tailPixels++;
+                    depth = Math.max(depth, dy);
+                } else {
+                    exposedRump++;
+                }
+            }
+        }
+        Playtest.require(tailPixels >= h * h / 3000 && depth <= h / 23 && exposedRump <= h * h / 8000,
+                "Expected just the tail below the pouch: tail pixels=" + tailPixels + ", depth=" + depth + ", flank pixels=" + exposedRump);
+        return true;
     }
 
     private static void photograph(Playtest t, String dye, String angle, Vec3 offset, double targetHeight) {
