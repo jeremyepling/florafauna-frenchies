@@ -108,7 +108,7 @@ final class FrontpackPlaytest {
         framePlayer(t);
         t.screenshot("frontpack-dyed-offhand");
         FrontpackCloseups.capture(t, "lime");
-        t.awaitClient("See dyed straps on the chest, over the shoulder and down the back",
+        t.awaitClient("See two straight straps meeting the pouch in front and the belt behind",
                 mc -> FrontpackCloseups.checkStraps(mc.gameDirectory.toPath().resolve("screenshots")));
         t.server("Wash the offhand pack at a water cauldron beside the player", p -> {
             var pos = p.blockPosition().east();

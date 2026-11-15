@@ -91,17 +91,12 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
     }
 
     private static void addShoulderStrap(PartDefinition carrier, String name, int side) {
-        // The jacket reaches Z ±2.25 and Y -0.25. Run the band just outside it,
-        // over the shoulder beside the head, then angle the ends in to the pack and belt.
-        PartDefinition strap = carrier.addOrReplaceChild(name, CubeListBuilder.create()
-                        .texOffs(47, 1).addBox(-0.55F, -0.1F, -2.46F, 1.1F, 0.35F, 4.92F),
-                PartPose.offset(side * 4.8F - 2.7F, -2.45F, 1.1F));
-        strap.addOrReplaceChild("front", CubeListBuilder.create()
-                        .texOffs(49, 2).addBox(-0.55F, 0, -2.45F, 1.1F, 5.2F, 0.2F),
-                PartPose.offsetAndRotation(0, 0.05F, 0, 0, 0, side * (float) Math.toRadians(20)));
-        strap.addOrReplaceChild("back", CubeListBuilder.create()
-                        .texOffs(55, 0).addBox(-0.55F, 0, 2.24F, 1.1F, 8.9F, 0.2F),
-                PartPose.offsetAndRotation(0, 0.05F, 0, 0, 0, side * (float) Math.toRadians(10)));
+        // Both ends share the shoulder's centerline and tuck into the pouch and waist belt.
+        carrier.addOrReplaceChild(name, CubeListBuilder.create()
+                        .texOffs(47, 1).addBox(-0.55F, -0.1F, -2.46F, 1.1F, 0.35F, 4.92F)
+                        .texOffs(49, 2).addBox(-0.55F, 0.25F, -2.45F, 1.1F, 4.5F, 0.2F)
+                        .texOffs(55, 0).addBox(-0.55F, 0.25F, 2.24F, 1.1F, 8.25F, 0.2F),
+                PartPose.offset(side * 3.25F - 2.7F, -2.45F, 1.1F));
     }
 
     @Override

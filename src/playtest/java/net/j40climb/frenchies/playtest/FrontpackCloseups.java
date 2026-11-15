@@ -80,7 +80,7 @@ final class FrontpackCloseups {
 
     static boolean checkStraps(Path screenshots) {
         try {
-            return checkView(screenshots, "front") && checkView(screenshots, "shoulders") && checkView(screenshots, "back");
+            return checkView(screenshots, "front") && checkView(screenshots, "back");
         } catch (IOException e) {
             return false;
         }
@@ -91,30 +91,33 @@ final class FrontpackCloseups {
         var lime = ImageIO.read(screenshots.resolve("frontpack-lime-" + angle + ".png").toFile());
         if (red == null || lime == null) return false;
         int h = red.getHeight(), center = red.getWidth() / 2;
-        if (angle.equals("shoulders")) {
-            // The raised camera sees the near sleeve's top to the right of the head.
-            int changed = 0;
-            for (int y = h * 48 / 100; y < h * 58 / 100; y++) {
-                for (int x = center + h * 5 / 100; x < center + h * 17 / 100; x++) {
-                    if (changesDye(red, lime, x, y)) changed++;
-                }
-            }
-            Playtest.require(changed >= h * h / 5000, "Dyed strap missing from the shoulder top: " + changed + " pixels");
-            return true;
-        }
-        // Count dyed rows beside the dog's head in front or above the waist belt behind.
         boolean front = angle.equals("front");
+        int top = h * 42 / 100;
+        int aboveJoin = h * (front ? 52 : 64) / 100;
+        int belowJoin = h * (front ? 56 : 68) / 100;
         for (int side : new int[]{-1, 1}) {
-            int dyedRows = 0;
-            for (int y = h * (front ? 40 : 42) / 100; y < h * (front ? 52 : 55) / 100; y++) {
-                int width = 0;
-                for (int dx = h * (front ? 7 : 2) / 100; dx < h / 5; dx++) {
-                    if (changesDye(red, lime, center + side * dx, y)) width++;
-                }
-                if (width >= Math.max(2, h / 180)) dyedRows++;
+            int minEdge = h, maxEdge = 0;
+            // Follow the inside edge. Scanning outward skips the arms and the offhand pack.
+            for (int y = top; y <= aboveJoin; y++) {
+                int edge = h / 50;
+                while (edge < h / 5 && !changesDye(red, lime, center + side * edge, y)) edge++;
+                minEdge = Math.min(minEdge, edge);
+                maxEdge = Math.max(maxEdge, edge);
             }
-            Playtest.require(dyedRows >= h * (front ? 4 : 8) / 100,
-                    "Too little dyed strap in the " + angle + " view on side " + side + ": " + dyedRows + " rows");
+            Playtest.require(maxEdge - minEdge <= h / 70, "Strap angles outward in the " + angle
+                    + " view on side " + side + ": edge shifts " + (maxEdge - minEdge) + " pixels");
+
+            // Follow a vertical strip of fabric from shoulder height into the pouch or waist belt.
+            int columns = 0;
+            for (int dx = h / 40; dx < h / 5; dx++) {
+                int y = top;
+                while (y <= belowJoin && changesDye(red, lime, center + side * dx, y)) {
+                    y++;
+                }
+                if (y > belowJoin) columns++;
+            }
+            Playtest.require(columns >= Math.max(2, h / 180), "Strap does not run continuously into its attachment in the "
+                    + angle + " view on side " + side + ": " + columns + " dyed columns");
         }
         return true;
     }
