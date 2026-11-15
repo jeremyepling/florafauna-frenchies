@@ -1,0 +1,190 @@
+import java.time.Duration
+
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '2.0.148'
+    id 'idea'
+}
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+version = mod_version
+group = mod_group_id
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+base {
+    archivesName = "${mod_id}-${minecraft_version}"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+def wt = rootProject.projectDir.name
+def devSave = providers.gradleProperty('devSave').orElse('dev').get()
+def playtestId = providers.gradleProperty('playtestId').orNull
+def playtestScenario = providers.gradleProperty('playtestScenario').orNull
+def playtestPhase = providers.gradleProperty('playtestPhase').orNull
+def deliveryTestId = providers.gradleProperty('deliveryTestId').orNull
+def deliveryTestPort = providers.gradleProperty('deliveryTestPort').orNull
+def multiplayerScenario = 'delivery'
+if (deliveryTestId != null && (!(deliveryTestId ==~ /[0-9a-f]{32}/) || !(deliveryTestPort ==~ /[0-9]{1,5}/) || !(1..65535).contains(deliveryTestPort.toInteger()))) {
+    throw new GradleException('Use scripts/test_delivery_multiplayer.ps1 to prepare the multiplayer run.')
+}
+if (playtestId != null && (!(playtestId ==~ /[0-9a-f]{32}/) || !(playtestScenario ==~ /[a-z]+/) || !(playtestPhase in ['1', '2']))) {
+    throw new GradleException('Use scripts/test_dev_world.ps1 to prepare an isolated world playtest.')
+}
+sourceSets.create('playtest') {
+    compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+    runtimeClasspath += sourceSets.main.runtimeClasspath
+}
+sourceSets.test {
+    compileClasspath += sourceSets.main.compileClasspath
+    runtimeClasspath += sourceSets.main.runtimeClasspath
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('compilePlaytestJava')
+}
+
+neoForge {
+    version = project.neo_version
+
+    runs {
+        if (deliveryTestId != null) {
+            def directory = file(".tmp/${multiplayerScenario}-multiplayer/${deliveryTestId}")
+            deliveryServer {
+                server()
+                gameDirectory = new File(directory, 'server')
+                programArgument '--nogui'
+                systemProperty "florafauna_frenchies.${multiplayerScenario}Test.root", directory.absolutePath
+                jvmArgument '-Xmx1G'
+            }
+            ['Owner', 'Visitor'].each { role ->
+                create("delivery${role}") {
+                    client()
+                    gameDirectory = new File(directory, role)
+                    programArguments.addAll '--username', "FF${role}".toString(), '--width', '640', '--height', '360',
+                            '--quickPlayMultiplayer', "127.0.0.1:${deliveryTestPort}".toString()
+                    systemProperty "florafauna_frenchies.${multiplayerScenario}Test.client", role
+                    jvmArgument '-Xmx1G'
+                }
+            }
+        }
+        if (playtestId != null) {
+            worldPlaytest {
+                client()
+                def directory = file(".tmp/world-playtests/${playtestId}/${playtestScenario}")
+                gameDirectory = directory
+                programArguments.addAll '--width', '960', '--height', '540', '--quickPlaySingleplayer', 'playtest'
+                systemProperty 'florafauna_frenchies.playtest.directory', directory.absolutePath
+                systemProperty 'florafauna_frenchies.playtest.scenario', playtestScenario
+                systemProperty 'florafauna_frenchies.playtest.phase', playtestPhase
+            }
+        }
+        client {
+            client()
+            gameDirectory = file("run/client-${wt}")
+
+            programArguments.addAll '--width', '1920', '--height', '1080'
+
+            if (providers.gradleProperty('devSave').isPresent()) programArguments.addAll '--quickPlaySingleplayer', devSave
+
+        }
+
+        server {
+            server()
+            gameDirectory = file("run/server-${wt}")
+            programArgument '--nogui'
+        }
+
+        gameTestServer {
+            type = "gameTestServer"
+            gameDirectory = file("run/gameTestServer-${wt}")
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            def selector = providers.gradleProperty('gameTestFilter').orNull
+            if (selector != null) {
+                if (!(selector ==~ /[a-z0-9_.*?-]+:[a-z0-9_.*?\/-]+/)) {
+                    throw new GradleException('Use a namespaced GameTest ID or wildcard, e.g. florafauna_frenchies:frenchie_bedtime')
+                }
+                programArguments.addAll '--tests', selector
+            }
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+            if (playtestId != null || deliveryTestId != null) {
+                sourceSet(sourceSets.playtest)
+            }
+        }
+    }
+}
+
+tasks.matching { it.name == 'runWorldPlaytest' }.configureEach {
+    timeout = Duration.ofMinutes(4)
+}
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+}
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}

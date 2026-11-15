@@ -1,0 +1,49 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+.eclipse
+run
+runs
+run-data
+nul
+
+repo
+/src/generated/
+
+# Optional per-worktree build cache
+.gradle-build-cache/
+
+# Optional per-worktree temp
+.tmp/
+
+/gradle/gradle-daemon-jvm.properties
+/.claude/settings.local.json
+/.claude/blockbench-config.json
+/net/
+/assets/
+/build_output.txt
+/temp_jar_list.txt
+
+# Dev world template (binary, not committed — shared via scripts)
+dev/world-template/
+
+# Claude Code temp files
+tmpclaude-*
