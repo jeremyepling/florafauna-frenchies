@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "florafauna:squeaky_toy"
+        "recipes": "florafauna:squeaky_toy"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
