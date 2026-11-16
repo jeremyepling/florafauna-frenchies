@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BedBlock;
@@ -51,7 +52,7 @@ final class DeliveryGoal extends Goal {
         reaction = stage;
         reactionTicks = ticks;
         dog.getNavigation().stop();
-        dog.setPose(stage == EXPECTING ? net.minecraft.world.entity.Pose.SITTING : net.minecraft.world.entity.Pose.STANDING);
+        dog.setPose(stage == EXPECTING ? Pose.SITTING : Pose.STANDING);
         dog.resetLastPoseChangeTick(dog.level().getGameTime());
         dog.syncCompanionJob();
     }
@@ -268,7 +269,7 @@ final class DeliveryGoal extends Goal {
             }
         }
         if (waitingRecipient() != null) {
-            dog.setPose(net.minecraft.world.entity.Pose.SITTING);
+            dog.setPose(Pose.SITTING);
             dog.resetLastPoseChangeTick(dog.level().getGameTime());
         } else if (!goingHome && back && !hasParcel()) {
             dog.standUp();

@@ -81,7 +81,7 @@ public final class DeliveryDialog {
         var owner = ctx.getSource().getPlayerOrException();
         if (owner.level().getEntity(UuidArgument.getUuid(ctx, "dog")) instanceof FrenchieEntity dog
                 && dog.isAlive() && dog.isOwnedBy(owner) && owner.isAlive() && !owner.isSpectator()
-                && owner.isWithinEntityInteractionRange(dog, 0) && !dog.hasCompanionJob()) {
+                && owner.isWithinEntityInteractionRange(dog, 0) && !dog.hasCompanionJob() && !dog.hasToyJob()) {
             DeliveryDialog dialog = dog.deliveryDialog;
             if (dialog != null && dog.level().getGameTime() <= dialog.expires
                     && ItemStack.matches(owner.getItemInHand(dialog.hand), dialog.previewStack)

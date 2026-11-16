@@ -413,6 +413,8 @@ public class FrenchieEntity extends TamableAnimal {
             } else if (compass && pPlayer instanceof ServerPlayer owner) {
                 trail.startTracking(owner);
                 syncCompanionJob();
+            } else if (bundle && hasToyJob()) {
+                orderMessage(pPlayer, "busy");
             } else if (bundle && pPlayer instanceof ServerPlayer owner) {
                 deliveryDialog = new DeliveryDialog(this, owner, pHand);
             } else {
