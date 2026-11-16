@@ -188,7 +188,7 @@ final class FrenchieDeliveryGameTests {
         var owner = networkedPlayer(h);
         var recipient = networkedPlayer(h);
         try {
-            var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 1, 1, 1);
+            var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 5, 1, 5);
             var expected = prepareDelivery(owner, recipient, dog);
             String target = recipient.getStringUUID();
             order(owner, dog, "send " + target);

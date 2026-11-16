@@ -32,8 +32,8 @@ public final class CompanionTests {
         registerTest(event, defaultEnv, "frenchie_compass_orders", FrenchieDeliveryGameTests::compassOrders);
         registerStructureTest(event, defaultEnv, "frenchie_home_recall",
                 FrenchiePen.STRUCTURE, 3000, FrenchieRecallGameTests::recallParkedDog);
-        registerTest(event, defaultEnv, "frenchie_home_bed_interaction", FrenchieRecallGameTests::sendUsingBed);
-        registerTest(event, defaultEnv, "frenchie_delivery_packed_cancel", FrenchieDeliveryGameTests::packAndCancel);
+        registerStructureTest(event, defaultEnv, "frenchie_home_bed_interaction", yard, 100, FrenchieRecallGameTests::sendUsingBed);
+        registerStructureTest(event, defaultEnv, "frenchie_delivery_packed_cancel", yard, 100, FrenchieDeliveryGameTests::packAndCancel);
         registerStructureTest(event, defaultEnv, "frenchie_delivery_recipient_full",
                 FrenchiePen.STRUCTURE, 900, FrenchieDeliveryGameTests::fullRecipient);
         registerStructureTest(event, defaultEnv, "frenchie_delivery_recipient_disconnect",
