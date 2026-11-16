@@ -72,7 +72,7 @@ final class FrenchieRecallGameTests {
         var level = h.getLevel();
         var owner = h.makeMockServerPlayerInLevel();
         try {
-            var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 3, 1, 3);
+            var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 5, 1, 5);
             dog.tame(owner);
             dog.sitDown();
             var bed = dog.blockPosition().east(2);
