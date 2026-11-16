@@ -38,6 +38,33 @@ final class DeliveryGoal extends Goal {
     private @Nullable BlockPos departure;
     private int departureTicks;
     private int plannedSeconds;
+    private static final int EXPECTING = 2, TIPPED = 3, GLANCING = 4;
+    private int reaction;
+    private int reactionTicks;
+    private boolean completedDelivery;
+
+    int handoffPhase() {
+        return reaction != 0 ? reaction : waitingRecipient() != null ? 1 : 0;
+    }
+
+    private void reaction(int stage, int ticks) {
+        reaction = stage;
+        reactionTicks = ticks;
+        dog.getNavigation().stop();
+        dog.setPose(stage == EXPECTING ? net.minecraft.world.entity.Pose.SITTING : net.minecraft.world.entity.Pose.STANDING);
+        dog.resetLastPoseChangeTick(dog.level().getGameTime());
+        dog.syncCompanionJob();
+    }
+
+    boolean tip(ServerPlayer player, InteractionHand hand) {
+        var treat = player.getItemInHand(hand);
+        if (reaction != EXPECTING || !player.getUUID().equals(recipient) || !dog.isFood(treat)) return false;
+        treat.consume(1, player);
+        reaction(TIPPED, 10);
+        if (dog.onGround()) dog.getJumpControl().jump();
+        dog.level().broadcastEntityEvent(dog, (byte) 7);
+        return true;
+    }
 
     DeliveryGoal(FrenchieEntity dog) {
         this.dog = dog;
@@ -85,7 +112,10 @@ final class DeliveryGoal extends Goal {
     }
 
     private void beginOrder(ServerPlayer owner, ItemStack bundle, @Nullable ServerPlayer target, @Nullable GlobalPos bed) {
+        reaction = 0;
+        completedDelivery = false;
         parcel = bundle;
+        dog.syncParcel(parcel);
         goingHome = bundle.isEmpty();
         home = bed;
         recipient = target == null ? null : target.getUUID();
@@ -120,7 +150,9 @@ final class DeliveryGoal extends Goal {
         CourierTrips.forget(dog);
         if (hasParcel()) owner.setItemInHand(emptyHand, parcel);
         parcel = ItemStack.EMPTY;
+        dog.syncParcel(parcel);
         goingHome = false;
+        reaction = 0;
         dog.getNavigation().stop();
         dog.sitDown();
         tell(owner, homeOrder ? "home_stopped" : delivered ? "collected" : "returned");
@@ -140,11 +172,12 @@ final class DeliveryGoal extends Goal {
         if (canUse()) CourierTrips.forget(dog);
         if (hasParcel()) dog.spawnAtLocation(level, parcel);
         parcel = ItemStack.EMPTY;
+        dog.syncParcel(parcel);
     }
 
     @Override
     public boolean canUse() {
-        return hasParcel() || goingHome;
+        return hasParcel() || goingHome || reaction != 0;
     }
 
     @Override
@@ -162,6 +195,22 @@ final class DeliveryGoal extends Goal {
         if (ownerId == null) return;
         var owner = server.getPlayerList().getPlayer(ownerId.getUUID());
         var player = recipient == null ? null : server.getPlayerList().getPlayer(recipient);
+        if (reaction != 0) {
+            if (!available(player) || player.level() != level || dog.distanceToSqr(player) > 36) {
+                sendBack(owner, null);
+            } else if (reaction == EXPECTING) {
+                dog.getLookControl().setLookAt(player, 35, 30);
+                if (--reactionTicks <= 0) {
+                    reaction(GLANCING, 12);
+                    dog.setYRot(dog.getYRot() + 80F);
+                    dog.yBodyRot = dog.getYRot();
+                }
+            } else {
+                if (reaction == GLANCING) dog.getLookControl().setLookAt(player, 35, 30);
+                if (--reactionTicks <= 0) sendBack(owner, null);
+            }
+            return;
+        }
         if (returning && !atDestination) {
             sendBack(owner, null);
             return;
@@ -205,6 +254,7 @@ final class DeliveryGoal extends Goal {
     }
 
     void arrived(boolean back) {
+        reaction = 0;
         returning = back;
         atDestination = true;
         announced = false;
@@ -216,6 +266,14 @@ final class DeliveryGoal extends Goal {
             } else {
                 dog.sitDown();
             }
+        }
+        if (waitingRecipient() != null) {
+            dog.setPose(net.minecraft.world.entity.Pose.SITTING);
+            dog.resetLastPoseChangeTick(dog.level().getGameTime());
+        } else if (!goingHome && back && !hasParcel()) {
+            dog.standUp();
+            if (completedDelivery) dog.tryCelebrate();
+            completedDelivery = false;
         }
         dog.syncCompanionJob();
     }
@@ -271,13 +329,17 @@ final class DeliveryGoal extends Goal {
         }
         player.getInventory().setItem(slot, parcel);
         parcel = ItemStack.EMPTY;
+        dog.syncParcel(parcel);
         tell(player, "received", dog.getName());
         var owner = player.level().getServer().getPlayerList().getPlayer(dog.getOwnerReference().getUUID());
         tell(owner, "complete", player.getName());
-        sendBack(owner, null);
+        completedDelivery = true;
+        reaction(EXPECTING, 60);
     }
 
     private void sendBack(@Nullable ServerPlayer owner, @Nullable String message) {
+        reaction = 0;
+        dog.standUp();
         if (message != null) tell(owner, message);
         var level = (ServerLevel) dog.level();
         int seconds = owner == null ? 3 : travelSeconds(level, dog.position(), owner.level(), owner.position());
@@ -285,7 +347,12 @@ final class DeliveryGoal extends Goal {
     }
 
     void save(ValueOutput output) {
+        if (completedDelivery) output.putBoolean("FrenchieCompletedDelivery", true);
         if (!canUse()) return;
+        if (reaction != 0) {
+            output.putInt("FrenchieHandoffReaction", reaction);
+            output.putInt("FrenchieHandoffTicks", reactionTicks);
+        }
         if (home != null) output.store("FrenchieHomeBed", GlobalPos.CODEC, home);
         if (hasParcel()) output.store("FrenchieParcel", ItemStack.CODEC, parcel);
         if (goingHome) output.putBoolean("FrenchieGoingHome", true);
@@ -301,6 +368,10 @@ final class DeliveryGoal extends Goal {
     void load(ValueInput input) {
         home = input.read("FrenchieHomeBed", GlobalPos.CODEC).orElse(null);
         parcel = input.read("FrenchieParcel", ItemStack.CODEC).orElse(ItemStack.EMPTY);
+        dog.syncParcel(parcel);
+        completedDelivery = input.getBooleanOr("FrenchieCompletedDelivery", false);
+        reaction = parcel.isEmpty() ? input.getIntOr("FrenchieHandoffReaction", 0) : 0;
+        reactionTicks = Math.clamp(input.getIntOr("FrenchieHandoffTicks", 0), 0, 60);
         goingHome = parcel.isEmpty() && input.getBooleanOr("FrenchieGoingHome", false);
         recipient = input.read("FrenchieRecipient", UUIDUtil.CODEC).orElse(null);
         returning = input.getBooleanOr("FrenchieReturning", false);

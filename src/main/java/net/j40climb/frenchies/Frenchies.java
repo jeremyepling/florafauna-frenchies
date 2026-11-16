@@ -42,6 +42,7 @@ public final class Frenchies {
     private static void creativeTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) event.accept(FrenchieRegistry.FRENCHIE_SPAWN_EGG);
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(FrenchieRegistry.SQUEAKY_TOY);
             event.accept(FrenchieRegistry.FRONT_PACK);
             event.accept(FrenchieRegistry.WINGED_FRONT_PACK);
         }

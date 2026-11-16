@@ -6,6 +6,7 @@ import net.j40climb.frenchies.common.entity.frenchie.WellRestedEffect;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackData;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackElytraRecipe;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackWarning;
+import net.j40climb.frenchies.common.item.SqueakyToyItem;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -60,6 +61,8 @@ public final class FrenchieRegistry {
     public static final DeferredItem<Item> FRENCHIE_SPAWN_EGG = ITEMS.registerItem("frenchie_spawn_egg", properties ->
             new SpawnEggItem(properties.spawnEgg(FRENCHIE.get())));
 
+    public static final DeferredItem<SqueakyToyItem> SQUEAKY_TOY = ITEMS.registerItem("squeaky_toy", SqueakyToyItem::new);
+
     private static final ItemLore FRONT_PACK_LORE = new ItemLore(List.of(
             Component.translatable("item.florafauna.front_pack.equip"),
             Component.translatable("item.florafauna.front_pack.dye")));
@@ -97,6 +100,7 @@ public final class FrenchieRegistry {
 
     public static void register(IEventBus bus) {
         ITEMS.register(bus);
+        SqueakyToyItem.SOUNDS.register(bus);
         RECIPE_SERIALIZERS.register(bus);
         ENTITY_TYPES.register(bus);
         MOB_EFFECTS.register(bus);
