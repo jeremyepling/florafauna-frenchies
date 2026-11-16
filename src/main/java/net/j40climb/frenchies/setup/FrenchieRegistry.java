@@ -5,6 +5,7 @@ import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.common.entity.frenchie.WellRestedEffect;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackData;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackWarning;
+import net.j40climb.frenchies.common.item.SqueakyToyItem;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -42,6 +43,8 @@ public final class FrenchieRegistry {
             () -> EntityType.Builder.of(FrenchieEntity::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f).build(FRENCHIE_KEY));
 
+    public static final DeferredItem<SqueakyToyItem> SQUEAKY_TOY = ITEMS.registerItem("squeaky_toy", SqueakyToyItem::new);
+
     public static final DeferredItem<Item> FRENCHIE_SPAWN_EGG = ITEMS.registerItem("frenchie_spawn_egg", properties ->
             new SpawnEggItem(properties.spawnEgg(FRENCHIE.get())));
 
@@ -64,6 +67,7 @@ public final class FrenchieRegistry {
 
     public static void register(IEventBus bus) {
         ITEMS.register(bus);
+        SqueakyToyItem.SOUNDS.register(bus);
         ENTITY_TYPES.register(bus);
         MOB_EFFECTS.register(bus);
         TICKET_TYPES.register(bus);

@@ -18,6 +18,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -50,6 +51,40 @@ public class FrenchieEntity extends TamableAnimal {
     public final AnimationState sitPoseAnimationState = new AnimationState();
     public final AnimationState standToSleepAnimationState = new AnimationState();
     public final AnimationState sleepToStandAnimationState = new AnimationState();
+    private static final EntityDataAccessor<Integer> CELEBRATION_STAGE =
+            SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.INT);
+    private CelebrationGoal celebration;
+    long nextCelebration;
+    private long ownerAwaySince = -1;
+
+    public void tryCelebrate() {
+        if (!level().isClientSide()) celebration.request(false);
+    }
+
+    boolean requestGuestCelebration() {
+        return celebration.request(true);
+    }
+
+    public int celebrationStage() {
+        return entityData.get(CELEBRATION_STAGE);
+    }
+
+    void setCelebrationStage(int stage) {
+        entityData.set(CELEBRATION_STAGE, stage);
+    }
+
+    private void checkReunion() {
+        if (!isTame() || tickCount % 20 != 0) return;
+        LivingEntity owner = getOwner();
+        long now = level().getGameTime();
+        if (owner == null || distanceToSqr(owner) >= 32 * 32) {
+            if (ownerAwaySince < 0) ownerAwaySince = now;
+        } else if (distanceToSqr(owner) <= 7 * 7) {
+            if (ownerAwaySince >= 0 && now - ownerAwaySince >= 2400) tryCelebrate();
+            ownerAwaySince = -1;
+        }
+    }
+
     private int idleAnimationTimeout = 0;
     private final FrenchieAwareness awareness = new FrenchieAwareness(this);
     private static final EntityDataAccessor<Long> WARNING_START =
@@ -73,6 +108,22 @@ public class FrenchieEntity extends TamableAnimal {
     private static final byte GOING_HOME = 3;
     private static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> WAITING_RECIPIENT =
             SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
+    private static final EntityDataAccessor<ItemStack> PARCEL = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.ITEM_STACK);
+    private static final EntityDataAccessor<Integer> HANDOFF = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Long> TOY_EARS_UNTIL = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.LONG);
+    private ToyPlayGoal toyPlay;
+
+    public int handoffPhase() { return entityData.get(HANDOFF); }
+    public ItemStack getParcel() { return entityData.get(PARCEL); }
+    void syncParcel(ItemStack parcel) { entityData.set(PARCEL, parcel.copy()); }
+    public ItemStack getMouthItem() {
+        return getParcel().isEmpty() && getOffhandItem().is(FrenchieRegistry.SQUEAKY_TOY.get()) ? getOffhandItem() : getParcel();
+    }
+
+    boolean personalityInterrupted() {
+        return entityData.get(BEDTIME) != 0 || level().getGameTime() - warningStart() < FrenchieAwareness.WARNING_TICKS;
+    }
+
     private final DeathTrackingGoal trail = new DeathTrackingGoal(this);
     private final DeliveryGoal delivery = new DeliveryGoal(this);
     @Nullable DeliveryDialog deliveryDialog;
@@ -91,10 +142,20 @@ public class FrenchieEntity extends TamableAnimal {
         this.goalSelector.addGoal(1, new BedtimeBuddyGoal(this));
         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, Ingredient.of(Items.GLOW_BERRIES), false));
+        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, Ingredient.of(Items.GLOW_BERRIES), false) {
+            @Override
+            public boolean canUse() {
+                // A treat still in the thrower's other hand should not strand the toy on the ground.
+                return !hasToyJob() && !celebration.requestedOrRunning() && super.canUse();
+            }
+        });
         this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.25d, 18f, 7f));
         this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.25));
-        this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0));
+        this.toyPlay = new ToyPlayGoal(this);
+        this.goalSelector.addGoal(4, toyPlay);
+        this.celebration = new CelebrationGoal(this);
+        this.goalSelector.addGoal(5, celebration);
+        this.goalSelector.addGoal(6, new RandomStrollGoal(this, 1.0));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
     }
@@ -152,12 +213,16 @@ public class FrenchieEntity extends TamableAnimal {
         builder.define(IS_SLEEPING, false);
         builder.define(WARNING_START, (long)-FrenchieAwareness.COOLDOWN_TICKS);
         builder.define(BEDTIME, (byte)0);
+        builder.define(HANDOFF, 0);
+        builder.define(PARCEL, ItemStack.EMPTY);
+        builder.define(TOY_EARS_UNTIL, 0L);
+        builder.define(CELEBRATION_STAGE, CelebrationGoal.NONE);
         builder.define(JOB, (byte) 0);
         builder.define(WAITING_RECIPIENT, Optional.empty());
     }
 
     public boolean isDelivering() {
-        return level().isClientSide() ? entityData.get(JOB) == DELIVERING : delivery.hasParcel();
+        return level().isClientSide() ? entityData.get(JOB) == DELIVERING : delivery.canUse() && !delivery.goingHome();
     }
 
     public boolean isGoingHome() {
@@ -186,6 +251,7 @@ public class FrenchieEntity extends TamableAnimal {
 
     void syncCompanionJob() {
         entityData.set(JOB, isDelivering() ? DELIVERING : isGoingHome() ? GOING_HOME : isDeathTracking() ? TRACKING : (byte) 0);
+        entityData.set(HANDOFF, delivery.handoffPhase());
         entityData.set(WAITING_RECIPIENT, Optional.ofNullable(delivery.waitingRecipient()).map(EntityReference::of));
     }
 
@@ -233,6 +299,38 @@ public class FrenchieEntity extends TamableAnimal {
         this.entityData.set(VARIANT, variant.getId());
     }
 
+    public ToyPlayGoal toyPlay() {
+        return toyPlay;
+    }
+
+    public boolean hasToyJob() {
+        return getOffhandItem().is(FrenchieRegistry.SQUEAKY_TOY.get()) || (toyPlay != null && toyPlay.hasJob());
+    }
+
+    void perkToyEars() {
+        entityData.set(TOY_EARS_UNTIL, level().getGameTime() + 14);
+    }
+
+    public float toyEarLift(float partialTick) {
+        return Math.clamp((entityData.get(TOY_EARS_UNTIL) - level().getGameTime() - partialTick) / 5f, 0f, 1f);
+    }
+
+    private Vec3 tripOrigin;
+
+    boolean finishedBoatTrip() {
+        return tripOrigin != null && distanceToSqr(tripOrigin) >= 16;
+    }
+
+    @Override
+    protected boolean canRide(Entity vehicle) {
+        if (isTame() && vehicle instanceof AbstractBoat boat && !CaptainControls.canJoin(this, boat)) return false;
+        return super.canRide(vehicle);
+    }
+
+    public boolean hasFlotationVest() {
+        return getVehicle() instanceof AbstractBoat boat && boat.isInWater();
+    }
+
     /* Interact */
 
     @Override
@@ -242,12 +340,30 @@ public class FrenchieEntity extends TamableAnimal {
             if (player instanceof ServerPlayer recipient) delivery.accept(recipient);
             return InteractionResult.SUCCESS;
         }
+        if (handoffPhase() == 2 && isFood(player.getItemInHand(hand))) {
+            if (player instanceof ServerPlayer recipient && delivery.tip(recipient, hand)) return InteractionResult.SUCCESS;
+            if (level().isClientSide()) return InteractionResult.SUCCESS;
+        }
         return super.interact(player, hand, location);
     }
 
     @Override
     public InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
         ItemStack itemstack = pPlayer.getItemInHand(pHand);
+        if (!pPlayer.isShiftKeyDown() && itemstack.isEmpty()
+                && isOwnedBy(pPlayer) && getOffhandItem().is(FrenchieRegistry.SQUEAKY_TOY.get())) {
+            if (!level().isClientSide()) {
+                ItemStack toy = getOffhandItem();
+                setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+                pPlayer.setItemInHand(pHand, toy);
+                tryCelebrate();
+            }
+            return InteractionResult.SUCCESS;
+        }
+        if (itemstack.is(FrenchieRegistry.SQUEAKY_TOY.get())) {
+            return itemstack.getItem().use(level(), pPlayer, pHand);
+        }
+        if (isPassenger()) return InteractionResult.SUCCESS;
         Item item = itemstack.getItem();
         Item itemForTaming = Items.BONE;
         if(item == itemForTaming && !isTame()) {
@@ -273,7 +389,7 @@ public class FrenchieEntity extends TamableAnimal {
             boolean empty = itemstack.isEmpty();
             if (pHand == InteractionHand.MAIN_HAND && empty && !hasCompanionJob()) {
                 ItemStack offhand = pPlayer.getOffhandItem();
-                if (offhand.getItem() instanceof BundleItem || offhand.is(Items.COMPASS) || isFood(offhand)) {
+                if (offhand.getItem() instanceof BundleItem || offhand.is(Items.COMPASS) || offhand.is(FrenchieRegistry.SQUEAKY_TOY.get()) || isFood(offhand)) {
                     return InteractionResult.PASS;
                 }
             }
@@ -297,6 +413,8 @@ public class FrenchieEntity extends TamableAnimal {
             } else if (compass && pPlayer instanceof ServerPlayer owner) {
                 trail.startTracking(owner);
                 syncCompanionJob();
+            } else if (bundle && hasToyJob()) {
+                orderMessage(pPlayer, "busy");
             } else if (bundle && pPlayer instanceof ServerPlayer owner) {
                 deliveryDialog = new DeliveryDialog(this, owner, pHand);
             } else {
@@ -347,6 +465,8 @@ public class FrenchieEntity extends TamableAnimal {
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
+        output.putLong("NextCelebration", nextCelebration);
+        output.putLong("OwnerAwaySince", ownerAwaySince);
         output.putInt("Variant", this.getTypeVariant());
         output.putString("Pose", this.getPose().name());
         output.putBoolean("IsSleeping", this.isFrenchieSleeping());
@@ -359,6 +479,8 @@ public class FrenchieEntity extends TamableAnimal {
     @Override
     public void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+        nextCelebration = input.getLongOr("NextCelebration", 0L);
+        ownerAwaySince = input.getLongOr("OwnerAwaySince", -1L);
         trail.load(input);
         delivery.load(input);
         if (delivery.canUse()) trail.cancel();
@@ -407,6 +529,13 @@ public class FrenchieEntity extends TamableAnimal {
             handleSleepingAnimations();
         }
         if (!this.level().isClientSide()) {
+            CaptainControls.followOwner(this);
+            if (getVehicle() instanceof AbstractBoat boat) {
+                if (tripOrigin == null) tripOrigin = boat.position();
+            } else {
+                tripOrigin = null;
+            }
+            checkReunion();
             updateSleepState();
             syncCompanionJob();
             awareness.tick();
@@ -508,7 +637,7 @@ public class FrenchieEntity extends TamableAnimal {
         }
         entityData.set(BEDTIME, (byte)(settled ? 2 : bed == null ? 0 : 1));
         if (settled) getNavigation().stop();
-        setFrenchieSleeping(settled || (bed == null && !hasCompanionJob() && !isOrderedToSit() && !isInWater() && isPlayerSleepTime()));
+        setFrenchieSleeping(settled || (bed == null && !isPassenger() && !hasToyJob() && !celebration.requestedOrRunning() && !hasCompanionJob() && !isOrderedToSit() && !isInWater() && isPlayerSleepTime()));
     }
 
     private boolean isPlayerSleepTime() {

@@ -44,7 +44,7 @@ public class FrontpackEvents {
         if (!(target instanceof FrenchieEntity frenchie)) return;
         if (!frenchie.isTame()) return;
         if (!frenchie.isOwnedBy(player)) return;
-        if (frenchie.isBaby()) return;
+        if (frenchie.isBaby() || frenchie.isPassenger() || player.getItemInHand(event.getHand()).is(FrenchieRegistry.SQUEAKY_TOY.get())) return;
 
         // Check if already carrying a Frenchie
         FrontpackData currentData = player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA);

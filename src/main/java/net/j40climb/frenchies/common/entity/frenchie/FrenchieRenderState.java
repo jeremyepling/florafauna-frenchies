@@ -1,10 +1,19 @@
 package net.j40climb.frenchies.common.entity.frenchie;
 
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.entity.AnimationState;
 
 public class FrenchieRenderState extends LivingEntityRenderState {
+    public boolean captain;
+    public int travelOwnerId;
+    public boolean hasVest;
+    public float turnLean;
+    public final ItemStackRenderState mouthItem = new ItemStackRenderState();
+    public boolean presenting;
+    public float toyEarLift;
     public FrenchieVariant variant;
+    public int celebrationStage;
     public boolean isSleeping;
     public boolean isSwimming;
     public boolean isSitting;

@@ -10,6 +10,10 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
+import net.minecraft.util.Mth;
+import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import net.minecraft.world.entity.Pose;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,8 +34,13 @@ public class FrenchieRenderer extends MobRenderer<FrenchieEntity, FrenchieRender
                         Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "textures/entity/frenchie/frenchie_brindle_texture.png"));
             });
 
+    private final ItemModelResolver itemResolver;
+
     public FrenchieRenderer(EntityRendererProvider.Context context) {
-        super(context, new FrenchieModel(context.bakeLayer(FrenchieModel.FRENCHIE)), 0.4f); //last parameter is the size of the shadow
+        super(context, new FrenchieModel(context.bakeLayer(FrenchieModel.FRENCHIE)), 0.4f);
+        addLayer(new FlotationVestLayer(this));
+        itemResolver = context.getItemModelResolver();
+        addLayer(new FrenchieMouthLayer(this));
     }
 
     @Override
@@ -63,7 +72,23 @@ public class FrenchieRenderer extends MobRenderer<FrenchieEntity, FrenchieRender
     @Override
     public void extractRenderState(FrenchieEntity entity, FrenchieRenderState reusedState, float partialTick) {
         super.extractRenderState(entity, reusedState, partialTick);
+        reusedState.captain = false;
+        reusedState.turnLean = 0F;
+        if (entity.getVehicle() instanceof AbstractBoat boat) {
+            reusedState.captain = true;
+            var owner = entity.getOwner();
+            reusedState.travelOwnerId = owner == null ? entity.getId() : owner.getId();
+            reusedState.bodyRot = Mth.rotLerp(partialTick, boat.yRotO, boat.getYRot());
+            reusedState.turnLean = Mth.clamp(Mth.wrapDegrees(boat.getYRot() - boat.yRotO) * 0.023F, -0.16F, 0.16F);
+        }
+        reusedState.hasVest = entity.hasFlotationVest();
+        itemResolver.updateForLiving(reusedState.mouthItem, entity.getMouthItem(),
+                ItemDisplayContext.GROUND, entity);
+        reusedState.presenting = entity.handoffPhase() != 0;
+        reusedState.toyEarLift = entity.toyEarLift(partialTick);
         reusedState.variant = entity.getVariant();
+        reusedState.celebrationStage = entity.celebrationStage();
+
         reusedState.isSleeping = entity.isFrenchieSleeping();
         reusedState.isSwimming = entity.isSwimming();
         reusedState.isSitting = entity.getPose() == Pose.SITTING;

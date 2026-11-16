@@ -1,5 +1,6 @@
 package net.j40climb.frenchies.common.entity.frenchie;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.j40climb.frenchies.Frenchies;
 import net.minecraft.client.animation.KeyframeAnimation;
 import net.minecraft.client.model.EntityModel;
@@ -67,7 +68,7 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
         earL.addOrReplaceChild("earL_behind_r1", CubeListBuilder.create().texOffs(1, 21).addBox(0.0F, -2.8377F, 2.9587F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F))
                 .texOffs(1, 24).addBox(0.0F, -2.8377F, 2.9087F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.2618F));
 
-        head.addOrReplaceChild("tongueBone", CubeListBuilder.create(), PartPose.offset(0.767F, 5.0625F, -0.475F));
+        FrenchieTravelGesture.addTongue(head);
 
         PartDefinition chest = body.addOrReplaceChild("chest", CubeListBuilder.create().texOffs(1, 1).addBox(-3.5F, -4.25F, -5.5F, 7.0F, 7.0F, 11.0F, new CubeDeformation(0.0F)), PartPose.offset(0.5F, 1.25F, 1.5F));
 
@@ -87,9 +88,43 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
     @Override
     public void setupAnim(FrenchieRenderState renderState) {
         super.setupAnim(renderState);
+        head.getChild("tongue").visible = renderState.captain;
+
+        if (renderState.celebrationStage == CelebrationGoal.BOW) {
+            body.xRot = 0.32F;
+            body.y += 1.2F;
+            head.xRot = -0.24F;
+            body.getChild("leg_front_left").xRot = -1.05F;
+            body.getChild("leg_front_right").xRot = -1.05F;
+            return;
+        }
+        if (renderState.celebrationStage == CelebrationGoal.SPLOOT) {
+            body.y += 1.9F;
+            head.y += 1.0F;
+            head.xRot = -0.1F;
+            body.getChild("leg_front_left").xRot = -1.25F;
+            body.getChild("leg_front_right").xRot = -1.25F;
+            // Splay the hind paws beyond the hips so the resting silhouette reads from either side.
+            ModelPart left = body.getChild("leg_back_left");
+            ModelPart right = body.getChild("leg_back_right");
+            left.xRot = right.xRot = 1.4F;
+            left.yRot = 0.38F;
+            right.yRot = -0.38F;
+            left.z += 0.9F;
+            right.z += 0.9F;
+            return;
+        }
+
+        if (renderState.captain) {
+            sitPoseAnimation.applyStatic();
+            body.zRot += renderState.turnLean;
+            head.xRot -= 0.12F;
+            FrenchieTravelGesture.applyInBoat(head, renderState.ageInTicks, renderState.travelOwnerId);
+            return;
+        }
 
         // Don't rotate head/body when sleeping or sitting
-        if (!renderState.isSleeping && !renderState.isSitting) {
+        if (!renderState.isSleeping && (!renderState.isSitting || renderState.presenting)) {
             this.applyHeadRotation(renderState.yRot, renderState.xRot);
         }
 
@@ -115,11 +150,31 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
 
         // Apply idle animation
         this.idlingAnimation.apply(renderState.idleAnimationState, renderState.ageInTicks, 1.0F);
+        if (renderState.toyEarLift > 0 && !renderState.isSleeping && !renderState.isSitting) {
+            float lift = renderState.toyEarLift * (renderState.isBaby ? 0.15F : 0.3F);
+            head.getChild("earL").zRot -= lift;
+            head.getChild("earR").zRot += lift;
+            head.getChild("earL").y -= lift;
+            head.getChild("earR").y -= lift;
+        }
+    }
+
+    void translateToChest(PoseStack pose) {
+        root.translateAndRotate(pose);
+        body.translateAndRotate(pose);
+        body.getChild("chest").translateAndRotate(pose);
+    }
+
+    void translateToMouth(PoseStack pose) {
+        root.translateAndRotate(pose);
+        body.translateAndRotate(pose);
+        head.translateAndRotate(pose);
+        pose.translate(0, 3.0 / 16, -5.5 / 16);
     }
 
     private void applyHeadRotation(float headYaw, float headPitch) {
         headYaw = Mth.clamp(headYaw, -30f, 30f);
-        headPitch = Mth.clamp(headYaw, -325f, 45);
+        headPitch = Mth.clamp(headPitch, -32.5f, 45f);
 
         this.head.yRot = headYaw * ((float)Math.PI / 180f);
         this.head.xRot = headPitch *  ((float)Math.PI / 180f);
