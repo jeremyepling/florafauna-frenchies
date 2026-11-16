@@ -124,14 +124,28 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         // Apply the idle animation (static pose that's always active)
         // Using the KeyframeAnimation.apply() method like in FrenchieModel
         this.idlingAnimation.apply(this.idleAnimationState, renderState.ageInTicks, 1.0F);
-        float phase = (renderState.ageInTicks + (renderState.id % 220) * 37) % 220;
-        float tilt = phase < 44 ? (float) Math.pow(Math.sin(Math.PI * phase / 44), 2) : 0;
-        // The dog's upright carrier pose points the parent's Y axis toward the viewer.
-        head.yRot += tilt * 0.34F;
         var tongue = head.getChild("tongue");
-        tongue.visible = tilt > 0.35F;
-        tongue.z -= 1.6F * tilt;
-        tongue.xRot += 0.28F * tilt;
+        if (renderState.isFallFlying) {
+            float ticks = renderState.fallFlyingTimeInTicks;
+            float glide = renderState.fallFlyingScale();
+            float glance = (float) Math.sin(ticks * Math.PI / 48);
+            float pant = 0.5F + 0.5F * (float) Math.sin(ticks * Math.PI / 6);
+            // Lift the muzzle as the player's torso tips into its horizontal flight pose.
+            head.xRot -= 1.2F * glide;
+            head.yRot += 0.40F * glance * glance * glance * glide;
+            tongue.visible = true;
+            tongue.z -= 1.65F + 0.65F * pant;
+            tongue.y += 0.26F * pant;
+            tongue.xRot += 0.24F + 0.32F * pant;
+        } else {
+            float phase = (renderState.ageInTicks + (renderState.id % 220) * 37) % 220;
+            float tilt = phase < 44 ? (float) Math.pow(Math.sin(Math.PI * phase / 44), 2) : 0;
+            // The dog's upright carrier pose points the parent's Y axis toward the viewer.
+            head.yRot += tilt * 0.34F;
+            tongue.visible = tilt > 0.35F;
+            tongue.z -= 1.6F * tilt;
+            tongue.xRot += 0.28F * tilt;
+        }
         Float yaw = renderState.getRenderData(FrontpackClientEvents.ALERT_YAW);
         if (yaw != null) {
             head.yRot += (float) Math.toRadians(yaw);

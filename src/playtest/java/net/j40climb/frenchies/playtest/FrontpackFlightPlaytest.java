@@ -75,6 +75,7 @@ final class FrontpackFlightPlaytest {
             return mc.player.isFallFlying() && mc.player.tickCount >= cameraStarted[0] + 12;
         });
         t.screenshot("frontpack-winged-glide-oblique", FrontpackFlightPlaytest::followGlider);
+        FrontpackFlightPosePlaytest.capture(t);
         t.client("Return the flight camera to the player", mc -> mc.setCameraEntity(mc.player));
         t.awaitClient("See the red pouch and open wings together in flight", mc ->
                 flightVisible(mc.gameDirectory.toPath().resolve("screenshots/frontpack-winged-glide-oblique.png")));
@@ -82,6 +83,12 @@ final class FrontpackFlightPlaytest {
                 p.isFallFlying() && !p.getAbilities().flying && p.getItemBySlot(EquipmentSlot.CHEST).is(FrenchieRegistry.WINGED_FRONT_PACK.get())
                         && p.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).frenchieNBT().read("UUID", UUIDUtil.CODEC).filter(dogId::equals).isPresent()
                         && p.level().getEntity(dogId) == null);
+        t.server("Bring the gliding carrier down onto the starting pen", p ->
+                p.teleportTo(p.level(), 0.5, 201.05, 2.5, Set.of(), 180, 0, true));
+        t.awaitClient("Land with the same Frenchie still in the winged pack", mc -> mc.player.onGround() && !mc.player.isFallFlying()
+                && mc.player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).hasCarriedFrenchie());
+        FrontpackPlaytest.framePlayer(t);
+        FrontpackCloseups.landed(t);
     }
 
     private static void followGlider(Minecraft mc) {

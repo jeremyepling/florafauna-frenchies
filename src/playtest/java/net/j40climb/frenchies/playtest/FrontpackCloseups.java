@@ -34,6 +34,13 @@ final class FrontpackCloseups {
         restoreCamera(t);
     }
 
+    static void landed(Playtest t) {
+        front(t, "landed");
+        restoreCamera(t);
+        t.awaitClient("Recover the resting forward face and retracted tongue after landing", mc ->
+                FrontpackExpressionPlaytest.landed(mc.gameDirectory.toPath().resolve("screenshots")));
+    }
+
     private static void hem(Playtest t, String label) {
         photograph(t, label, "hem", new Vec3(0, 0.50, -1.40), 0.86);
     }
@@ -161,7 +168,7 @@ final class FrontpackCloseups {
             FrontpackExpressionPlaytest.faceCamera(mc);
             return mc.gameRenderer.getMainCamera().position().distanceToSqr(mc.player.position().add(offset)) < 0.00001;
         });
-        if (dye.equals("red") && angle.equals("front")) FrontpackExpressionPlaytest.waitForRest(t);
+        if ((dye.equals("red") || dye.equals("landed")) && angle.equals("front")) FrontpackExpressionPlaytest.waitForRest(t);
         t.screenshot("frontpack-" + dye + "-" + angle, FrontpackExpressionPlaytest::faceCamera);
     }
 

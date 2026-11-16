@@ -56,6 +56,19 @@ final class FrontpackExpressionPlaytest {
         }
     }
 
+    static boolean landed(Path images) {
+        try {
+            var rest = ImageIO.read(images.resolve("frontpack-red-front.png").toFile());
+            var landed = ImageIO.read(images.resolve("frontpack-landed-front.png").toFile());
+            if (rest == null || landed == null) return false;
+            Playtest.require(Math.abs(earSlope(rest) - earSlope(landed)) <= rest.getHeight() / 100 && tonguePixels(landed) == 0,
+                    "Expected the ground pose with level ears and no exposed tongue after landing");
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     private static int earSlope(BufferedImage image) {
         int h = image.getHeight(), center = image.getWidth() / 2, slope = 0;
         for (int side : new int[]{-1, 1}) {
