@@ -3,12 +3,15 @@ package net.j40climb.frenchies.playtest;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackModel;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Screenshot;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import org.joml.Vector3f;
 
 import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 final class FrontpackFlightPosePlaytest {
     static void capture(Playtest t) {
@@ -22,17 +25,46 @@ final class FrontpackFlightPosePlaytest {
     }
 
     private static void sample(Playtest t, String label, int tick, Pose[] samples, int index) {
-        t.awaitClient("Follow the Frenchie until its " + label + " flight pose", mc -> {
+        String filename = "frontpack-flight-" + label + ".png";
+        var written = new AtomicBoolean();
+        t.awaitClient("Capture the glider in its " + label + " flight pose", mc -> {
             followFace(mc);
-            if (!mc.player.isFallFlying() || Math.floorMod(mc.level.getGameTime() + 37L * mc.player.getId(), 360) != tick) return false;
+            if (samples[index] != null) {
+                if (!written.getAndSet(false)) return false;
+                if (gliderInFrame(mc.gameDirectory.toPath().resolve("screenshots").resolve(filename))) return true;
+                samples[index] = null;
+            }
+            int phase = Math.floorMod(mc.level.getGameTime() + 37L * mc.player.getId(), 360);
+            if (!mc.player.isFallFlying() || phase < tick || phase > tick + 12) return false;
             samples[index] = pose(mc);
-            return true;
+            Screenshot.grab(mc.gameDirectory, filename, mc.getMainRenderTarget(), 1, ignored -> written.set(true));
+            return false;
         });
-        t.screenshot("frontpack-flight-" + label, FrontpackFlightPosePlaytest::followFace);
+    }
+
+    private static boolean gliderInFrame(Path file) {
+        try {
+            var image = ImageIO.read(file.toFile());
+            // Only accept a frame containing the dark brindle glider. Check the tongue separately below.
+            for (int y = image.getHeight() / 4; y < image.getHeight() * 3 / 4; y += 8) {
+                for (int x = image.getWidth() / 3; x < image.getWidth() * 2 / 3; x += 8) {
+                    int rgb = image.getRGB(x, y);
+                    if ((rgb >> 16 & 255) < 80 && (rgb >> 8 & 255) < 80 && (rgb & 255) < 80) return true;
+                }
+            }
+            return false;
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
     }
 
     private static void followFace(Minecraft mc) {
         FrontpackExpressionPlaytest.faceCamera(mc);
+        // LocalPlayer stops sending position updates while the test's marker is the camera.
+        // Keep the integrated server tracking the real glide and loading chunks along its path.
+        var pilot = mc.player;
+        pilot.connection.send(new ServerboundMovePlayerPacket.PosRot(pilot.position(), pilot.getYRot(),
+                pilot.getXRot(), pilot.onGround(), pilot.horizontalCollision));
         var target = mc.player.position().add(0, 0.23, -0.4);
         var position = target.add(0, -0.64, -2.2);
         var camera = mc.getCameraEntity();
