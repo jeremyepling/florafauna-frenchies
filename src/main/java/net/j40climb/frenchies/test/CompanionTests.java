@@ -17,6 +17,13 @@ public final class CompanionTests {
         Holder<TestEnvironmentDefinition<?>> defaultEnv = event.registerEnvironment(
                 Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "default"),
                 new TestEnvironmentDefinition.AllOf());
+        var yard = Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "companion_yard");
+        registerStructureTest(event, defaultEnv, "companion_fetch", yard, 550, CompanionTravelTests::fetch);
+        registerStructureTest(event, defaultEnv, "companion_captain", yard, 550, CompanionTravelTests::captain);
+        registerStructureTest(event, defaultEnv, "companion_zoomies_interrupt", yard, 550, CompanionTravelTests::interruptCelebration);
+        registerStructureTest(event, defaultEnv, "companion_audience", yard, 550, CompanionTravelTests::audience);
+        registerStructureTest(event, defaultEnv, "companion_zoomies_laps", yard, 550, h -> CompanionTravelTests.zoomies(h, true));
+        registerStructureTest(event, defaultEnv, "companion_zoomies_crops", yard, 550, h -> CompanionTravelTests.zoomies(h, false));
         registerTest(event, defaultEnv, "frenchie_warning_sight", FrenchieAwarenessGameTests::warningSight);
         registerTest(event, defaultEnv, "frenchie_bedtime", FrenchieAwarenessGameTests::bedtime);
         registerTest(event, defaultEnv, "frenchie_owner_orders", FrenchieGameTests::ownerOrders);
