@@ -7,7 +7,9 @@ import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
+import net.j40climb.frenchies.common.entity.frenchie.FrenchieTravelGesture;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.AnimationState;
 
@@ -24,11 +26,16 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
     private final KeyframeAnimation idlingAnimation;
     private final AnimationState idleAnimationState = new AnimationState();
 
-    private final ModelPart root;
+    private final ModelPart frenchie;
+    private final ModelPart head;
+    private final ModelPart pouch;
 
     public FrontpackModel(ModelPart root) {
         super(root);
-        this.root = root.getChild("root");
+        ModelPart pack = root.getChild("root");
+        this.frenchie = pack.getChild("frenchie");
+        this.head = frenchie.getChild("body").getChild("head");
+        this.pouch = pack.getChild("carrier").getChild("pouch");
 
         // Bake the idle animation - converts the AnimationDefinition to a KeyframeAnimation
         this.idlingAnimation = FrontpackAnimations.ANIM_IDLE.bake(root);
@@ -43,7 +50,9 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
 
         PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
 
-        PartDefinition carrier = root.addOrReplaceChild("carrier", CubeListBuilder.create().texOffs(44, 0).addBox(-6.2F, 2.0F, -2.9F, 7.0F, 6.0F, 3.0F, new CubeDeformation(0.0F)), PartPose.offset(2.7F, -9.0F, -1.1F));
+        PartDefinition carrier = root.addOrReplaceChild("carrier", CubeListBuilder.create(), PartPose.offset(2.7F, -9.0F, -1.1F));
+        carrier.addOrReplaceChild("pouch", CubeListBuilder.create().texOffs(44, 0)
+                .addBox(-6.2F, 2.0F, -3.0F, 7.0F, 6.0F, 3.0F), PartPose.offset(0, 0, 0.1F));
 
         carrier.addOrReplaceChild("strap_left", CubeListBuilder.create().texOffs(49, 2).addBox(-1.0F, -2.6F, -0.45F, 1.0F, 5.1F, 0.2F, new CubeDeformation(0.0F))
                 .texOffs(47, 1).addBox(-1.0F, -2.8F, -0.2F, 1.0F, 0.2F, 4.6F, new CubeDeformation(0.0F))
@@ -76,9 +85,7 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         earL.addOrReplaceChild("earL_behind_r1", CubeListBuilder.create().texOffs(1, 21).addBox(0.0F, -2.8377F, 2.9587F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F))
                 .texOffs(1, 24).addBox(0.0F, -2.8377F, 2.9087F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.2618F));
 
-        PartDefinition tonge = head.addOrReplaceChild("tonge", CubeListBuilder.create(), PartPose.offset(-0.483F, 2.6125F, -5.875F));
-
-        tonge.addOrReplaceChild("cube_r1", CubeListBuilder.create().texOffs(0, 0).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 0.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, -0.4F, 0.9F, 0.6545F, 0.0F, 0.0F));
+        FrenchieTravelGesture.addTongue(head);
 
         PartDefinition chest = body.addOrReplaceChild("chest", CubeListBuilder.create().texOffs(1, 1).addBox(-3.5F, -4.25F, -5.5F, 7.0F, 7.0F, 11.0F, new CubeDeformation(0.0F)), PartPose.offset(0.5F, 1.25F, 1.5F));
 
@@ -102,10 +109,21 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         // Apply the idle animation (static pose that's always active)
         // Using the KeyframeAnimation.apply() method like in FrenchieModel
         this.idlingAnimation.apply(this.idleAnimationState, renderState.ageInTicks, 1.0F);
-        Float yaw = renderState.getRenderData(FrontpackClientEvents.ALERT_YAW);
-        if (yaw != null) {
-            var head = root.getChild("frenchie").getChild("body").getChild("head");
-            head.yRot += (float) Math.toRadians(yaw);
+        boolean gliding = renderState.isFallFlying;
+        head.getChild("tongue").visible = gliding;
+        Float alertYaw = renderState.getRenderData(FrontpackClientEvents.ALERT_YAW);
+        if (gliding) {
+            float glide = renderState.fallFlyingScale();
+            // The dog's weight settles into the front of the pouch while the straps stay on the torso.
+            frenchie.z -= 3.8F * glide;
+            // Extend the pouch from its bottom seam to the dog's shoulders.
+            pouch.yScale += 0.38F * glide;
+            pouch.y -= 8.0F * 0.38F * glide;
+            pouch.zScale += 1.6F * glide;
+            FrenchieTravelGesture.applyInFlight(head, renderState.ageInTicks, renderState.id, glide);
+        }
+        if (alertYaw != null) {
+            head.yRot = (float) Math.toRadians(alertYaw);
             head.getChild("earR").zRot -= 0.2F;
             head.getChild("earL").zRot += 0.2F;
         }
