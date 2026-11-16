@@ -40,6 +40,7 @@ public final class DeliveryMultiplayerServer {
     private static final BlockPos END = START.east(96);
     private enum Step { JOIN, CONFIRM, DEPART, LAND, ACCEPT, TIP, RETURN, TRAVEL, EXIT }
     private static Step step = Step.JOIN;
+    private static Step previous;
     private static Path root;
     private static long confirmTick;
     private static boolean recipientClicked;
@@ -71,6 +72,10 @@ public final class DeliveryMultiplayerServer {
         var recipient = server.getPlayerList().getPlayerByName("FFVisitor");
         if (owner == null || recipient == null || !owner.connection.hasClientLoaded() || !recipient.connection.hasClientLoaded()) return;
         try {
+            if (previous != step) {
+                LogUtils.getLogger().info("Two-client companion case reached {}", step);
+                previous = step;
+            }
             advance(owner, recipient);
         } catch (AssertionError | RuntimeException e) {
             LogUtils.getLogger().error("Delivery failed during {}", step, e);

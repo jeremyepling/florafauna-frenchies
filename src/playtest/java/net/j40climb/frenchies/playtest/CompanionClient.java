@@ -69,6 +69,7 @@ public final class CompanionClient {
             case TIP -> {
                 if (!mc.player.getOffhandItem().is(Items.GLOW_BERRIES) || !(mc.hitResult instanceof EntityHitResult hit) || hit.getEntity() != dog) return;
                 KeyMapping.click(mc.options.keyUse.getKey());
+                com.mojang.logging.LogUtils.getLogger().info("Recipient offered off-hand berries after signing");
             }
             case FETCH -> {
                 if (!dog.getOffhandItem().is(FrenchieRegistry.SQUEAKY_TOY.get()) || mc.player.distanceToSqr(dog) > 8) return;
