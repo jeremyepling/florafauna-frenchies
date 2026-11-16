@@ -2,7 +2,7 @@
 
 Take a French bulldog on your next expedition. It can ride on the bow while you row, carry a bundle to a friend in another dimension, and lead you back to the spot where you dropped your gear. Bring glow berries. Your courier has been known to linger after a delivery.
 
-**Minecraft 26.3 · NeoForge · Standalone mod**
+**Standalone NeoForge mod for Minecraft [26.1](https://github.com/jeremyepling/frenchies/tree/main) and [26.3](https://github.com/jeremyepling/frenchies/tree/26.3).** This guide covers 26.3.
 
 ![A Frenchie wearing an orange life jacket sits at the bow in front of its owner.](docs/images/frenchie-boat-captain.png)
 
