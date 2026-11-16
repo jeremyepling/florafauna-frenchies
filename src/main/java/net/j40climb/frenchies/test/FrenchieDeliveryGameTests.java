@@ -289,6 +289,9 @@ final class FrenchieDeliveryGameTests {
                     var arrived = (FrenchieEntity) level.getEntity(id);
                     NeoForge.EVENT_BUS.unregister(onBark);
                     h.assertTrue(barks.get() == 1, "The arriving courier should greet the recipient with a single bark");
+                    arrived = CompanionTravelTests.reload(h, arrived);
+                    h.assertTrue(arrived.handoffPhase() == 1 && ItemStack.matches(arrived.getParcel(), expected),
+                            "Reload did not preserve the waiting signature and its exact parcel");
                     click(recipient, arrived);
                     h.assertTrue(recipient.getInventory().countItem(Items.BUNDLE) == 0 && arrived.isDelivering(),
                             "A full inventory must leave the original parcel on the dog");
@@ -305,6 +308,8 @@ final class FrenchieDeliveryGameTests {
                     var held = recipient.getMainHandItem().copy();
                     click(recipient, arrived);
                     click(recipient, arrived);
+                    h.assertTrue(arrived.handoffPhase() == 2 && arrived.getParcel().isEmpty(),
+                            "Expected no cargo and an optional tip window after the recipient signed");
                     h.assertTrue(ItemStack.matches(recipient.getMainHandItem(), held), "Acceptance consumed the held item");
                 })
                 .thenWaitUntil(() -> h.assertTrue(ItemStack.matches(recipient.getInventory().getItem(7), expected)

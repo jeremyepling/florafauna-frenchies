@@ -57,7 +57,7 @@ final class CompanionTravelTests {
         return (FrenchieEntity) entity;
     }
 
-    private static FrenchieEntity reload(GameTestHelper h, FrenchieEntity original) {
+    static FrenchieEntity reload(GameTestHelper h, FrenchieEntity original) {
         var level = h.getLevel();
         var output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
         original.saveWithoutId(output);
