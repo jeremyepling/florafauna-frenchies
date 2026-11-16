@@ -56,7 +56,7 @@ try {
         Write-Host "Launching dedicated $Scenario phase $phase"
         Set-Content -LiteralPath (Join-Path $root 'phase') -Value $phase
         $processes = @()
-        $deadline = [DateTime]::UtcNow.AddMinutes(4)
+        $deadline = [DateTime]::UtcNow.AddMinutes(6)
         try {
             foreach ($role in $roles) {
                 $processes += Start-Process -FilePath $env:ComSpec -WorkingDirectory $launchDir `

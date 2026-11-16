@@ -38,7 +38,7 @@ public final class DeliveryMultiplayerServer {
     static final int ETA = 13; // 96 blocks at 16 blocks per second + 3 seconds travel + 4 seconds walk-off
     private static final BlockPos START = new BlockPos(0, 200, 0);
     private static final BlockPos END = START.east(96);
-    private enum Step { JOIN, CONFIRM, DEPART, LAND, ACCEPT, RETURN, EXIT }
+    private enum Step { JOIN, CONFIRM, DEPART, LAND, ACCEPT, TIP, RETURN, TRAVEL, EXIT }
     private static Step step = Step.JOIN;
     private static Path root;
     private static long confirmTick;
@@ -117,6 +117,7 @@ public final class DeliveryMultiplayerServer {
                 long elapsed = level.getGameTime() - confirmTick;
                 require(elapsed >= ETA * 20 - 1 && elapsed <= ETA * 20 + 20, "Expected " + ETA + " s from confirmation, got " + elapsed + " ticks");
                 require(dog.isDelivering() && dog.isOwnedBy(owner) && recipient.getInventory().isEmpty(), "Expected a visible courier holding the parcel");
+                if (dog.handoffPhase() != 1 || !ItemStack.matches(dog.getParcel(), CourierParcel.parcel())) return;
                 recipient.sendSystemMessage(Component.literal(ACCEPT));
                 step = Step.ACCEPT;
             }
@@ -127,6 +128,14 @@ public final class DeliveryMultiplayerServer {
                 }
                 if (recipient.getInventory().countItem(Items.BUNDLE) == 0) return;
                 require(ItemStack.matches(recipient.getMainHandItem(), CourierParcel.parcel()), "The recipient's parcel changed");
+                require(dog.handoffPhase() == 2 && dog.getParcel().isEmpty(), "Signature should clear cargo and begin the optional tip");
+                recipient.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.GLOW_BERRIES, 2));
+                recipient.sendSystemMessage(Component.literal("FF fixture tip"));
+                step = Step.TIP;
+            }
+            case TIP -> {
+                if (recipient.getOffhandItem().getCount() != 1) return;
+                require(dog != null && dog.handoffPhase() == 3 && dog.getParcel().isEmpty(), "Tip changed parcel custody");
                 step = Step.RETURN;
             }
             case RETURN -> {
@@ -135,7 +144,12 @@ public final class DeliveryMultiplayerServer {
                 require(recipient.getInventory().countItem(Items.BUNDLE) == 1
                         && ItemStack.matches(recipient.getMainHandItem(), CourierParcel.parcel()), "Handoff lost or duplicated the bundle");
                 require(Files.isRegularFile(root.resolve("Visitor/screenshots/courier-arrival.png")), "Missing recipient's screenshot");
-                finish(owner, recipient, "PASS");
+                dog.sitDown();
+                CaptainCourse.begin(owner, recipient, root);
+                step = Step.TRAVEL;
+            }
+            case TRAVEL -> {
+                if (CompanionServer.finished(owner, recipient, root)) finish(owner, recipient, "PASS");
             }
         }
     }
