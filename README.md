@@ -1,32 +1,37 @@
 # Frenchies
 
-Standalone French bulldog companions for Minecraft 26.1 and NeoForge. Existing Frenchie entities, eggs, carried dogs, and saved courier trips keep their original identifiers.
+Take a French bulldog on your next expedition. It can ride on the bow while you row, carry a bundle to a friend in another dimension, and lead you back to the spot where you dropped your gear. Bring glow berries. Your courier has been known to linger after a delivery.
 
+**Minecraft 26.1 · NeoForge · Standalone mod**
 
-Tame a Frenchie with a bone, feed it glow berries, and right-click with an empty hand to switch between Sit and Follow. While wearing a Frenchie Front Pack, shift + right-click your adult dog to pick it up. Shift + right-click the air to put it down. Packing pauses a job until release.
+## Meet your Frenchie
 
-**Custom front packs.** To change the color of the pack your dog rides in, craft a Frenchie Front Pack at a crafting table. Place string in the left and right squares of one row and three leather in the row below. Combine the pack with any of the 16 dyes in a crafting grid. Multiple dyes blend together, including any color already on the pack. Use the dyed pack on a water cauldron to wash it back to its original color. Each wash uses one level of water.
+Offer a bone to tame a Frenchie, then right-click it with an empty hand to switch between sitting and following. Glow berries are its favorite treat.
 
-Hold the pack and right-click the air to equip it in your chest armor slot. This also works while crouching. In Survival, a chestplate you swap out goes into the same hand. To wear it with a chestplate, use the **Body** slot from Curios or Baubles 2, or the **Cape** slot from Trinkets Updated. If you wear two packs, the chest armor slot sets the visible color. Taking off the last worn pack sets your Frenchie down beside you. If you’re in midair or there’s no room for the dog, it waits until there’s safe ground nearby.
+- **Play fetch.** Craft a squeaky toy with orange wool and a slimeball. Right-click to squeak it and watch the ears turn your way. Squeak a few times to draw a small audience, or crouch and right-click to throw it. When your dog brings it back, right-click with an empty hand to take it.
+- **Catch the zoomies.** A reunion, a finished delivery or a good game of fetch can earn a play bow, a couple of loops, and a belly-down sploot. A nearby Frenchie can join the fun.
+- **Take the boat.** Board with your dog following and it rides at the bow, leaving the passenger seat free. Its life jacket appears automatically on the water. When you step out, it looks for a safe landing.
+- **Follow its nose.** Use an ordinary compass on your dog and follow it toward your last death in this dimension. It waits if you fall behind and signals when you reach the spot.
+- **Listen for two barks.** An awake Frenchie turns toward a visible creeper within 12 blocks. A green creeper face flashes with each bark, even above the hotbar when you're carrying the dog. Warnings have an eight-second cooldown.
+- **Share a bedtime.** Use a bed within ten blocks of your dog and it can curl up by your pillow, even after a sit order. Sleep through the night together for two minutes of **Well Rested** and 10% faster block breaking.
 
-**Winged Frenchie Front Pack.** Put one Frenchie Front Pack and one elytra anywhere in a crafting grid. Equip the result in your chest slot to glide with your Frenchie in front and the elytra wings on your back. The recipe keeps the pack’s dye, the elytra’s remaining durability and enchantments from both items. If both have the same enchantment, the higher level carries over. You can still dye or wash the pouch and repair the wings with a phantom membrane at an anvil.
+## Send a special delivery
 
-For Minecraft 26.1 with NeoForge 26.1.0.19-beta, use Trinkets Updated 4.0.0-alpha.9+26.1. Later Trinkets releases use a newer NeoForge client event.
+Use a bundle on your Frenchie, choose an online player or **Your bed**, check the arrival estimate, and select **Send**. A trip of 160 blocks takes about 17 seconds at normal server speed. Couriers can cross dimensions without loading terrain along the route.
 
-| Behavior | Player controls |
-| --- | --- |
-| Death Tracking | Use an ordinary compass on your dog. Follow the compass icon to your last death in this dimension. Your dog waits when you fall behind and signals when you reach the spot. |
-| Delivery Dog | Use a bundle on your dog, choose **Your bed** or an online player, check the estimated arrival time and select **Send**. |
-| Creeper Warning | An awake dog turns toward a visible creeper within 12 blocks and barks twice. The green face flashes with the barks, including above the hotbar when you carry the dog. The warning has an eight-second cooldown. |
-| Bedtime Buddy | Use a bed within ten blocks of your dog. A nearby sitting dog can join you too. Sleep marks appear when the dog settles by the pillow. Completing the night together grants two minutes of **Well Rested**, increasing block breaking speed by 10%. |
+At the recipient's feet, the Frenchie sits with the parcel on display. Right-click with a free inventory slot to accept it. The dog looks up for a moment. A glow berry earns a happy bounce, and it heads home either way. For a bed delivery, the dog waits at your bed until you collect the bundle with an empty hand.
 
-The estimate includes the short walk before departure. At normal server speed, a 160-block delivery takes about 17 seconds from confirmation. The dog travels any distance, including between dimensions, without loading terrain along the route.
+Use `/frenchie recall` anywhere to call back traveling or waiting dogs, including any unaccepted parcels. To send a dog home on its own, use `/frenchie home` within 12 blocks of it, or crouch and right-click your bed with an empty hand.
 
-The Frenchie appears beside the recipient and barks. The recipient must right-click the dog with an inventory slot free to accept the bundle. The Frenchie then heads back to the sender. For a delivery to your bed, it waits there with the parcel. Use an empty hand on the dog to collect it.
+## Carry your copilot
 
-**Send home without a parcel.** Use `/frenchie home` within 12 blocks of your Frenchie. The nearest available dog goes to your bed and sits there. You can also crouch and right-click your bed with an empty hand to send a nearby dog there.
+Craft a Frenchie Front Pack with string in the left and right squares of one row and three leather in the row below. Right-click the air with the pack to equip it on your chest. Crouch and right-click your adult Frenchie to pick it up, then crouch and right-click the air to set it down. Carrying pauses its current job.
 
-**Recall.** Use `/frenchie recall` anywhere to call back your traveling or waiting Frenchies. Each brings back any unaccepted bundle. Right-click the returned courier with an empty hand to collect it.
+**Pick a color.** Combine the pack with any of the 16 dyes. Multiple dyes blend with the existing color. Wash the pouch in a water cauldron to restore its original color for one level of water.
+
+**Give it wings.** Combine a front pack and an elytra anywhere in the crafting grid. Wear the winged pack on your chest to glide with your dog's head peeking out in front. The recipe keeps the dye, remaining wing durability, and enchantments from both items, taking the higher level for matching enchantments. You can still dye the pouch and repair the wings with a phantom membrane at an anvil.
+
+**Wear it with armor.** A regular pack also fits the **Body** slot in Curios or Baubles 2, or the **Cape** slot in Trinkets Updated. If you wear two, the chest-slot pack supplies the visible color. Removing the last pack releases your dog when there's safe ground and room nearby. For NeoForge 26.1.0.19-beta, use Trinkets Updated 4.0.0-alpha.9+26.1.
 
 ## Development
 
