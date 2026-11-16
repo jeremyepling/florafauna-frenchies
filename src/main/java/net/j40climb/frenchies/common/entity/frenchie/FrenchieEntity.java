@@ -340,9 +340,13 @@ public class FrenchieEntity extends TamableAnimal {
             if (player instanceof ServerPlayer recipient) delivery.accept(recipient);
             return InteractionResult.SUCCESS;
         }
-        if (handoffPhase() == 2 && isFood(player.getItemInHand(hand))) {
-            if (player instanceof ServerPlayer recipient && delivery.tip(recipient, hand)) return InteractionResult.SUCCESS;
-            if (level().isClientSide()) return InteractionResult.SUCCESS;
+        if (handoffPhase() == 2) {
+            // The signed bundle may now occupy the main hand. Check for a tip before it handles use.
+            InteractionHand treatHand = isFood(player.getItemInHand(hand)) ? hand : InteractionHand.OFF_HAND;
+            if (isFood(player.getItemInHand(treatHand))
+                    && (level().isClientSide() || player instanceof ServerPlayer recipient && delivery.tip(recipient, treatHand))) {
+                return InteractionResult.SUCCESS;
+            }
         }
         return super.interact(player, hand, location);
     }
