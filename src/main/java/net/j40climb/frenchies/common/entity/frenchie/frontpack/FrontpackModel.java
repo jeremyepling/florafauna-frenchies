@@ -1,6 +1,7 @@
 package net.j40climb.frenchies.common.entity.frenchie.frontpack;
 
 import net.j40climb.frenchies.Frenchies;
+import net.j40climb.frenchies.common.entity.frenchie.FrenchieTravelGesture;
 import net.minecraft.client.animation.KeyframeAnimation;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
@@ -31,9 +32,15 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
 
     private final ModelPart root;
     private final ModelPart head;
+    private final boolean fabricOnly;
 
     public FrontpackModel(ModelPart root) {
+        this(root, false);
+    }
+
+    FrontpackModel(ModelPart root, boolean fabricOnly) {
         super(root);
+        this.fabricOnly = fabricOnly;
         this.root = root.getChild("root");
         this.head = this.root.getChild("carried_dog").getChild("frenchie").getChild("body").getChild("head");
 
@@ -86,9 +93,7 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         earL.addOrReplaceChild("earL_behind_r1", CubeListBuilder.create().texOffs(1, 21).addBox(0.0F, -2.8377F, 2.9587F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F))
                 .texOffs(1, 24).addBox(0.0F, -2.8377F, 2.9087F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.2618F));
 
-        head.addOrReplaceChild("tongue", CubeListBuilder.create().texOffs(54, 56)
-                .addBox(-1, 0, -2, 2, 1, 2), PartPose.ZERO.scaled(0.78F, 0.55F, 1)
-                .translated(-0.483F, 2.25F, -2.55F));
+        FrenchieTravelGesture.addTongue(head);
 
         PartDefinition chest = body.addOrReplaceChild("chest", CubeListBuilder.create().texOffs(1, 1).addBox(-3.5F, -4.25F, -5.5F, 7.0F, 7.0F, 11.0F, new CubeDeformation(0.0F)), PartPose.offset(0.5F, 1.25F, 1.5F));
 
@@ -118,37 +123,40 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
     @Override
     public void setupAnim(AvatarRenderState renderState) {
         super.setupAnim(renderState);
-        root.getChild("carrier").visible = renderState.getRenderData(FrontpackLayer.FABRIC_TINT) == null;
-        root.getChild("carried_dog").visible = renderState.getRenderData(FrontpackLayer.CARRIED_COAT) != null;
+        boolean carrying = renderState.getRenderData(FrontpackLayer.CARRIED_COAT) != null;
+        var carrier = root.getChild("carrier");
+        var dog = root.getChild("carried_dog");
+        carrier.visible = fabricOnly || renderState.getRenderData(FrontpackLayer.FABRIC_TINT) == null;
+        dog.visible = carrying && !fabricOnly;
+        if (!carrying) return;
 
-        // Apply the idle animation (static pose that's always active)
-        // Using the KeyframeAnimation.apply() method like in FrenchieModel
+        float glide = renderState.isFallFlying ? renderState.fallFlyingScale() : 0F;
+        if (glide > 0F) {
+            // Raise the rim to the shoulders without lifting the seam under the rump.
+            var pouch = carrier.getChild("pouch");
+            pouch.y -= 2.28F * glide;
+            pouch.yScale += 0.38F * glide;
+            pouch.zScale += 1.6F * glide;
+            dog.z -= 3.8F * glide;
+        }
+        if (fabricOnly) return;
         this.idlingAnimation.apply(this.idleAnimationState, renderState.ageInTicks, 1.0F);
         var tongue = head.getChild("tongue");
         if (renderState.isFallFlying) {
-            float ticks = renderState.fallFlyingTimeInTicks;
-            float glide = renderState.fallFlyingScale();
-            float glance = (float) Math.sin(ticks * Math.PI / 48);
-            float pant = 0.5F + 0.5F * (float) Math.sin(ticks * Math.PI / 6);
-            // Lift the muzzle as the player's torso tips into its horizontal flight pose.
-            head.xRot -= 1.2F * glide;
-            head.yRot += 0.40F * glance * glance * glance * glide;
+            FrenchieTravelGesture.applyInFlight(head, renderState.ageInTicks, renderState.id, glide);
             tongue.visible = true;
-            tongue.z -= 1.65F + 0.65F * pant;
-            tongue.y += 0.26F * pant;
-            tongue.xRot += 0.24F + 0.32F * pant;
         } else {
             float phase = (renderState.ageInTicks + (renderState.id % 220) * 37) % 220;
             float tilt = phase < 44 ? (float) Math.pow(Math.sin(Math.PI * phase / 44), 2) : 0;
             // The dog's upright carrier pose points the parent's Y axis toward the viewer.
             head.yRot += tilt * 0.34F;
             tongue.visible = tilt > 0.35F;
-            tongue.z -= 1.6F * tilt;
+            tongue.z += 0.8F * (1F - tilt);
             tongue.xRot += 0.28F * tilt;
         }
         Float yaw = renderState.getRenderData(FrontpackClientEvents.ALERT_YAW);
         if (yaw != null) {
-            head.yRot += (float) Math.toRadians(yaw);
+            head.yRot = (float) Math.toRadians(yaw);
             head.getChild("earR").zRot -= 0.2F;
             head.getChild("earL").zRot += 0.2F;
         }
