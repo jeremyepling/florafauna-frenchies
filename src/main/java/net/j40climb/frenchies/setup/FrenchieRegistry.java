@@ -6,8 +6,13 @@ import net.j40climb.frenchies.common.entity.frenchie.PlayBubbleEntity;
 import net.j40climb.frenchies.common.entity.frenchie.WellRestedEffect;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackData;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackWarning;
+import net.j40climb.frenchies.common.item.FrenchieWhistleItem;
 import net.j40climb.frenchies.common.item.SqueakyToyItem;
 import net.j40climb.frenchies.common.item.BubbleToyItem;
+import java.util.List;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -45,6 +50,11 @@ public final class FrenchieRegistry {
             () -> EntityType.Builder.of(FrenchieEntity::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f).build(FRENCHIE_KEY));
 
+    public static final DeferredItem<FrenchieWhistleItem> FRENCHIE_WHISTLE =
+            ITEMS.registerItem("frenchie_whistle", props -> new FrenchieWhistleItem(
+                    props.stacksTo(1).component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("item.florafauna.frenchie_whistle.use"),
+                            Component.translatable("item.florafauna.frenchie_whistle.select"))))));
     public static final DeferredItem<SqueakyToyItem> SQUEAKY_TOY = ITEMS.registerItem("squeaky_toy", SqueakyToyItem::new);
     public static final DeferredItem<BubbleToyItem> BUBBLE_TOY = ITEMS.registerItem("bubble_toy", BubbleToyItem::new);
 

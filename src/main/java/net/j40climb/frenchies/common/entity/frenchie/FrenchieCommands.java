@@ -5,6 +5,7 @@ import net.j40climb.frenchies.Frenchies;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -21,6 +22,11 @@ import java.util.Comparator;
 public final class FrenchieCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("frenchie")
+                .then(Commands.literal("whistle").executes(ctx -> CompanionRoster.replaceWhistle(ctx.getSource().getPlayerOrException())))
+                .then(Commands.literal("select").executes(ctx -> CompanionRoster.list(ctx.getSource().getPlayerOrException()))
+                        .then(Commands.argument("dog", UuidArgument.uuid()).executes(ctx ->
+                                CompanionRoster.select(ctx.getSource().getPlayerOrException(),
+                                        UuidArgument.getUuid(ctx, "dog")) ? 1 : 0)))
                 .then(Commands.literal("home").executes(ctx -> {
                     var owner = ctx.getSource().getPlayerOrException();
                     var dog = nearbyDog(owner);

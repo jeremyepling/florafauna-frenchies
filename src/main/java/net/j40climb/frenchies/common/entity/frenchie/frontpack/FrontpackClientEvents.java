@@ -89,6 +89,7 @@ public class FrontpackClientEvents {
     @SubscribeEvent
     public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
         Player player = event.getEntity();
+        if (player.getOffhandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) return;
         var data = player.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
         if (player.isShiftKeyDown() && data != null && data.hasCarriedFrenchie()) {
             ClientPacketDistributor.sendToServer(PutDownFrenchiePayload.INSTANCE);

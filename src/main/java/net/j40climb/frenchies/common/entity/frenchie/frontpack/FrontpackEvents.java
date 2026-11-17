@@ -3,6 +3,7 @@ package net.j40climb.frenchies.common.entity.frenchie.frontpack;
 import net.j40climb.frenchies.Frenchies;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.common.entity.frenchie.CourierTrips;
+import net.j40climb.frenchies.common.entity.frenchie.CompanionRoster;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -39,6 +40,7 @@ public class FrontpackEvents {
         Player player = event.getEntity();
         Entity target = event.getTarget();
 
+        if (player.getItemInHand(event.getHand()).is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) return;
         // Pickup conditions
         if (!player.isShiftKeyDown()) return;
         if (!(target instanceof FrenchieEntity frenchie)) return;
@@ -64,6 +66,7 @@ public class FrontpackEvents {
             ProblemReporter.DISCARDING,
             player.level().registryAccess()
         );
+        CompanionRoster.packing(frenchie);
         frenchie.saveWithoutId(output);
         CompoundTag frenchieNBT = output.buildResult();
 
