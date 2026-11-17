@@ -50,12 +50,12 @@ public final class CompanionTests {
         registerPlayTest(event, yard, "play_slime_unsafe_footing", 150, SlimePlayTests::unsafeFooting);
         registerPlayTest(event, yard, "play_slime_blocked", 200, SlimePlayTests::blocked);
         registerPlayTest(event, yard, "play_slime_vanilla", 250, SlimePlayTests::vanilla);
-        registerStructureTest(event, defaultEnv, "companion_fetch", yard, 550, CompanionTravelTests::fetch);
+        registerPlayTest(event, yard, "companion_fetch", 550, CompanionTravelTests::fetch);
         registerStructureTest(event, defaultEnv, "companion_captain", yard, 550, CompanionTravelTests::captain);
-        registerStructureTest(event, defaultEnv, "companion_zoomies_interrupt", yard, 550, CompanionTravelTests::interruptCelebration);
-        registerStructureTest(event, defaultEnv, "companion_audience", yard, 550, CompanionTravelTests::audience);
-        registerStructureTest(event, defaultEnv, "companion_zoomies_laps", yard, 550, h -> CompanionTravelTests.zoomies(h, true));
-        registerStructureTest(event, defaultEnv, "companion_zoomies_crops", yard, 550, h -> CompanionTravelTests.zoomies(h, false));
+        registerPlayTest(event, yard, "companion_zoomies_interrupt", 550, CompanionTravelTests::interruptCelebration);
+        registerPlayTest(event, yard, "companion_audience", 550, CompanionTravelTests::audience);
+        registerPlayTest(event, yard, "companion_zoomies_laps", 550, h -> CompanionTravelTests.zoomies(h, true));
+        registerPlayTest(event, yard, "companion_zoomies_crops", 550, h -> CompanionTravelTests.zoomies(h, false));
         registerTest(event, defaultEnv, "frenchie_warning_sight", FrenchieAwarenessGameTests::warningSight);
         registerStructureTest(event, defaultEnv, "frenchie_bedtime", yard, 100, FrenchieAwarenessGameTests::bedtime);
         registerTest(event, defaultEnv, "frenchie_owner_orders", FrenchieGameTests::ownerOrders);
