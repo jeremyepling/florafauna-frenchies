@@ -127,7 +127,8 @@ final class CompanionSafetyTests {
         .thenExecuteAfter(60, () -> {
             h.assertTrue(level.getEntity(id) == null, "The missing owner caused a premature or unsafe arrival");
             var cookie = CommonListenerCookie.createInitial(owner.getGameProfile(), false);
-            var player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation());
+            // ConfigSync distinguishes an embedded GameTest player by its subclass, as GameTestHelper does.
+            var player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation()) {};
             var connection = new Connection(PacketFlow.SERVERBOUND);
             new EmbeddedChannel(connection);
             level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
