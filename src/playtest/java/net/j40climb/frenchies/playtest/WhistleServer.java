@@ -35,7 +35,7 @@ final class WhistleServer {
     static final String LOOK = "Whistle fixture: watch Pip";
     private static final BlockPos YARD = new BlockPos(480, 210, 480);
     private static final BlockPos INN = YARD.east(640);
-    private enum Step { START, DISMISS, LEAVE, CALL, FOLLOW, PREPARE_PHOTO, PHOTO, TUMBLE, LINE_UP, THROUGH_DOG, ACCIDENT, SAVE, REJOIN, RESPAWN, LAST_CALL, RETURN_TO_KENNEL }
+    private enum Step { START, DISMISS, LEAVE, CALL, FOLLOW, SETTLE, PREPARE_PHOTO, PHOTO, TUMBLE, LINE_UP, THROUGH_DOG, ACCIDENT, SAVE, REJOIN, RESPAWN, LAST_CALL, RETURN_TO_KENNEL }
     private static Step step = Step.START;
     private static int ticks;
     private static Cow target;
@@ -101,8 +101,15 @@ final class WhistleServer {
                 if (companion == null || companion.distanceToSqr(owner) >= 36) break;
                 require(courier == null, "Returning to the old area resurrected the dismissed dog");
                 checkPip(companion);
+                next(Step.SETTLE);
+            }
+            case SETTLE -> {
+                if (companion == null || companion.distanceToSqr(owner) >= 36) break;
+                if (ticks < 85) break;
+                // Let the automatic reunion finish before positioning either subject.
+                // Keep the owner behind the camera and within the normal greeting distance.
+                place(owner, YARD.north(2));
                 companion.sitDown();
-                place(owner, YARD.offset(-5, 0, -4));
                 companion.setNoAi(true);
                 companion.snapTo(YARD, -145, 0);
                 visitor.setGameMode(GameType.SPECTATOR);
@@ -118,6 +125,7 @@ final class WhistleServer {
                 next(Step.PHOTO);
             }
             case PHOTO -> {
+                if (companion == null) break;
                 frame(visitor, companion);
                 if (!Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-blast-duck.png"))
                         || !Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-after-blast.png"))) {
@@ -128,6 +136,7 @@ final class WhistleServer {
                 next(Step.TUMBLE);
             }
             case TUMBLE -> {
+                if (companion == null) break;
                 frame(visitor, companion);
                 if (!Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-tumble.png"))) {
                     if (ticks % 80 == 0) companion.causeFallDamage(14, 1f, companion.damageSources().fall());

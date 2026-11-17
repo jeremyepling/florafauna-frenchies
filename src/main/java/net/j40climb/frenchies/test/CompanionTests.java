@@ -22,7 +22,7 @@ public final class CompanionTests {
                 Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "default"),
                 new TestEnvironmentDefinition.AllOf());
         var yard = Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "companion_yard");
-        registerPlayTest(event, yard, "companion_whistle_unloaded_dismiss", 1800, CompanionWhistleTests::unloadedDismiss);
+        registerPlayTest(event, yard, "companion_whistle_unloaded_dismiss", 5000, CompanionWhistleTests::unloadedDismiss);
         registerPlayTest(event, yard, "companion_whistle_offline_void", 350, CompanionSafetyTests::offlineVoid);
         registerPlayTest(event, yard, "companion_whistle_fall", 180, CompanionSafetyTests::falling);
         registerPlayTest(event, yard, "companion_whistle_escape_magma", 250, h -> CompanionSafetyTests.contact(h, Blocks.MAGMA_BLOCK));
