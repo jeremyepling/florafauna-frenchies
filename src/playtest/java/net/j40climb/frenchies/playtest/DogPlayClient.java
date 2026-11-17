@@ -52,8 +52,8 @@ public final class DogPlayClient {
         }
         if (mc.level == null || mc.player == null || mc.gui.screen() != null || mc.gameMode == null
                 || !(mc.level.getEntity(DogPlayServer.DOG) instanceof FrenchieEntity dog)) return;
-        mc.getToastManager().clear();
-        if (ROLE.equals("Visitor")) mc.options.hideGui = true;
+        mc.gui.toastManager().clear();
+        if (ROLE.equals("Visitor") && !mc.gui.hud.isHidden()) mc.gui.hud.toggle();
         var aim = dog.getBoundingBox().getCenter();
         mc.player.lookAt(Anchor.EYES, aim);
         switch (step) {
