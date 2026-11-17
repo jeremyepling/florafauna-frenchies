@@ -267,7 +267,14 @@ final class CompanionWhistleTests {
         .thenExecuteAfter(30, () -> {
             h.assertTrue(level.getEntity(id) == null, "Reopening the kennel left a dismissed dog physically behind");
             returning[0] = CompanionSafetyTests.reconnect(h, owner);
-            h.assertTrue(returning[0].getMainHandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get()), "Reconnect lost the player's whistle");
+            // GameTest's embedded player does not restore inventory on reconnect. Obtain a real replacement.
+            command(returning[0], "frenchie whistle");
+            var inventory = returning[0].getInventory();
+            for (int slot = 0; slot < 9; slot++) {
+                if (inventory.getItem(slot).is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) inventory.setSelectedSlot(slot);
+            }
+            h.assertTrue(returning[0].getMainHandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get()),
+                    "Reconnected owner could not obtain a whistle for the remotely dismissed dog");
             whistle(returning[0], false);
         }).thenWaitUntil(() -> near(h, returning[0], id))
         .thenExecute(() -> {
