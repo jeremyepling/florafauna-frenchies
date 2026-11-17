@@ -499,7 +499,7 @@ final class FrenchieDeliveryGameTests {
         return stack;
     }
 
-    private static void confirm(ServerPlayer owner, ServerPlayer recipient, FrenchieEntity dog) {
+    static void confirm(ServerPlayer owner, ServerPlayer recipient, FrenchieEntity dog) {
         click(owner, dog);
         order(owner, dog, "choose " + recipient.getStringUUID());
         order(owner, dog, "send " + recipient.getStringUUID());
