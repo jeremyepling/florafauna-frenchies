@@ -320,6 +320,14 @@ public class FrenchieEntity extends TamableAnimal {
 
     public void setFrenchieSleeping(boolean sleeping) {
         if (this.entityData.get(IS_SLEEPING) != sleeping) {
+            if (sleeping && !level().isClientSide()) {
+                // Once asleep, vanilla stops ticking the selector, including its normal cleanup.
+                for (WrappedGoal goal : goalSelector.getAvailableGoals()) {
+                    if (goal.isRunning() && (goal.getGoal() == bubblePlay || goal.getGoal() instanceof SlimeTeaseGoal)) {
+                        goal.stop();
+                    }
+                }
+            }
             this.entityData.set(IS_SLEEPING, sleeping);
             this.resetLastSleepChangeTick(this.level().getGameTime());
         }
@@ -584,6 +592,7 @@ public class FrenchieEntity extends TamableAnimal {
             updateSleepState();
             syncCompanionJob();
             awareness.tick();
+            bubblePlay.tickSleepySpectator();
         }
     }
 

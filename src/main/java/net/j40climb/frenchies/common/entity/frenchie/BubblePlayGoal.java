@@ -11,6 +11,7 @@ public final class BubblePlayGoal extends Goal {
     private long deadline;
     private long nextInvitation;
     private boolean watchOnly;
+    private boolean sleepySpectator;
     private boolean running;
     private boolean recovering;
     private int stageTicks;
@@ -38,16 +39,30 @@ public final class BubblePlayGoal extends Goal {
         if (!bubble.claim(dog)) return false;
         targetId = bubble.getId();
         watchOnly = resting;
+        sleepySpectator = dog.isFrenchieSleeping();
         // A resting spectator can share the sit goal. Set flags before the selector considers the invitation.
         setFlags(watchOnly ? EnumSet.of(Flag.LOOK) : EnumSet.of(Flag.MOVE, Flag.LOOK, Flag.JUMP));
-        deadline = now + 10;
+        deadline = now + (sleepySpectator ? 32 : 10);
+        if (sleepySpectator) stage(PlayPose.BUBBLE_WATCH);
         nextInvitation = now + 100 + dog.getRandom().nextInt(41);
         return true;
     }
 
     @Override
     public boolean canUse() {
-        return engaged() && available();
+        return !sleepySpectator && engaged() && available();
+    }
+
+    // Sleeping Frenchies are immobile, so vanilla skips their goal selector and look control.
+    void tickSleepySpectator() {
+        if (!sleepySpectator) return;
+        PlayBubbleEntity bubble = bubble();
+        if (!dog.isFrenchieSleeping() || !engaged() || !dog.canWatchPlay() || bubble == null || !dog.hasLineOfSight(bubble)) {
+            stop();
+            return;
+        }
+        dog.getLookControl().setLookAt(bubble, 20, 15);
+        dog.getLookControl().tick();
     }
 
     private boolean available() {
@@ -195,6 +210,7 @@ public final class BubblePlayGoal extends Goal {
         if (!watchOnly) halt();
         stage(PlayPose.NONE);
         targetId = -1;
+        sleepySpectator = false;
         recovering = false;
         running = false;
     }
