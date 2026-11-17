@@ -96,6 +96,11 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
             return;
         }
 
+        if (renderState.weatherStage != WeatherPlayGoal.NONE) {
+            applyWeatherPlay(renderState);
+            return;
+        }
+
         if (renderState.playPose == PlayPose.SLIME_BOW || renderState.playPose == PlayPose.BUBBLE_BOW) {
             // Pivot the chest down, stretch the forepaws out and keep the hind paws planted.
             body.xRot = 0.42F;
@@ -224,6 +229,61 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
                 }
             }
             default -> {}
+        }
+    }
+
+    private void applyWeatherPlay(FrenchieRenderState state) {
+        float t = state.weatherAge;
+        ModelPart foreLeft = body.getChild("leg_front_left");
+        ModelPart foreRight = body.getChild("leg_front_right");
+        ModelPart hindLeft = body.getChild("leg_back_left");
+        ModelPart hindRight = body.getChild("leg_back_right");
+        switch (state.weatherStage) {
+            case WeatherPlayGoal.SHAKE -> {
+                root.zRot = 0.28F * Mth.sin(t * 2.7F);
+                head.zRot = 0.42F * Mth.sin(t * 3.4F);
+                body.yRot = 0.22F * Mth.sin(t * 2.7F);
+                foreLeft.xRot = foreRight.xRot = -0.25F;
+            }
+            case WeatherPlayGoal.GRASS_APPROACH, WeatherPlayGoal.SNOW_APPROACH ->
+                    walkingAnimation.applyWalk(state.walkAnimationPos, state.walkAnimationSpeed, 2.5F, 2.5F);
+            case WeatherPlayGoal.GRASS_SHOULDER -> {
+                root.zRot = 0.9F * Math.min(1, t / 7F);
+                root.y += 2.0F;
+                foreLeft.xRot = -1.1F;
+                foreRight.xRot = -0.4F;
+            }
+            case WeatherPlayGoal.GRASS_ROLL -> {
+                root.zRot = 0.9F + 5.383F * Math.min(1, t / 27F);
+                root.y += 2.7F;
+                foreLeft.xRot = foreRight.xRot = -1.15F;
+                hindLeft.xRot = hindRight.xRot = 1.25F;
+            }
+            case WeatherPlayGoal.GRASS_DRAG -> {
+                root.y += 2.3F;
+                body.xRot = 0.12F;
+                foreLeft.xRot = -1.35F + 0.3F * Mth.sin(t * 1.4F);
+                foreRight.xRot = -1.35F - 0.3F * Mth.sin(t * 1.4F);
+                hindLeft.xRot = hindRight.xRot = 1.2F;
+            }
+            case WeatherPlayGoal.SNOW_DIVE -> {
+                root.xRot = 0.95F * Math.min(1, t / 6F);
+                root.y += 1.4F;
+                foreLeft.xRot = foreRight.xRot = -0.8F;
+                hindLeft.xRot = hindRight.xRot = 0.5F;
+            }
+            case WeatherPlayGoal.SNOW_PLOW -> {
+                root.xRot = 0.38F;
+                root.y += 1.8F;
+                foreLeft.xRot = -0.7F + 0.55F * Mth.sin(t * 1.8F);
+                foreRight.xRot = -0.7F - 0.55F * Mth.sin(t * 1.8F);
+                hindLeft.xRot = hindRight.xRot = 0.5F;
+            }
+            case WeatherPlayGoal.SNOW_POP -> {
+                root.y -= 1.0F * Mth.sin((float) Math.PI * Math.min(1, t / 11F));
+                head.xRot = -0.55F;
+                foreLeft.xRot = foreRight.xRot = -0.55F;
+            }
         }
     }
 
