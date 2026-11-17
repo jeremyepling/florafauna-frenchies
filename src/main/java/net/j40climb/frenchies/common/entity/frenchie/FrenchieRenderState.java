@@ -17,6 +17,10 @@ public class FrenchieRenderState extends LivingEntityRenderState {
     public int celebrationStage;
     public int digStage;
     public float digStageAge;
+    public int trickStage;
+    public float trickAge;
+    public int bellyStage;
+    public float bellyAge;
     public PlayPose playPose = PlayPose.NONE;
     public DangerReaction dangerReaction = DangerReaction.NONE;
     public float dangerAge;

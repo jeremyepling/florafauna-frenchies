@@ -95,6 +95,14 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
             applyDangerReaction(renderState);
             return;
         }
+        if (renderState.trickStage != TrickGoal.NONE) {
+            applyTrick(renderState);
+            return;
+        }
+        if (renderState.bellyStage != BellyRubGoal.NONE) {
+            applyBellyRub(renderState);
+            return;
+        }
 
         if (renderState.digStage == DiggingAssistantGoal.DIG) {
             // Deep shoulder dip and alternating paw sweeps read as digging at normal distance.
@@ -309,6 +317,76 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
                 foreLeft.xRot = foreRight.xRot = -0.55F;
             }
         }
+    }
+
+    private void applyTrick(FrenchieRenderState state) {
+        float t = state.trickAge;
+        switch (state.trickStage) {
+            case TrickGoal.CROUCH -> {
+                body.y += Math.min(t / 5F, 1F) * 1.9F;
+                body.xRot = 0.32F;
+                head.xRot = -0.24F;
+                body.getChild("leg_front_left").xRot = -0.6F;
+                body.getChild("leg_front_right").xRot = -0.6F;
+            }
+            case TrickGoal.SPRING -> {
+                float arc = (float) Math.sin(Math.PI * Math.clamp(t / 9F, 0F, 1F));
+                body.y -= 3.2F * arc;
+                body.xRot = -0.48F * Math.min(t / 9F, 1F);
+                body.getChild("leg_front_left").xRot = -0.8F;
+                body.getChild("leg_front_right").xRot = -0.8F;
+                body.getChild("leg_back_left").xRot = 0.7F;
+                body.getChild("leg_back_right").xRot = 0.7F;
+            }
+            case TrickGoal.FLOP -> {
+                float progress = Math.clamp(t / 6F, 0F, 1F);
+                body.xRot = 0.45F + progress * 2.65F;
+                body.y -= progress * 4F;
+                splayPaws();
+            }
+            case TrickGoal.WIGGLE -> {
+                body.xRot = 3.1F;
+                body.y -= 4F;
+                body.zRot = (float) Math.sin(t * 1.8F) * 0.22F;
+                splayPaws();
+                body.getChild("leg_back_right").xRot += (float) Math.sin(t * 2F) * 0.65F;
+            }
+            case TrickGoal.ROLL_UP -> {
+                float progress = Math.clamp(t / 11F, 0F, 1F);
+                body.xRot = 3.1F + progress * (float) Math.PI;
+                body.y -= 4F * (1F - progress);
+                splayPaws();
+            }
+            case TrickGoal.LAP -> {
+                walkingAnimation.applyWalk(state.walkAnimationPos, Math.max(0.35F, state.walkAnimationSpeed), 2.5F, 2.5F);
+                body.y -= (float) Math.abs(Math.sin(state.ageInTicks * 0.8F)) * 0.6F;
+            }
+        }
+    }
+
+    private void applyBellyRub(FrenchieRenderState state) {
+        float t = state.bellyAge;
+        float progress = state.bellyStage == BellyRubGoal.ROLL_OVER ? Math.clamp(t / 10F, 0F, 1F)
+                : state.bellyStage == BellyRubGoal.ROLL_UP ? 1F - Math.clamp(t / 11F, 0F, 1F) : 1F;
+        body.zRot = progress * (float) Math.PI;
+        body.y -= 4F * progress;
+        splayPaws();
+        if (state.bellyStage == BellyRubGoal.RUBBING) {
+            // One rear paw rises and falls far enough to be seen beyond the body.
+            body.getChild("leg_back_right").xRot = 0.8F + (float) Math.sin(t * 1.5F) * 1.0F;
+            body.getChild("leg_back_right").zRot = 0.55F;
+        }
+    }
+
+    private void splayPaws() {
+        body.getChild("leg_front_left").xRot = -0.9F;
+        body.getChild("leg_front_right").xRot = -0.9F;
+        body.getChild("leg_back_left").xRot = 0.8F;
+        body.getChild("leg_back_right").xRot = 0.8F;
+        body.getChild("leg_front_left").zRot = -0.38F;
+        body.getChild("leg_front_right").zRot = 0.38F;
+        body.getChild("leg_back_left").zRot = -0.38F;
+        body.getChild("leg_back_right").zRot = 0.38F;
     }
 
     void translateToChest(PoseStack pose) {

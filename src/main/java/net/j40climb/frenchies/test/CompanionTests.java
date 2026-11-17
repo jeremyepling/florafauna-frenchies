@@ -63,6 +63,8 @@ public final class CompanionTests {
         registerPlayTest(event, yard, "play_digging_interrupt", 150, DiggingAssistantGameTests::commandInterrupts);
         registerPlayTest(event, yard, "play_weather_snowball", 250, WeatherPlayTests::snowball);
         registerPlayTest(event, yard, "play_weather_swim", 200, WeatherPlayTests::swim);
+        registerPlayTest(event, yard, "play_trick_backflop", 200, TrickBellyTests::trick);
+        registerPlayTest(event, yard, "play_belly_rub", 200, TrickBellyTests::belly);
         registerPlayTest(event, yard, "companion_fetch", 550, CompanionTravelTests::fetch);
         registerStructureTest(event, defaultEnv, "companion_captain", yard, 550, CompanionTravelTests::captain);
         registerPlayTest(event, yard, "companion_zoomies_interrupt", 550, CompanionTravelTests::interruptCelebration);

@@ -50,7 +50,9 @@ public class FrontpackEvents {
         if (!frenchie.isTame()) return;
         if (!frenchie.isOwnedBy(player)) return;
         var heldItem = player.getItemInHand(event.getHand());
-        if (frenchie.isBaby() || frenchie.isPassenger() || heldItem.is(FrenchieRegistry.SQUEAKY_TOY.get())
+        if (frenchie.isBaby() || frenchie.isPassenger() || frenchie.isBellyRubPose()
+                || heldItem.is(net.minecraft.world.item.Items.BONE)
+                || heldItem.is(FrenchieRegistry.SQUEAKY_TOY.get())
                 || heldItem.is(FrenchieRegistry.BUBBLE_TOY.get())) return;
         if (FrontpackEquipment.wornBy(player).isEmpty()) {
             var held = player.getItemInHand(event.getHand());
