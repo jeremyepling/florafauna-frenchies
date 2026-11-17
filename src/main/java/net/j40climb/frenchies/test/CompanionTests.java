@@ -18,6 +18,16 @@ public final class CompanionTests {
                 Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "default"),
                 new TestEnvironmentDefinition.AllOf());
         var yard = Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "companion_yard");
+        registerPlayTest(event, yard, "play_bubble_toy", 230, BubblePlayTests::toy);
+        registerPlayTest(event, yard, "play_bubble_audience", 230, BubblePlayTests::audience);
+        registerPlayTest(event, yard, "play_bubble_pops", 200, BubblePlayTests::pops);
+        registerPlayTest(event, yard, "play_bubble_delivery", 150, BubblePlayTests::delivery);
+        registerPlayTest(event, yard, "play_bubble_nose", 230, BubblePlayTests::nose);
+        registerPlayTest(event, yard, "play_bubble_unreachable", 230, BubblePlayTests::unreachable);
+        registerStructureTest(event, defaultEnv, "play_slime_sequence", yard, 420, SlimePlayTests::sequence);
+        registerStructureTest(event, defaultEnv, "play_slime_damage", yard, 230, SlimePlayTests::damage);
+        registerStructureTest(event, defaultEnv, "play_slime_blocked", yard, 200, SlimePlayTests::blocked);
+        registerStructureTest(event, defaultEnv, "play_slime_vanilla", yard, 250, SlimePlayTests::vanilla);
         registerStructureTest(event, defaultEnv, "companion_fetch", yard, 550, CompanionTravelTests::fetch);
         registerStructureTest(event, defaultEnv, "companion_captain", yard, 550, CompanionTravelTests::captain);
         registerStructureTest(event, defaultEnv, "companion_zoomies_interrupt", yard, 550, CompanionTravelTests::interruptCelebration);
@@ -52,6 +62,14 @@ public final class CompanionTests {
         registerTest(event, defaultEnv, "frenchie_frontpack_right_click_equip", FrontpackEquipGameTest::equipFromHand);
         registerTest(event, defaultEnv, "frenchie_frontpack_dye", FrontpackDyeGameTest::craftAndWash);
         registerTest(event, defaultEnv, "frenchie_frontpack_elytra", FrontpackElytraGameTest::craftAndRepair);
+    }
+
+    // Bubble recruitment and the production limit reach into adjacent GameTest structures.
+    private static void registerPlayTest(RegisterGameTestsEvent event, Identifier yard, String name,
+                                         int ticks, Consumer<GameTestHelper> test) {
+        var environment = event.registerEnvironment(Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, name),
+                new TestEnvironmentDefinition.AllOf());
+        registerStructureTest(event, environment, name, yard, ticks, test);
     }
 
     static void registerStructureTest(

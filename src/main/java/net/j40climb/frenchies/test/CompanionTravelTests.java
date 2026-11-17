@@ -29,7 +29,7 @@ final class CompanionTravelTests {
 
     private static final int BOW = 1, RUN = 2, HOP = 3, SPLOOT = 4;
 
-    private static ServerPlayer player(GameTestHelper h, double x, double z) {
+    static ServerPlayer player(GameTestHelper h, double x, double z) {
         var player = h.makeMockServerPlayerInLevel();
         NetworkRegistry.configureMockConnection(player.connection.getConnection());
         player.setGameMode(GameType.SURVIVAL);
@@ -38,7 +38,7 @@ final class CompanionTravelTests {
         return player;
     }
 
-    private static void disconnect(ServerPlayer... players) {
+    static void disconnect(ServerPlayer... players) {
         for (ServerPlayer player : players) {
             player.level().getServer().getPlayerList().remove(player);
         }
