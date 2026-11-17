@@ -9,7 +9,7 @@ import java.util.EnumSet;
 final class TrickGoal extends Goal {
     static final int NONE = 0, CROUCH = 1, SPRING = 2, FLOP = 3, WIGGLE = 4, ROLL_UP = 5, LAP = 6;
     private final FrenchieEntity dog;
-    private long requestUntil;
+    private long requestUntil = -1;
     private long nextTrick;
     private int ticks;
     private int lapPoint;
