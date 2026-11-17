@@ -250,6 +250,12 @@ public final class CourierTrips extends SavedData {
                 if (trip.bed.isEmpty() || DeliveryGoal.isBedHead(level, destination)) {
                     Vec3 landing = findLanding(level, destination, target);
                     if (landing != null) {
+                        // The safe square can be just across the chunk boundary from a bed or recipient.
+                        var arrivalChunk = ChunkPos.containing(BlockPos.containing(landing));
+                        if (!arrivalChunk.equals(chunk)) {
+                            level.getChunkSource().addTicketWithRadius(FrenchieRegistry.COURIER_STOP.get(), arrivalChunk, 2);
+                            if (!level.areEntitiesActuallyLoadedAndTicking(arrivalChunk)) continue;
+                        }
                         if (restore(level, trip, landing)) {
                             iterator.remove();
                             setDirty();
@@ -297,6 +303,7 @@ public final class CourierTrips extends SavedData {
         dog.resetFallDistance();
         dog.delivery().arrived(trip.returning());
         if (!level.addFreshEntity(dog)) return false;
+        CompanionRoster.track(dog);
         var owner = level.getServer().getPlayerList().getPlayer(trip.owner);
         if (dog.isDelivering() || dog.isGoingHome()) track(dog);
         if (trip.returning() && !dog.isDelivering()) DeliveryGoal.tell(owner,
