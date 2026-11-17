@@ -48,6 +48,10 @@ public final class DeliveryDialog {
         PacketDistributor.sendToPlayer(owner, new DeliveryPopupPayload(dog.getUUID(), choices, Optional.empty()));
     }
 
+    boolean isOpen() {
+        return dog.level().getGameTime() <= expires;
+    }
+
     static @Nullable GlobalPos ownerBed(ServerPlayer owner) {
         var respawn = owner.getRespawnConfig();
         if (respawn == null || respawn.forced()) return null;
@@ -83,7 +87,7 @@ public final class DeliveryDialog {
                 && dog.isAlive() && dog.isOwnedBy(owner) && owner.isAlive() && !owner.isSpectator()
                 && owner.isWithinEntityInteractionRange(dog, 0) && !dog.hasCompanionJob() && !dog.hasToyJob()) {
             DeliveryDialog dialog = dog.deliveryDialog;
-            if (dialog != null && dog.level().getGameTime() <= dialog.expires
+            if (dialog != null && dialog.isOpen()
                     && ItemStack.matches(owner.getItemInHand(dialog.hand), dialog.previewStack)
                     && dialog.handle(owner, action, destination)) return 1;
         }
