@@ -20,7 +20,7 @@ import java.util.Locale;
 @EventBusSubscriber(modid = Frenchies.MOD_ID, value = Dist.CLIENT)
 public final class DogPlayClient {
     private static final String ROLE = System.getProperty("florafauna_frenchies.playTest.client");
-    private enum Step { WAIT, BLOW, BLOW_AGAIN, BUBBLES, BOW, RESTORED, EXIT }
+    private enum Step { WAIT, BLOW, BLOW_AGAIN, BUBBLES, NOSE, BOW, RESTORED, EXIT }
     private static Step step = Step.WAIT;
     private static int frames;
 
@@ -31,6 +31,7 @@ public final class DogPlayClient {
             case DogPlayServer.BLOW -> Step.BLOW;
             case DogPlayServer.BLOW_AGAIN -> Step.BLOW_AGAIN;
             case DogPlayServer.WATCH_BUBBLES -> Step.BUBBLES;
+            case DogPlayServer.WATCH_NOSE -> Step.NOSE;
             case DogPlayServer.WATCH_BOW -> Step.BOW;
             case DogPlayServer.WATCH_RELOAD -> Step.RESTORED;
             case DeliveryMultiplayerServer.DONE -> Step.EXIT;
@@ -84,6 +85,13 @@ public final class DogPlayClient {
                     return;
                 }
                 if (++frames >= 3) capture(mc, "slime-bow");
+            }
+            case NOSE -> {
+                var attached = mc.level.getEntitiesOfClass(PlayBubbleEntity.class, dog.getBoundingBox().inflate(1.5),
+                        bubble -> bubble.noseDogId() == dog.getId());
+                if (attached.size() != 1 || dog.playPose() != PlayPose.BUBBLE_NOSE) return;
+                mc.player.lookAt(Anchor.EYES, aim.lerp(attached.getFirst().position(), 0.55));
+                if (++frames >= 3) capture(mc, "nose");
             }
             case RESTORED -> {
                 if (dog.playPose() == PlayPose.NONE && mc.level.getEntity(DogPlayServer.SLIME) == null && ++frames >= 4) {
