@@ -96,6 +96,31 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
             return;
         }
 
+        if (renderState.digStage == DiggingAssistantGoal.DIG) {
+            // Deep shoulder dip and alternating paw sweeps read as digging at normal distance.
+            body.y += 1.1F;
+            body.xRot += 0.36F;
+            head.xRot += 0.40F;
+            float stroke = (float) Math.sin(renderState.digStageAge * 1.45F);
+            ModelPart left = body.getChild("leg_front_left");
+            ModelPart right = body.getChild("leg_front_right");
+            left.xRot = -0.85F + 0.95F * stroke;
+            right.xRot = -0.85F - 0.95F * stroke;
+            left.z -= 0.55F;
+            right.z -= 0.55F;
+            body.getChild("leg_back_left").xRot = 0.35F;
+            body.getChild("leg_back_right").xRot = 0.35F;
+            return;
+        }
+        if (renderState.digStage == DiggingAssistantGoal.REVEAL) {
+            body.xRot -= 0.27F;
+            body.y -= 0.5F;
+            head.xRot -= 0.35F;
+            body.getChild("leg_front_left").xRot = -0.55F;
+            body.getChild("leg_front_right").xRot = -0.55F;
+            return;
+        }
+
         if (renderState.playPose == PlayPose.SLIME_BOW || renderState.playPose == PlayPose.BUBBLE_BOW) {
             // Pivot the chest down, stretch the forepaws out and keep the hind paws planted.
             body.xRot = 0.42F;

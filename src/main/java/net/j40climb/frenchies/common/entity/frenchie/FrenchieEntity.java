@@ -2,6 +2,7 @@ package net.j40climb.frenchies.common.entity.frenchie;
 
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -124,6 +125,11 @@ public class FrenchieEntity extends TamableAnimal {
     private ToyPlayGoal toyPlay;
     private BubblePlayGoal bubblePlay;
     private static final EntityDataAccessor<Byte> PLAY_POSE = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Integer> DIG_STAGE = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Long> DIG_STAGE_START = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Boolean> HAS_TOY_STICK = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.BOOLEAN);
+    private DiggingAssistantGoal diggingAssistant;
+    long nextDigAt;
     long nextSlimePlayAt;
     private long nextPlayDangerCheck;
     private boolean playDanger;
@@ -161,7 +167,28 @@ public class FrenchieEntity extends TamableAnimal {
     public ItemStack getParcel() { return entityData.get(PARCEL); }
     void syncParcel(ItemStack parcel) { entityData.set(PARCEL, parcel.copy()); }
     public ItemStack getMouthItem() {
-        return getParcel().isEmpty() && getOffhandItem().is(FrenchieRegistry.SQUEAKY_TOY.get()) ? getOffhandItem() : getParcel();
+        if (!getParcel().isEmpty()) return getParcel();
+        if (!getOffhandItem().isEmpty()) return getOffhandItem();
+        return entityData.get(HAS_TOY_STICK) && digStage() != DiggingAssistantGoal.APPROACH
+                && digStage() != DiggingAssistantGoal.DIG
+                ? new ItemStack(Items.STICK) : ItemStack.EMPTY;
+    }
+
+    public int digStage() { return entityData.get(DIG_STAGE); }
+
+    public float digStageAge(float partialTick) {
+        return level().getGameTime() - entityData.get(DIG_STAGE_START) + partialTick;
+    }
+
+    void setDigStage(int stage) {
+        entityData.set(DIG_STAGE, stage);
+        entityData.set(DIG_STAGE_START, level().getGameTime());
+    }
+
+    void setHasToyStick(boolean hasStick) { entityData.set(HAS_TOY_STICK, hasStick); }
+
+    boolean requestDigging(BlockPos broken) {
+        return diggingAssistant != null && diggingAssistant.request(broken);
     }
 
     boolean personalityInterrupted() {
@@ -203,6 +230,8 @@ public class FrenchieEntity extends TamableAnimal {
         this.goalSelector.addGoal(4, toyPlay);
         this.celebration = new CelebrationGoal(this);
         this.goalSelector.addGoal(5, celebration);
+        this.diggingAssistant = new DiggingAssistantGoal(this);
+        this.goalSelector.addGoal(5, diggingAssistant);
         this.bubblePlay = new BubblePlayGoal(this);
         this.goalSelector.addGoal(6, bubblePlay);
         this.goalSelector.addGoal(7, new SlimeTeaseGoal(this));
@@ -271,6 +300,9 @@ public class FrenchieEntity extends TamableAnimal {
         builder.define(DANGER_REACTION, (byte) 0);
         builder.define(DANGER_START, 0L);
         builder.define(PLAY_POSE, (byte) PlayPose.NONE.ordinal());
+        builder.define(DIG_STAGE, DiggingAssistantGoal.NONE);
+        builder.define(DIG_STAGE_START, 0L);
+        builder.define(HAS_TOY_STICK, false);
         builder.define(JOB, (byte) 0);
         builder.define(WAITING_RECIPIENT, Optional.empty());
     }
@@ -340,7 +372,8 @@ public class FrenchieEntity extends TamableAnimal {
                 if (sleeping) {
                     // Once asleep, vanilla stops ticking the selector, including its normal cleanup.
                     for (WrappedGoal goal : goalSelector.getAvailableGoals()) {
-                        if (goal.isRunning() && (goal.getGoal() == bubblePlay || goal.getGoal() instanceof SlimeTeaseGoal)) {
+                        if (goal.isRunning() && (goal.getGoal() == bubblePlay || goal.getGoal() == diggingAssistant
+                                || goal.getGoal() instanceof SlimeTeaseGoal)) {
                             goal.stop();
                         }
                     }
@@ -420,12 +453,13 @@ public class FrenchieEntity extends TamableAnimal {
         for (WrappedGoal goal : goalSelector.getAvailableGoals()) {
             var behavior = goal.getGoal();
             if (goal.isRunning() && (behavior == toyPlay || behavior == bubblePlay || behavior == celebration
-                    || behavior instanceof SlimeTeaseGoal)) goal.stop();
+                    || behavior == diggingAssistant || behavior instanceof SlimeTeaseGoal)) goal.stop();
         }
         // An invitation, thrown toy or sleeping spectator can be pending outside the goal selector.
         toyPlay.stop();
         bubblePlay.stop();
         celebration.stop();
+        if (diggingAssistant != null) diggingAssistant.stop();
     }
 
     @Override
@@ -682,6 +716,8 @@ public class FrenchieEntity extends TamableAnimal {
         super.addAdditionalSaveData(output);
         output.putLong("NextCelebration", nextCelebration);
         output.putLong("NextSlimePlay", nextSlimePlayAt);
+        output.putLong("NextDigAt", nextDigAt);
+        output.putBoolean("HasToyStick", entityData.get(HAS_TOY_STICK));
         if (nextDangerReaction > level().getGameTime()) output.putLong("NextDangerReaction", nextDangerReaction);
         output.putLong("OwnerAwaySince", ownerAwaySince);
         output.putInt("Variant", this.getTypeVariant());
@@ -698,6 +734,9 @@ public class FrenchieEntity extends TamableAnimal {
         super.readAdditionalSaveData(input);
         nextCelebration = input.getLongOr("NextCelebration", 0L);
         nextSlimePlayAt = input.getLongOr("NextSlimePlay", 0L);
+        nextDigAt = input.getLongOr("NextDigAt", 0L);
+        entityData.set(HAS_TOY_STICK, input.getBooleanOr("HasToyStick", false));
+        setDigStage(DiggingAssistantGoal.NONE);
         nextDangerReaction = input.getLongOr("NextDangerReaction", 0L);
         ownerAwaySince = input.getLongOr("OwnerAwaySince", -1L);
         trail.load(input);
