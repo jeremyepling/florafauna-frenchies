@@ -96,6 +96,8 @@ public class FrenchieRenderer extends MobRenderer<FrenchieEntity, FrenchieRender
         reusedState.variant = entity.getVariant();
         reusedState.celebrationStage = entity.celebrationStage();
         reusedState.playPose = entity.playPose();
+        reusedState.dangerReaction = entity.dangerReaction();
+        reusedState.dangerAge = entity.dangerReactionAge(partialTick);
 
         reusedState.isSleeping = entity.isFrenchieSleeping();
         reusedState.isSwimming = entity.isSwimming();
