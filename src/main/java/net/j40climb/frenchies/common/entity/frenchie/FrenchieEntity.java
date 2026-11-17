@@ -61,6 +61,11 @@ public class FrenchieEntity extends TamableAnimal {
             SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Long> DANGER_START =
             SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Byte> WEATHER_STAGE =
+            SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Long> WEATHER_START =
+            SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.LONG);
+    private WeatherPlayGoal weatherPlay;
     private EscapeDangerGoal escapeDanger;
     private long nextDangerReaction;
     private long respondingUntil;
@@ -147,11 +152,33 @@ public class FrenchieEntity extends TamableAnimal {
     }
 
     boolean canPlay() {
-        return !isOrderedToSit() && !isSitting() && !isFrenchieSleeping() && canWatchPlay();
+        return !weatherPlay.active() && !isOrderedToSit() && !isSitting() && !isFrenchieSleeping() && canWatchPlay();
+    }
+
+    boolean celebrationRequestedOrRunning() { return celebration.requestedOrRunning(); }
+
+    public int weatherStage() { return entityData.get(WEATHER_STAGE); }
+
+    void setWeatherStage(int stage) {
+        entityData.set(WEATHER_STAGE, (byte) stage);
+        entityData.set(WEATHER_START, level().getGameTime());
+    }
+
+    public float weatherAge(float partialTick) {
+        return level().getGameTime() - entityData.get(WEATHER_START) + partialTick;
+    }
+
+    public void inviteSnowball(Vec3 at) {
+        if (weatherPlay != null) weatherPlay.inviteSnowball(at);
     }
 
     boolean canWatchPlay() {
+        return canWatchPlay(false);
+    }
+
+    boolean canWatchPlay(boolean includeWeather) {
         if (!isAlive() || isNoAi() || personalityInterrupted() || hasCompanionJob() || hasToyJob()
+                || !includeWeather && weatherPlay != null && weatherPlay.active()
                 || celebration.requestedOrRunning() || isPassenger() || isLeashed() || isInLove()
                 || isInWater() || isInLava() || isOnFire() || isFullyFrozen() || hurtTime > 0 || getTarget() != null
                 || deliveryDialog != null && deliveryDialog.isOpen()) return false;
@@ -232,6 +259,8 @@ public class FrenchieEntity extends TamableAnimal {
         this.goalSelector.addGoal(5, celebration);
         this.diggingAssistant = new DiggingAssistantGoal(this);
         this.goalSelector.addGoal(5, diggingAssistant);
+        this.weatherPlay = new WeatherPlayGoal(this);
+        this.goalSelector.addGoal(6, weatherPlay);
         this.bubblePlay = new BubblePlayGoal(this);
         this.goalSelector.addGoal(6, bubblePlay);
         this.goalSelector.addGoal(7, new SlimeTeaseGoal(this));
@@ -299,6 +328,8 @@ public class FrenchieEntity extends TamableAnimal {
         builder.define(CELEBRATION_STAGE, CelebrationGoal.NONE);
         builder.define(DANGER_REACTION, (byte) 0);
         builder.define(DANGER_START, 0L);
+        builder.define(WEATHER_STAGE, (byte) 0);
+        builder.define(WEATHER_START, 0L);
         builder.define(PLAY_POSE, (byte) PlayPose.NONE.ordinal());
         builder.define(DIG_STAGE, DiggingAssistantGoal.NONE);
         builder.define(DIG_STAGE_START, 0L);
@@ -373,6 +404,7 @@ public class FrenchieEntity extends TamableAnimal {
                     // Once asleep, vanilla stops ticking the selector, including its normal cleanup.
                     for (WrappedGoal goal : goalSelector.getAvailableGoals()) {
                         if (goal.isRunning() && (goal.getGoal() == bubblePlay || goal.getGoal() == diggingAssistant
+                                || goal.getGoal() == weatherPlay
                                 || goal.getGoal() instanceof SlimeTeaseGoal)) {
                             goal.stop();
                         }
@@ -453,13 +485,15 @@ public class FrenchieEntity extends TamableAnimal {
         for (WrappedGoal goal : goalSelector.getAvailableGoals()) {
             var behavior = goal.getGoal();
             if (goal.isRunning() && (behavior == toyPlay || behavior == bubblePlay || behavior == celebration
-                    || behavior == diggingAssistant || behavior instanceof SlimeTeaseGoal)) goal.stop();
+                    || behavior == diggingAssistant || behavior == weatherPlay
+                    || behavior instanceof SlimeTeaseGoal)) goal.stop();
         }
         // An invitation, thrown toy or sleeping spectator can be pending outside the goal selector.
         toyPlay.stop();
         bubblePlay.stop();
         celebration.stop();
         if (diggingAssistant != null) diggingAssistant.stop();
+        weatherPlay.interrupt();
     }
 
     @Override
@@ -718,6 +752,7 @@ public class FrenchieEntity extends TamableAnimal {
         output.putLong("NextSlimePlay", nextSlimePlayAt);
         output.putLong("NextDigAt", nextDigAt);
         output.putBoolean("HasToyStick", entityData.get(HAS_TOY_STICK));
+        weatherPlay.save(output);
         if (nextDangerReaction > level().getGameTime()) output.putLong("NextDangerReaction", nextDangerReaction);
         output.putLong("OwnerAwaySince", ownerAwaySince);
         output.putInt("Variant", this.getTypeVariant());
@@ -737,6 +772,7 @@ public class FrenchieEntity extends TamableAnimal {
         nextDigAt = input.getLongOr("NextDigAt", 0L);
         entityData.set(HAS_TOY_STICK, input.getBooleanOr("HasToyStick", false));
         setDigStage(DiggingAssistantGoal.NONE);
+        weatherPlay.load(input);
         nextDangerReaction = input.getLongOr("NextDangerReaction", 0L);
         ownerAwaySince = input.getLongOr("OwnerAwaySince", -1L);
         trail.load(input);
@@ -793,6 +829,7 @@ public class FrenchieEntity extends TamableAnimal {
             handleSleepingAnimations();
         }
         if (!this.level().isClientSide()) {
+            weatherPlay.observeWater();
             CaptainControls.followOwner(this);
             if (getVehicle() instanceof AbstractBoat boat) {
                 if (tripOrigin == null) tripOrigin = boat.position();
