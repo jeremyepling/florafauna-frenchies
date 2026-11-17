@@ -44,6 +44,7 @@ public final class DeliveryMultiplayerServer {
     private static Path root;
     private static boolean testingPlay;
     private static boolean testingWhistle;
+    private static boolean testingLegacy;
     private static int phase = 1;
     private static long confirmTick;
     private static boolean recipientClicked;
@@ -58,6 +59,10 @@ public final class DeliveryMultiplayerServer {
         if (path == null) {
             path = System.getProperty("florafauna_frenchies.whistleTest.root");
             testingWhistle = path != null;
+        }
+        if (path == null) {
+            path = System.getProperty("florafauna_frenchies.legacyTest.root");
+            testingLegacy = path != null;
         }
         if (path == null) return;
         root = Path.of(path).toRealPath();
@@ -84,6 +89,10 @@ public final class DeliveryMultiplayerServer {
         var recipient = server.getPlayerList().getPlayerByName("FFVisitor");
         if (owner == null || recipient == null || !owner.connection.hasClientLoaded() || !recipient.connection.hasClientLoaded()) return;
         try {
+            if (testingLegacy) {
+                if (WhistleServer.legacy(owner, recipient, phase)) finish(owner, recipient, "PASS");
+                return;
+            }
             if (testingWhistle) {
                 if (WhistleServer.finished(owner, recipient, root, phase)) finish(owner, recipient, "PASS");
                 return;
