@@ -41,11 +41,11 @@ final class FrenchieAwarenessGameTests {
 
     static void bedtime(GameTestHelper h) {
         var owner = h.makeMockPlayer(GameType.SURVIVAL);
-        var dog = h.spawnWithNoFreeWill(FrenchieRegistry.FRENCHIE.get(), 1, 1, 1);
+        var dog = h.spawnWithNoFreeWill(FrenchieRegistry.FRENCHIE.get(), 4, 1, 5);
         dog.tame(owner);
         dog.sitDown();
         h.assertTrue(!dog.isBedtimeBuddy(), "The icon should require an occupied owner bed");
-        var bed = new BlockPos(2, 1, 1);
+        var bed = new BlockPos(5, 1, 5);
         var head = h.absolutePos(bed);
         var state = Blocks.RED_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.NORTH);
         h.getLevel().setBlock(head.south(), state.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
