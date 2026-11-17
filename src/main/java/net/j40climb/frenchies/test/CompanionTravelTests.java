@@ -38,6 +38,19 @@ final class CompanionTravelTests {
         return player;
     }
 
+    static String playState(GameTestHelper h, FrenchieEntity dog) {
+        var owner = dog.getOwner();
+        var goals = dog.getGoalSelector().getAvailableGoals().stream().filter(goal -> goal.isRunning())
+                .map(goal -> goal.getGoal().getClass().getSimpleName()).toList();
+        var neighbors = dog.level().getEntities(dog, dog.getBoundingBox().inflate(8)).stream()
+                .map(entity -> entity.getType().toShortString() + "@" + h.relativePos(entity.blockPosition())).toList();
+        return "pose=" + dog.playPose() + ", dog=" + h.relativeVec(dog.position()) + ", ticks=" + dog.tickCount
+                + ", owner=" + (owner == null ? "-" : h.relativeVec(owner.position()))
+                + ", ground=" + dog.onGround() + ", asleep=" + dog.isFrenchieSleeping()
+                + ", sit=" + dog.isOrderedToSit() + ", warned=" + dog.isWarningFlash()
+                + ", goals=" + goals + ", nearby=" + neighbors;
+    }
+
     static void disconnect(ServerPlayer... players) {
         for (ServerPlayer player : players) {
             player.level().getServer().getPlayerList().remove(player);
