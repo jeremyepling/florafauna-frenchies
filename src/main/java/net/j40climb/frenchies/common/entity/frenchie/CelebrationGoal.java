@@ -46,7 +46,8 @@ final class CelebrationGoal extends Goal {
     }
 
     private boolean available() {
-        return !dog.personalityInterrupted() && dog.isAlive() && dog.isTame() && !dog.isOrderedToSit() && !dog.isSitting()
+        return dog.weatherStage() == WeatherPlayGoal.NONE && !dog.personalityInterrupted()
+                && dog.isAlive() && dog.isTame() && !dog.isOrderedToSit() && !dog.isSitting()
                 && !dog.isFrenchieSleeping() && !dog.isPassenger() && !dog.isLeashed()
                 && !dog.isInWater() && !dog.isInLava() && !dog.isOnFire() && dog.hurtTime == 0
                 && dog.getTarget() == null && !dog.isInLove() && !dog.hasCompanionJob() && !dog.hasToyJob();

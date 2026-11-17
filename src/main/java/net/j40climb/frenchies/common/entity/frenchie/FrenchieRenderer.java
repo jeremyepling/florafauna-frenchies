@@ -95,9 +95,17 @@ public class FrenchieRenderer extends MobRenderer<FrenchieEntity, FrenchieRender
         reusedState.toyEarLift = entity.toyEarLift(partialTick);
         reusedState.variant = entity.getVariant();
         reusedState.celebrationStage = entity.celebrationStage();
+        reusedState.digStage = entity.digStage();
+        reusedState.digStageAge = entity.digStageAge(partialTick);
+        reusedState.trickStage = entity.trickStage();
+        reusedState.trickAge = entity.level().getGameTime() - entity.trickStageStart() + partialTick;
+        reusedState.bellyStage = entity.bellyStage();
+        reusedState.bellyAge = entity.level().getGameTime() - entity.bellyStageStart() + partialTick;
         reusedState.playPose = entity.playPose();
         reusedState.dangerReaction = entity.dangerReaction();
         reusedState.dangerAge = entity.dangerReactionAge(partialTick);
+        reusedState.weatherStage = entity.weatherStage();
+        reusedState.weatherAge = entity.weatherAge(partialTick);
 
         reusedState.isSleeping = entity.isFrenchieSleeping();
         reusedState.isSwimming = entity.isSwimming();

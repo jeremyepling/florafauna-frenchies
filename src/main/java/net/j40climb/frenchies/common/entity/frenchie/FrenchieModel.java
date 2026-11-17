@@ -95,6 +95,43 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
             applyDangerReaction(renderState);
             return;
         }
+        if (renderState.trickStage != TrickGoal.NONE) {
+            applyTrick(renderState);
+            return;
+        }
+        if (renderState.bellyStage != BellyRubGoal.NONE) {
+            applyBellyRub(renderState);
+            return;
+        }
+
+        if (renderState.digStage == DiggingAssistantGoal.DIG) {
+            // Deep shoulder dip and alternating paw sweeps read as digging at normal distance.
+            body.y += 1.1F;
+            body.xRot += 0.36F;
+            head.xRot += 0.40F;
+            float stroke = (float) Math.sin(renderState.digStageAge * 1.45F);
+            ModelPart left = body.getChild("leg_front_left");
+            ModelPart right = body.getChild("leg_front_right");
+            left.xRot = -0.85F + 0.95F * stroke;
+            right.xRot = -0.85F - 0.95F * stroke;
+            left.z -= 0.55F;
+            right.z -= 0.55F;
+            body.getChild("leg_back_left").xRot = 0.35F;
+            body.getChild("leg_back_right").xRot = 0.35F;
+            return;
+        }
+        if (renderState.digStage == DiggingAssistantGoal.REVEAL) {
+            body.xRot -= 0.27F;
+            body.y -= 0.5F;
+            head.xRot -= 0.35F;
+            body.getChild("leg_front_left").xRot = -0.55F;
+            body.getChild("leg_front_right").xRot = -0.55F;
+            return;
+        }
+        if (renderState.weatherStage != WeatherPlayGoal.NONE) {
+            applyWeatherPlay(renderState);
+            return;
+        }
 
         if (renderState.playPose == PlayPose.SLIME_BOW || renderState.playPose == PlayPose.BUBBLE_BOW) {
             // Pivot the chest down, stretch the forepaws out and keep the hind paws planted.
@@ -225,6 +262,131 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
             }
             default -> {}
         }
+    }
+
+    private void applyWeatherPlay(FrenchieRenderState state) {
+        float t = state.weatherAge;
+        ModelPart foreLeft = body.getChild("leg_front_left");
+        ModelPart foreRight = body.getChild("leg_front_right");
+        ModelPart hindLeft = body.getChild("leg_back_left");
+        ModelPart hindRight = body.getChild("leg_back_right");
+        switch (state.weatherStage) {
+            case WeatherPlayGoal.SHAKE -> {
+                root.zRot = 0.28F * Mth.sin(t * 2.7F);
+                head.zRot = 0.42F * Mth.sin(t * 3.4F);
+                body.yRot = 0.22F * Mth.sin(t * 2.7F);
+                foreLeft.xRot = foreRight.xRot = -0.25F;
+            }
+            case WeatherPlayGoal.GRASS_APPROACH, WeatherPlayGoal.SNOW_APPROACH ->
+                    walkingAnimation.applyWalk(state.walkAnimationPos, state.walkAnimationSpeed, 2.5F, 2.5F);
+            case WeatherPlayGoal.GRASS_SHOULDER -> {
+                root.zRot = 0.9F * Math.min(1, t / 7F);
+                root.y += 2.0F;
+                foreLeft.xRot = -1.1F;
+                foreRight.xRot = -0.4F;
+            }
+            case WeatherPlayGoal.GRASS_ROLL -> {
+                root.zRot = 0.9F + 5.383F * Math.min(1, t / 27F);
+                root.y += 2.7F;
+                foreLeft.xRot = foreRight.xRot = -1.15F;
+                hindLeft.xRot = hindRight.xRot = 1.25F;
+            }
+            case WeatherPlayGoal.GRASS_DRAG -> {
+                root.y += 2.3F;
+                body.xRot = 0.12F;
+                foreLeft.xRot = -1.35F + 0.3F * Mth.sin(t * 1.4F);
+                foreRight.xRot = -1.35F - 0.3F * Mth.sin(t * 1.4F);
+                hindLeft.xRot = hindRight.xRot = 1.2F;
+            }
+            case WeatherPlayGoal.SNOW_DIVE -> {
+                root.xRot = 0.95F * Math.min(1, t / 6F);
+                root.y += 1.4F;
+                foreLeft.xRot = foreRight.xRot = -0.8F;
+                hindLeft.xRot = hindRight.xRot = 0.5F;
+            }
+            case WeatherPlayGoal.SNOW_PLOW -> {
+                root.xRot = 0.38F;
+                root.y += 1.8F;
+                foreLeft.xRot = -0.7F + 0.55F * Mth.sin(t * 1.8F);
+                foreRight.xRot = -0.7F - 0.55F * Mth.sin(t * 1.8F);
+                hindLeft.xRot = hindRight.xRot = 0.5F;
+            }
+            case WeatherPlayGoal.SNOW_POP -> {
+                root.y -= 1.0F * Mth.sin((float) Math.PI * Math.min(1, t / 11F));
+                head.xRot = -0.55F;
+                foreLeft.xRot = foreRight.xRot = -0.55F;
+            }
+        }
+    }
+
+    private void applyTrick(FrenchieRenderState state) {
+        float t = state.trickAge;
+        switch (state.trickStage) {
+            case TrickGoal.CROUCH -> {
+                body.y += Math.min(t / 5F, 1F) * 1.9F;
+                body.xRot = 0.32F;
+                head.xRot = -0.24F;
+                body.getChild("leg_front_left").xRot = -0.6F;
+                body.getChild("leg_front_right").xRot = -0.6F;
+            }
+            case TrickGoal.SPRING -> {
+                float arc = (float) Math.sin(Math.PI * Math.clamp(t / 9F, 0F, 1F));
+                body.y -= 3.2F * arc;
+                body.xRot = -0.48F * Math.min(t / 9F, 1F);
+                body.getChild("leg_front_left").xRot = -0.8F;
+                body.getChild("leg_front_right").xRot = -0.8F;
+                body.getChild("leg_back_left").xRot = 0.7F;
+                body.getChild("leg_back_right").xRot = 0.7F;
+            }
+            case TrickGoal.FLOP -> {
+                float progress = Math.clamp(t / 6F, 0F, 1F);
+                body.xRot = 0.45F + progress * 2.65F;
+                body.y -= progress * 4F;
+                splayPaws();
+            }
+            case TrickGoal.WIGGLE -> {
+                body.xRot = 3.1F;
+                body.y -= 4F;
+                body.zRot = (float) Math.sin(t * 1.8F) * 0.22F;
+                splayPaws();
+                body.getChild("leg_back_right").xRot += (float) Math.sin(t * 2F) * 0.65F;
+            }
+            case TrickGoal.ROLL_UP -> {
+                float progress = Math.clamp(t / 11F, 0F, 1F);
+                body.xRot = 3.1F + progress * (float) Math.PI;
+                body.y -= 4F * (1F - progress);
+                splayPaws();
+            }
+            case TrickGoal.LAP -> {
+                walkingAnimation.applyWalk(state.walkAnimationPos, Math.max(0.35F, state.walkAnimationSpeed), 2.5F, 2.5F);
+                body.y -= (float) Math.abs(Math.sin(state.ageInTicks * 0.8F)) * 0.6F;
+            }
+        }
+    }
+
+    private void applyBellyRub(FrenchieRenderState state) {
+        float t = state.bellyAge;
+        float progress = state.bellyStage == BellyRubGoal.ROLL_OVER ? Math.clamp(t / 10F, 0F, 1F)
+                : state.bellyStage == BellyRubGoal.ROLL_UP ? 1F - Math.clamp(t / 11F, 0F, 1F) : 1F;
+        body.zRot = progress * (float) Math.PI;
+        body.y -= 4F * progress;
+        splayPaws();
+        if (state.bellyStage == BellyRubGoal.RUBBING) {
+            // One rear paw rises and falls far enough to be seen beyond the body.
+            body.getChild("leg_back_right").xRot = 0.8F + (float) Math.sin(t * 1.5F) * 1.0F;
+            body.getChild("leg_back_right").zRot = 0.55F;
+        }
+    }
+
+    private void splayPaws() {
+        body.getChild("leg_front_left").xRot = -0.9F;
+        body.getChild("leg_front_right").xRot = -0.9F;
+        body.getChild("leg_back_left").xRot = 0.8F;
+        body.getChild("leg_back_right").xRot = 0.8F;
+        body.getChild("leg_front_left").zRot = -0.38F;
+        body.getChild("leg_front_right").zRot = 0.38F;
+        body.getChild("leg_back_left").zRot = -0.38F;
+        body.getChild("leg_back_right").zRot = 0.38F;
     }
 
     void translateToChest(PoseStack pose) {
