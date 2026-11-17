@@ -492,7 +492,7 @@ final class FrenchieDeliveryGameTests {
         return parcel;
     }
 
-    private static ItemStack parcel() {
+    static ItemStack parcel() {
         var stack = new ItemStack(Items.BUNDLE);
         stack.set(DataComponents.CUSTOM_NAME, Component.literal("Violet's delivery"));
         stack.set(DataComponents.BUNDLE_CONTENTS, new BundleContents(List.of(new ItemStackTemplate(Items.AMETHYST_SHARD, 7))));
