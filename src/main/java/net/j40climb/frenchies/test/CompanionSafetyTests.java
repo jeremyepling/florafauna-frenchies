@@ -1,9 +1,14 @@
 package net.j40climb.frenchies.test;
 
+import io.netty.channel.embedded.EmbeddedChannel;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -105,6 +110,37 @@ final class CompanionSafetyTests {
                     "Dog absorbed damage or retained a combat target");
             disconnect(owner);
         }).thenSucceed();
+    }
+
+    static void offlineVoid(GameTestHelper h) {
+        var owner = player(h, 2.5, 2.5);
+        var level = h.getLevel();
+        var dog = CompanionWhistleTests.dog(h, owner, 6, 3);
+        var id = dog.getUUID();
+        var toy = CompanionWhistleTests.named(new ItemStack(FrenchieRegistry.SQUEAKY_TOY.get()), "Home squeaker");
+        dog.setItemSlot(EquipmentSlot.OFFHAND, toy.copy());
+        ServerPlayer[] returning = new ServerPlayer[1];
+        h.startSequence().thenExecuteAfter(5, () -> {
+            disconnect(owner);
+            dog.snapTo(dog.getX(), level.getMinY() - 96, dog.getZ(), 0, 0);
+        }).thenWaitUntil(() -> h.assertTrue(level.getEntity(id) == null, "Offline owner's dog remained in the void"))
+        .thenExecuteAfter(60, () -> {
+            h.assertTrue(level.getEntity(id) == null, "The missing owner caused a premature or unsafe arrival");
+            var cookie = CommonListenerCookie.createInitial(owner.getGameProfile(), false);
+            var player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation());
+            var connection = new Connection(PacketFlow.SERVERBOUND);
+            new EmbeddedChannel(connection);
+            level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+            net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
+            player.snapTo(h.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+            returning[0] = player;
+        }).thenWaitUntil(() -> {
+            var entity = level.getEntity(id);
+            h.assertTrue(entity instanceof FrenchieEntity back && back.isOwnedBy(returning[0])
+                            && back.distanceToSqr(returning[0]) < 36 && back.getHealth() == back.getMaxHealth()
+                            && ItemStack.matches(toy, back.getOffhandItem()),
+                    "Reconnecting after an offline void rescue lost the dog or its toy");
+        }).thenExecute(() -> disconnect(returning[0])).thenSucceed();
     }
 
     static void rescue(GameTestHelper h, boolean voidFall) {

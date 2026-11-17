@@ -178,8 +178,12 @@ final class CompanionWhistleTests {
         var id = dog.getUUID();
         var nether = h.getLevel().getServer().getLevel(Level.NETHER);
         h.assertTrue(nether != null, "Missing test Nether");
-        var landing = BlockPos.containing(dog.getX(), 240, dog.getZ());
+        var landing = new BlockPos(40, 150, 40);
         var chunk = ChunkPos.containing(landing);
+        // The test server sprints ticks. Finish generation around the endpoint before starting its deadline.
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) nether.getChunk(chunk.x() + dx, chunk.z() + dz);
+        }
         nether.getChunkSource().addTicketWithRadius(TicketType.FORCED, chunk, 2);
         for (var pos : BlockPos.betweenClosed(landing.offset(-5, -1, -5), landing.offset(5, -1, 5)))
             nether.setBlockAndUpdate(pos, Blocks.MAGMA_BLOCK.defaultBlockState());
@@ -200,6 +204,46 @@ final class CompanionWhistleTests {
                             && nether.getBlockState(arrived.blockPosition().below()).is(Blocks.STONE),
                     "Cross-dimension whistle retained the old entity, sit order, or unsafe footing");
             nether.getChunkSource().removeTicketWithRadius(TicketType.FORCED, chunk, 2);
+            disconnect(owner);
+        }).thenSucceed();
+    }
+
+    static void unloadedDismiss(GameTestHelper h) {
+        var owner = player(h, 4.5, 4.5);
+        var level = h.getLevel();
+        var kennel = ChunkPos.containing(owner.blockPosition().east(880)).getMiddleBlockPosition(owner.getBlockY() + 14);
+        var remote = ChunkPos.containing(kennel);
+        var tickets = level.getChunkSource();
+        tickets.addTicketWithRadius(TicketType.FORCED, remote, 2);
+        level.getChunkAt(kennel);
+        for (var floor : BlockPos.betweenClosed(kennel.offset(-2, -1, -2), kennel.offset(2, -1, 2))) {
+            level.setBlockAndUpdate(floor, Blocks.STONE.defaultBlockState());
+        }
+        var dog = dog(h, owner, 5, 5);
+        var id = dog.getUUID();
+        var toy = named(new ItemStack(FrenchieRegistry.SQUEAKY_TOY.get()), "Away squeaker");
+        dog.setItemSlot(EquipmentSlot.OFFHAND, toy.copy());
+        equip(owner);
+        h.startSequence().thenWaitUntil(() -> h.assertTrue(level.areEntitiesActuallyLoadedAndTicking(remote), "Kennel did not load"))
+        .thenExecute(() -> dog.snapTo(kennel, 0, 0))
+        .thenExecuteAfter(30, () -> {
+            h.assertTrue(dog.isOrderedToSit() && dog.chunkPosition().equals(remote), "Stay failed before the owner whistled");
+            tickets.removeTicketWithRadius(TicketType.FORCED, remote, 2);
+        }).thenWaitUntil(() -> h.assertTrue(!level.hasChunkAt(kennel) && level.getEntity(id) == null,
+                "The remote dog's chunk never unloaded"))
+        .thenExecute(() -> whistle(owner, true))
+        .thenWaitUntil(() -> h.assertTrue(level.areEntitiesActuallyLoadedAndTicking(remote), "Remote dismissal did not resolve the dog"))
+        .thenExecute(() -> tickets.addTicketWithRadius(TicketType.FORCED, remote, 2))
+        .thenExecuteAfter(60, () -> {
+            h.assertTrue(level.getEntity(id) == null, "Reopening the kennel left a dismissed dog physically behind");
+            whistle(owner, false);
+        }).thenWaitUntil(() -> near(h, owner, id))
+        .thenExecute(() -> {
+            var restored = near(h, owner, id);
+            h.assertTrue(ItemStack.matches(toy, restored.getOffhandItem())
+                            && level.getEntities(FrenchieRegistry.FRENCHIE.get(), d -> d.isOwnedBy(owner)).size() == 1,
+                    "Distant dismissal recreated the original or its named toy on return");
+            tickets.removeTicketWithRadius(TicketType.FORCED, remote, 2);
             disconnect(owner);
         }).thenSucceed();
     }

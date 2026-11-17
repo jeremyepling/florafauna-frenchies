@@ -134,8 +134,9 @@ final class FrenchieDeliveryGameTests {
             owner.setGameMode(GameType.SURVIVAL);
             owner.setItemInHand(HAND, new ItemStack(Items.BONE));
             click(owner, dog);
-            h.assertTrue(dog.isOwnedBy(owner) && dog.isOrderedToSit() && owner.getMainHandItem().isEmpty(),
-                    "Using a bone should tame the dog and order it to sit");
+            h.assertTrue(dog.isOwnedBy(owner) && dog.isOrderedToSit() && owner.getInventory().countItem(Items.BONE) == 0
+                            && owner.getInventory().countItem(FrenchieRegistry.FRENCHIE_WHISTLE.get()) == 1,
+                    "Using a bone should consume it, tame and sit the dog, and grant its first whistle");
             owner.setItemInHand(HAND, new ItemStack(Items.GLOW_BERRIES));
             click(owner, dog);
             h.assertTrue(dog.isInLove() && owner.getMainHandItem().isEmpty() && dog.isOrderedToSit(),
