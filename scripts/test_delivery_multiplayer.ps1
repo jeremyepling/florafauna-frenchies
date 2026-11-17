@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 # Two offline development clients connect only to a disposable loopback server.
-param([switch]$Offline, [ValidateSet('delivery','play','whistle')][string]$Scenario = 'delivery')
+param([switch]$Offline, [ValidateSet('delivery','play','whistle','legacy')][string]$Scenario = 'delivery')
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
@@ -56,8 +56,14 @@ try {
         $script.Replace((Join-Path $checkout 'build\moddev'), $launchDir) | Set-Content -LiteralPath (Join-Path $launchDir $scriptName)
     }
 
-    $phases = if ($Scenario -in 'play', 'whistle') { @(1, 2) } else { @(1) }
+    $phases = if ($Scenario -in 'play', 'whistle', 'legacy') { @(1, 2) } else { @(1) }
     foreach ($phase in $phases) {
+        if ($Scenario -eq 'legacy' -and $phase -eq 2) {
+            # This disposable fixture owns exactly one live, sitting dog. Preserve the first run's
+            # locator outside the world to reproduce upgrading a world that predates whistle saves.
+            $roster = Join-Path $root 'Server/world/data/florafauna/companions.dat'
+            Move-Item -LiteralPath $roster -Destination (Join-Path $root 'pre-upgrade-companions.dat')
+        }
         Write-Host "Launching dedicated $Scenario phase $phase"
         Set-Content -LiteralPath (Join-Path $root 'phase') -Value $phase
         $processes = @()

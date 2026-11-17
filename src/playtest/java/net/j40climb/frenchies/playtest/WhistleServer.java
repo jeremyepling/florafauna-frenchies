@@ -35,7 +35,7 @@ final class WhistleServer {
     static final String LOOK = "Whistle fixture: watch Pip";
     private static final BlockPos YARD = new BlockPos(480, 210, 480);
     private static final BlockPos INN = YARD.east(640);
-    private enum Step { START, DISMISS, LEAVE, CALL, FOLLOW, PREPARE_PHOTO, PHOTO, TUMBLE, LINE_UP, THROUGH_DOG, ACCIDENT, SAVE, REJOIN, RESPAWN, LAST_CALL }
+    private enum Step { START, DISMISS, LEAVE, CALL, FOLLOW, PREPARE_PHOTO, PHOTO, TUMBLE, LINE_UP, THROUGH_DOG, ACCIDENT, SAVE, REJOIN, RESPAWN, LAST_CALL, RETURN_TO_KENNEL }
     private static Step step = Step.START;
     private static int ticks;
     private static Cow target;
@@ -208,6 +208,71 @@ final class WhistleServer {
                 require(ItemStack.matches(owner.getMainHandItem(), CourierParcel.parcel()) && courier.getParcel().isEmpty()
                                 && level.getEntities(FrenchieRegistry.FRENCHIE.get(), d -> d.isOwnedBy(owner)).size() == 2,
                         "Could not collect precisely one copy after reconnect and respawn");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // A separate disposable world. Removing its locator file between phases is safe because
+    // all dog and item data live exclusively in this one unloaded entity chunk.
+    static boolean legacy(ServerPlayer owner, ServerPlayer visitor, int phase) {
+        var level = owner.level();
+        var dog = (FrenchieEntity) level.getEntity(COMPANION);
+        if (++ticks > 2000) throw new AssertionError("Legacy save fixture timed out at " + step);
+        switch (step) {
+            case START -> {
+                if (phase == 2) {
+                    require(!level.hasChunkAt(YARD) && dog == null, "The owner revisited the kennel before migration");
+                    next(Step.REJOIN);
+                    break;
+                }
+                platform(owner, YARD);
+                platform(owner, INN);
+                owner.setGameMode(GameType.SURVIVAL);
+                visitor.setGameMode(GameType.SURVIVAL);
+                place(owner, YARD);
+                place(visitor, YARD.east(3));
+                dog = spawn(owner, COMPANION, "Pip", YARD.west(2));
+                dog.setItemSlot(EquipmentSlot.OFFHAND, named(new ItemStack(FrenchieRegistry.SQUEAKY_TOY.get()), "Pip's squeaker"));
+                next(Step.SAVE);
+            }
+            case SAVE -> {
+                if (ticks < 20) break;
+                require(dog != null && dog.isOrderedToSit() && dog.isAlive()
+                                && level.getEntities(FrenchieRegistry.FRENCHIE.get(), d -> true).size() == 1,
+                        "Upgrade fixture requires exactly one live dog and no dismissed dog");
+                checkPip(dog);
+                place(owner, INN);
+                place(visitor, INN.east(3));
+                next(Step.LEAVE);
+            }
+            case LEAVE -> {
+                if (level.hasChunkAt(YARD) || dog != null) break;
+                require(level.getServer().saveEverything(false, true, true), "Could not save the old kennel");
+                return true;
+            }
+            case REJOIN -> {
+                if (ticks == 1 || ticks % 100 == 0) command(owner, "frenchie whistle");
+                if (!owner.getInventory().contains(stack -> stack.is(FrenchieRegistry.FRENCHIE_WHISTLE.get()))) break;
+                require(!level.hasChunkAt(YARD) && dog == null, "Migration force-loaded the old kennel to enumerate dogs");
+                var inventory = owner.getInventory();
+                for (int i = 0; i < 9; i++) if (inventory.getItem(i).is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) inventory.setSelectedSlot(i);
+                cue(owner, CALL_ACTIVE);
+                next(Step.CALL);
+            }
+            case CALL -> {
+                if (dog == null || dog.distanceToSqr(owner) >= 36) break;
+                require(dog.isOwnedBy(owner) && !dog.isOrderedToSit(), "Migration changed ownership or refused the recall");
+                checkPip(dog);
+                place(visitor, YARD);
+                next(Step.RETURN_TO_KENNEL);
+            }
+            case RETURN_TO_KENNEL -> {
+                if (!level.areEntitiesActuallyLoadedAndTicking(net.minecraft.world.level.ChunkPos.containing(YARD))) break;
+                require(dog != null && dog.distanceToSqr(owner) < 36
+                                && level.getEntities(FrenchieRegistry.FRENCHIE.get(), d -> d.isOwnedBy(owner)).size() == 1,
+                        "Revisiting legacy terrain duplicated the dog or its toy");
                 return true;
             }
         }
