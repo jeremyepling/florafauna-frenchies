@@ -1,5 +1,6 @@
 package net.j40climb.frenchies.common.entity.frenchie;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.entity.AnimationState;
@@ -17,6 +18,7 @@ public class FrenchieRenderState extends LivingEntityRenderState {
     public PlayPose playPose = PlayPose.NONE;
     public DangerReaction dangerReaction = DangerReaction.NONE;
     public float dangerAge;
+    public PoseStack.Pose noseBubbleFacing;
     public boolean isSleeping;
     public boolean isSwimming;
     public boolean isSitting;

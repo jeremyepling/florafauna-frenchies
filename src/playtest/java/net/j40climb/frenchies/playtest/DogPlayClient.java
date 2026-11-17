@@ -89,7 +89,10 @@ public final class DogPlayClient {
             case NOSE -> {
                 var attached = mc.level.getEntitiesOfClass(PlayBubbleEntity.class, dog.getBoundingBox().inflate(1.5),
                         bubble -> bubble.noseDogId() == dog.getId());
-                if (attached.size() != 1 || dog.playPose() != PlayPose.BUBBLE_NOSE) return;
+                if (attached.size() != 1 || dog.playPose() != PlayPose.BUBBLE_NOSE || !dog.onGround()) {
+                    frames = 0;
+                    return;
+                }
                 mc.player.lookAt(Anchor.EYES, aim.lerp(attached.getFirst().position(), 0.55));
                 if (++frames >= 3) capture(mc, "nose");
             }

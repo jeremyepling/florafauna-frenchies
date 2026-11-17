@@ -3,6 +3,9 @@ package net.j40climb.frenchies.test;
 import net.j40climb.frenchies.Frenchies;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.GameTestInfo;
+import net.minecraft.gametest.framework.GameTestListener;
+import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
@@ -39,12 +42,12 @@ public final class CompanionTests {
         registerPlayTest(event, yard, "play_bubble_delivery", 150, BubblePlayTests::delivery);
         registerPlayTest(event, yard, "play_bubble_nose", 230, BubblePlayTests::nose);
         registerPlayTest(event, yard, "play_bubble_unreachable", 230, BubblePlayTests::unreachable);
-        registerStructureTest(event, defaultEnv, "play_slime_sequence", yard, 420, SlimePlayTests::sequence);
-        registerStructureTest(event, defaultEnv, "play_slime_damage", yard, 230, SlimePlayTests::damage);
+        registerPlayTest(event, yard, "play_slime_sequence", 420, SlimePlayTests::sequence);
+        registerPlayTest(event, yard, "play_slime_damage", 230, SlimePlayTests::damage);
         registerPlayTest(event, yard, "play_slime_warning", 200, SlimePlayTests::warning);
-        registerStructureTest(event, defaultEnv, "play_slime_unsafe_footing", yard, 150, SlimePlayTests::unsafeFooting);
-        registerStructureTest(event, defaultEnv, "play_slime_blocked", yard, 200, SlimePlayTests::blocked);
-        registerStructureTest(event, defaultEnv, "play_slime_vanilla", yard, 250, SlimePlayTests::vanilla);
+        registerPlayTest(event, yard, "play_slime_unsafe_footing", 150, SlimePlayTests::unsafeFooting);
+        registerPlayTest(event, yard, "play_slime_blocked", 200, SlimePlayTests::blocked);
+        registerPlayTest(event, yard, "play_slime_vanilla", 250, SlimePlayTests::vanilla);
         registerStructureTest(event, defaultEnv, "companion_fetch", yard, 550, CompanionTravelTests::fetch);
         registerStructureTest(event, defaultEnv, "companion_captain", yard, 550, CompanionTravelTests::captain);
         registerStructureTest(event, defaultEnv, "companion_zoomies_interrupt", yard, 550, CompanionTravelTests::interruptCelebration);
@@ -85,8 +88,20 @@ public final class CompanionTests {
     private static void registerPlayTest(RegisterGameTestsEvent event, Identifier yard, String name,
                                          int ticks, Consumer<GameTestHelper> test) {
         var environment = event.registerEnvironment(Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, name),
-                new TestEnvironmentDefinition.AllOf());
-        registerStructureTest(event, environment, name, yard, ticks, test);
+                new TestEnvironmentDefinition.Weather(TestEnvironmentDefinition.Weather.Type.CLEAR));
+        registerStructureTest(event, environment, name, yard, ticks, h -> {
+            // The registered dimension clock is available when the server starts the case.
+            var level = h.getLevel();
+            var clock = level.dimensionType().defaultClock().orElseThrow();
+            var daylight = TestEnvironmentDefinition.activate(new TestEnvironmentDefinition.ClockTime(clock, 6000), level);
+            h.testInfo.addListener(new GameTestListener() {
+                @Override public void testStructureLoaded(GameTestInfo info) {}
+                @Override public void testAddedForRerun(GameTestInfo original, GameTestInfo copy, GameTestRunner runner) {}
+                @Override public void testPassed(GameTestInfo info, GameTestRunner runner) { daylight.teardown(); }
+                @Override public void testFailed(GameTestInfo info, GameTestRunner runner) { daylight.teardown(); }
+            });
+            test.accept(h);
+        });
     }
 
     static void registerStructureTest(
