@@ -56,6 +56,13 @@ public class FrenchieRenderer extends MobRenderer<FrenchieEntity, FrenchieRender
 
     @Override
     public void submit(FrenchieRenderState renderState, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState cameraRenderState) {
+        renderState.noseBubbleFacing = null;
+        if (renderState.playPose == PlayPose.BUBBLE_NOSE) {
+            poseStack.pushPose();
+            poseStack.rotate(cameraRenderState.orientation);
+            renderState.noseBubbleFacing = poseStack.last().copy();
+            poseStack.popPose();
+        }
         if(renderState.isBaby) {
             poseStack.scale(BABY_SCALE, BABY_SCALE, BABY_SCALE);
         } else {
