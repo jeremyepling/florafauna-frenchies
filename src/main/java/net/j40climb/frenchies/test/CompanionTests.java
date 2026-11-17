@@ -2,6 +2,7 @@ package net.j40climb.frenchies.test;
 
 import net.j40climb.frenchies.Frenchies;
 import net.j40climb.frenchies.common.entity.frenchie.DiggingAssistantGameTests;
+import net.j40climb.frenchies.common.entity.frenchie.PlayInterruptionGameTests;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;
@@ -65,6 +66,7 @@ public final class CompanionTests {
         registerPlayTest(event, yard, "play_weather_swim", 200, WeatherPlayTests::swim);
         registerPlayTest(event, yard, "play_trick_backflop", 200, TrickBellyTests::trick);
         registerPlayTest(event, yard, "play_belly_rub", 200, TrickBellyTests::belly);
+        registerPlayTest(event, yard, "play_whistle_interruptions", 400, PlayInterruptionGameTests::whistleDuringPlay);
         registerPlayTest(event, yard, "companion_fetch", 550, CompanionTravelTests::fetch);
         registerStructureTest(event, defaultEnv, "companion_captain", yard, 550, CompanionTravelTests::captain);
         registerPlayTest(event, yard, "companion_zoomies_interrupt", 550, CompanionTravelTests::interruptCelebration);
