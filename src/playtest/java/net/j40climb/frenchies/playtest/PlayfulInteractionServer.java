@@ -45,16 +45,16 @@ public final class PlayfulInteractionServer {
     static final String TRICK = "Playful fixture: trick";
     static final String BELLY = "Playful fixture: belly";
     static final String RUB = "Playful fixture: rub";
+    static final String STICK = "Playful fixture: stick portrait";
     static final String REJOIN = "Playful fixture: rejoin";
     static final String DONE = "Playful fixture: done";
     private static final BlockPos YARD = new BlockPos(0, 200, 0);
     private static final String[] TRICK_FRAMES = {"trick-crouch", "trick-spring", "trick-flop",
             "trick-wiggle", "trick-roll-up"};
-    private static final String[] BELLY_FRAMES = {"belly-up", "belly-kick"};
+    private static final String[] BELLY_FRAMES = {"belly-up", "belly-kick-high", "belly-kick-low"};
     private static final String[] DRY_FRAMES = {"dry-shake", "dry-shoulder", "dry-roll", "dry-drag"};
     private static final String[] SNOW_FRAMES = {"snow-dive", "snow-plow", "snow-pop"};
-    private static final String[] DIG_FRAMES = {"dig-paws", "dig-stick"};
-    private enum Step { JOIN, TRICK, BELLY, RUB, BELLY_EXIT, SWIM, DRY, SNOW_INVITE, SNOW, DIG, REJOIN, EXIT }
+    private enum Step { JOIN, TRICK, BELLY, RUB, BELLY_EXIT, SWIM, DRY, SNOW_INVITE, SNOW, DIG, DIG_STICK, REJOIN, EXIT }
     private static Step step = Step.JOIN;
     private static Path root;
     private static int phase;
@@ -101,6 +101,8 @@ public final class PlayfulInteractionServer {
                     preparePlayers(owner, visitor);
                     if (phase == 2) {
                         Files.deleteIfExists(root.resolve("Visitor/screenshots/visitor-reload-upright-stick.png"));
+                        require(dog != null, "Saved Frenchie did not reload");
+                        stageMouthPortrait(owner, visitor, dog);
                         cue(visitor, REJOIN);
                         advance(Step.REJOIN, now);
                         break;
@@ -127,6 +129,8 @@ public final class PlayfulInteractionServer {
                     dog.snapTo(Vec3.atBottomCenterOf(YARD), 0, 0);
                     owner.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                     owner.teleportTo(level, 2.0, 200, 0.5, Set.of(), -90, 0, true);
+                    // The owner's position points the dog east; the observer sees the kick in profile.
+                    visitor.teleportTo(level, 0.5, 199.7, -2.1, Set.of(), 0, 0, true);
                     cue(owner, BELLY);
                     advance(Step.BELLY, now);
                 }
@@ -137,7 +141,7 @@ public final class PlayfulInteractionServer {
                     }
                 }
                 case RUB -> {
-                    if (dog == null || dog.bellyStage() != 3 || !frame("belly-kick")) break;
+                    if (dog == null || dog.bellyStage() != 3 || !frames(BELLY_FRAMES)) break;
                     require(!dog.isOrderedToSit(), "Belly rub toggled sit");
                     owner.teleportTo(level, 5.5, 200, 5.5, Set.of(), 180, 0, true);
                     advance(Step.BELLY_EXIT, now);
@@ -211,23 +215,37 @@ public final class PlayfulInteractionServer {
                         owner.gameMode.destroyBlock(new BlockPos(x, 200, z));
                         attempts++;
                     }
-                    if (dog.digStage() != 0 || !frames(DIG_FRAMES)) break;
+                    if (dog.digStage() != 0 || !frame("dig-paws")) break;
                     require(dog.getMouthItem().is(Items.STICK) && dog.getOffhandItem().isEmpty(),
                             "Reusable stick was not a virtual mouth prop");
                     require(level.getBlockState(YARD.below()).is(Blocks.DIRT), "Frenchie changed digging floor");
                     require(level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
                             dog.getBoundingBox().inflate(8), item -> item.getItem().is(Items.STICK)).isEmpty(),
                             "Frenchie dropped a collectible stick");
-                    finish(owner, visitor, "PASS");
+                    stageMouthPortrait(owner, visitor, dog);
+                    cue(visitor, STICK);
+                    advance(Step.DIG_STICK, now);
+                }
+                case DIG_STICK -> {
+                    require(dog != null && dog.getMouthItem().is(Items.STICK), "Staged portrait lost toy stick");
+                    require(visitor.hasLineOfSight(dog), "Visitor cannot see the mouth-stick portrait");
+                    if (frame("dig-stick")) {
+                        dog.setNoAi(false);
+                        finish(owner, visitor, "PASS");
+                    }
                 }
                 case REJOIN -> {
                     if (dog == null) break;
+                    require(visitor.hasLineOfSight(dog), "Visitor cannot see the reloaded stick portrait");
                     require(dog.getMouthItem().is(Items.STICK) && dog.getOffhandItem().isEmpty(),
                             "Reload lost or duplicated the virtual stick");
                     require(dog.trickStage() == 0 && dog.bellyStage() == 0
                             && dog.weatherStage() == 0 && dog.digStage() == 0,
                             "Reload retained an unfinished pose");
-                    if (frame("reload-upright-stick")) finish(owner, visitor, "PASS");
+                    if (frame("reload-upright-stick")) {
+                        dog.setNoAi(false);
+                        finish(owner, visitor, "PASS");
+                    }
                 }
                 case EXIT -> { }
             }
@@ -254,6 +272,18 @@ public final class PlayfulInteractionServer {
         owner.getInventory().clearContent();
         owner.teleportTo(owner.level(), 0.5, 200, 2.5, Set.of(), 180, 0, true);
         visitor.teleportTo(visitor.level(), -2.2, 199.7, -1.4, Set.of(), -50, 0, true);
+    }
+
+    private static void stageMouthPortrait(ServerPlayer owner, ServerPlayer visitor, FrenchieEntity dog) {
+        // Keep the real excavation untouched; use the open yard for an unobstructed stick close-up.
+        dog.getNavigation().stop();
+        dog.setDeltaMovement(Vec3.ZERO);
+        dog.snapTo(Vec3.atBottomCenterOf(YARD), 0, 0);
+        dog.yBodyRot = 0;
+        dog.setYHeadRot(0);
+        dog.setNoAi(true);
+        owner.teleportTo(owner.level(), 6.5, 200, -6.5, Set.of(), 0, 0, true);
+        visitor.teleportTo(visitor.level(), 0.5, 199.7, 3.1, Set.of(), 180, 0, true);
     }
 
     private static void cue(ServerPlayer player, String text) { player.sendSystemMessage(Component.literal(text)); }
