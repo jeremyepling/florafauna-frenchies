@@ -40,7 +40,8 @@ public class FrontpackEvents {
         Player player = event.getEntity();
         Entity target = event.getTarget();
 
-        if (player.getItemInHand(event.getHand()).is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) return;
+        if (player.getItemInHand(event.getHand()).is(FrenchieRegistry.FRENCHIE_WHISTLE.get())
+                || player.getMainHandItem().isEmpty() && player.getOffhandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) return;
         // Pickup conditions
         if (!player.isShiftKeyDown()) return;
         if (!(target instanceof FrenchieEntity frenchie)) return;

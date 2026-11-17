@@ -14,7 +14,7 @@ import net.minecraft.world.phys.Vec3;
 final class CaptainControls {
     static boolean canJoin(FrenchieEntity dog, AbstractBoat boat) {
         LivingEntity owner = dog.getOwner();
-        return owner != null && owner.getVehicle() == boat && !dog.isOrderedToSit() && !dog.isLeashed()
+        return !dog.respondingToWhistle() && owner != null && owner.getVehicle() == boat && !dog.isOrderedToSit() && !dog.isLeashed()
                 && !dog.hasCompanionJob() && !dog.hasToyJob() && !boat.isUnderWater()
                 && boat.getPassengers().stream().noneMatch(p -> p instanceof FrenchieEntity other && other.isTame());
     }

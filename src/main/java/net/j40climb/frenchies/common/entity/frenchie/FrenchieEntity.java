@@ -62,6 +62,7 @@ public class FrenchieEntity extends TamableAnimal {
             SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.LONG);
     private EscapeDangerGoal escapeDanger;
     private long nextDangerReaction;
+    private long respondingUntil;
     private CelebrationGoal celebration;
     long nextCelebration;
     private long ownerAwaySince = -1;
@@ -164,7 +165,7 @@ public class FrenchieEntity extends TamableAnimal {
     }
 
     boolean personalityInterrupted() {
-        return dangerReaction() != DangerReaction.NONE || escapeDanger != null && escapeDanger.canUse() || entityData.get(BEDTIME) != 0
+        return respondingToWhistle() || dangerReaction() != DangerReaction.NONE || escapeDanger != null && escapeDanger.canUse() || entityData.get(BEDTIME) != 0
                 || level().getGameTime() - warningStart() < FrenchieAwareness.WARNING_TICKS;
     }
 
@@ -519,6 +520,8 @@ public class FrenchieEntity extends TamableAnimal {
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand, Vec3 location) {
+        if (hand == InteractionHand.MAIN_HAND && player.getMainHandItem().isEmpty()
+                && player.getOffhandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) return InteractionResult.PASS;
         if (player.getItemInHand(hand).is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) {
             return FrenchieRegistry.FRENCHIE_WHISTLE.get().use(level(), player, hand);
         }
@@ -626,14 +629,15 @@ public class FrenchieEntity extends TamableAnimal {
         deliveryDialog = null;
         delivery.cancelForCompanion();
         trail.cancel();
-        goalSelector.getAvailableGoals().stream().filter(WrappedGoal::isRunning).forEach(WrappedGoal::stop);
-        toyPlay.stop();
-        celebration.stop();
-        bubblePlay.stop();
-        setPlayPose(PlayPose.NONE);
+        interruptPlay();
+        respondingUntil = level().getGameTime() + 60;
         standUp();
         setFrenchieSleeping(false);
         syncCompanionJob();
+    }
+
+    boolean respondingToWhistle() {
+        return level().getGameTime() < respondingUntil;
     }
 
     private void orderMessage(Player owner, String key) {
@@ -851,7 +855,7 @@ public class FrenchieEntity extends TamableAnimal {
     /* Sleeping */
 
     private void updateSleepState() {
-        if (escapeDanger.canUse() || dangerReaction() != DangerReaction.NONE) {
+        if (respondingToWhistle() || escapeDanger.canUse() || dangerReaction() != DangerReaction.NONE) {
             entityData.set(BEDTIME, (byte) 0);
             setFrenchieSleeping(false);
             return;
