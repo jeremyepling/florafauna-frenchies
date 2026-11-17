@@ -26,6 +26,8 @@ public final class CompanionTests {
         registerPlayTest(event, yard, "play_bubble_unreachable", 230, BubblePlayTests::unreachable);
         registerStructureTest(event, defaultEnv, "play_slime_sequence", yard, 420, SlimePlayTests::sequence);
         registerStructureTest(event, defaultEnv, "play_slime_damage", yard, 230, SlimePlayTests::damage);
+        registerPlayTest(event, yard, "play_slime_warning", 200, SlimePlayTests::warning);
+        registerStructureTest(event, defaultEnv, "play_slime_unsafe_footing", yard, 150, SlimePlayTests::unsafeFooting);
         registerStructureTest(event, defaultEnv, "play_slime_blocked", yard, 200, SlimePlayTests::blocked);
         registerStructureTest(event, defaultEnv, "play_slime_vanilla", yard, 250, SlimePlayTests::vanilla);
         registerStructureTest(event, defaultEnv, "companion_fetch", yard, 550, CompanionTravelTests::fetch);
@@ -64,7 +66,7 @@ public final class CompanionTests {
         registerTest(event, defaultEnv, "frenchie_frontpack_elytra", FrontpackElytraGameTest::craftAndRepair);
     }
 
-    // Bubble recruitment and the production limit reach into adjacent GameTest structures.
+    // Audience scans, production limits, and creeper warnings reach into adjacent structures.
     private static void registerPlayTest(RegisterGameTestsEvent event, Identifier yard, String name,
                                          int ticks, Consumer<GameTestHelper> test) {
         var environment = event.registerEnvironment(Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, name),
