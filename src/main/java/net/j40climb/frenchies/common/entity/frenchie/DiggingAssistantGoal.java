@@ -90,8 +90,9 @@ final class DiggingAssistantGoal extends Goal {
                     return;
                 }
                 if (ticks % 4 == 0 && dog.level() instanceof ServerLevel level) {
+                    Vec3 forward = dog.getLookAngle().multiply(0.3, 0, 0.3);
                     level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state),
-                            dog.getX(), dog.getY() + 0.15, dog.getZ() - 0.25,
+                            dog.getX() + forward.x, dog.getY() + 0.15, dog.getZ() + forward.z,
                             5, 0.28, 0.08, 0.28, 0.04);
                 }
                 if (ticks >= 48) {
