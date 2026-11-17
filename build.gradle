@@ -41,7 +41,7 @@ def playtestPhase = providers.gradleProperty('playtestPhase').orNull
 def deliveryTestId = providers.gradleProperty('deliveryTestId').orNull
 def deliveryTestPort = providers.gradleProperty('deliveryTestPort').orNull
 def multiplayerScenario = providers.gradleProperty('multiplayerScenario').orElse('delivery').get()
-if (!(multiplayerScenario in ['delivery', 'play'])) {
+if (!(multiplayerScenario in ['delivery', 'play', 'whistle'])) {
     throw new GradleException('Unknown multiplayer scenario')
 }
 if (deliveryTestId != null && (!(deliveryTestId ==~ /[0-9a-f]{32}/) || !(deliveryTestPort ==~ /[0-9]{1,5}/) || !(1..65535).contains(deliveryTestPort.toInteger()))) {

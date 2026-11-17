@@ -1,0 +1,136 @@
+package net.j40climb.frenchies.test;
+
+import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
+import net.j40climb.frenchies.setup.FrenchieRegistry;
+import net.minecraft.core.BlockPos;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.List;
+
+import static net.j40climb.frenchies.test.CompanionTravelTests.disconnect;
+import static net.j40climb.frenchies.test.CompanionTravelTests.player;
+
+final class CompanionSafetyTests {
+    static void damage(GameTestHelper h) {
+        var owner = player(h, 4.5, 4.5);
+        var dog = CompanionWhistleTests.dog(h, owner, 4, 5);
+        var recipient = player(h, 8.5, 7.5);
+        var boots = CompanionWhistleTests.named(new ItemStack(Items.LEATHER_BOOTS), "Rain boots");
+        var parcel = FrenchieDeliveryGameTests.parcel();
+        dog.setItemSlot(EquipmentSlot.FEET, boots.copy());
+        owner.setItemInHand(InteractionHand.MAIN_HAND, parcel.copy());
+        FrenchieDeliveryGameTests.confirm(owner, recipient, dog);
+        h.assertTrue(ItemStack.matches(dog.getParcel(), parcel), "Fixture did not transfer the parcel");
+        float health = dog.getHealth();
+        h.assertTrue(!dog.showVehicleHealth(), "Tamed Frenchie requested a health bar");
+        var sources = dog.damageSources();
+        var arrow = new Arrow(h.getLevel(), owner, new ItemStack(Items.ARROW), null);
+        for (var hit : List.of(sources.playerAttack(owner), sources.arrow(arrow, owner), sources.explosion(null, null),
+                sources.fall(), sources.inFire(), sources.onFire(), sources.lava(), sources.drown(), sources.inWall(),
+                sources.freeze(), sources.cactus(), sources.wither(), sources.magic())) {
+            dog.hurtServer(h.getLevel(), hit, 1000);
+            h.assertTrue(dog.isAlive() && dog.getHealth() == health && dog.hurtTime == 0
+                    && ItemStack.matches(dog.getItemBySlot(EquipmentSlot.FEET), boots) && ItemStack.matches(dog.getParcel(), parcel),
+                    "Hazard " + hit + " damaged the dog or its possessions");
+        }
+        var wild = h.spawn(FrenchieRegistry.FRENCHIE.get(), 7, 1, 3);
+        float wildHealth = wild.getHealth();
+        wild.hurtServer(h.getLevel(), sources.cactus(), 2);
+        h.assertTrue(wild.getHealth() < wildHealth, "Wild Frenchie gained the tamed damage protection");
+        disconnect(recipient, owner);
+        h.succeed();
+    }
+
+    static void reactions(GameTestHelper h) {
+        var owner = player(h, 4.5, 4.5);
+        var dog = CompanionWhistleTests.dog(h, owner, 5, 5);
+        dog.standUp();
+        var level = h.getLevel();
+        float health = dog.getHealth();
+        h.startSequence().thenWaitUntil(() -> h.assertTrue(dog.onGround(), "Dog has not landed"))
+        .thenExecute(dog::tryCelebrate)
+        .thenWaitUntil(() -> h.assertTrue(dog.celebrationStage() != 0, "Celebration never began"))
+        .thenExecute(() -> {
+            dog.hurtServer(level, dog.damageSources().playerAttack(owner), 10);
+            h.assertTrue(dog.dangerReaction().name().equals("STARTLE"), "An accidental hit gave no startle");
+        }).thenExecuteAfter(3, () -> h.assertTrue(dog.celebrationStage() == 0 && dog.hurtTime == 0, "Hit left the play goal active"))
+        .thenExecuteAfter(20, () -> {
+            dog.hurtServer(level, dog.damageSources().playerAttack(owner), 10);
+            h.assertTrue(dog.dangerReaction().name().equals("NONE"), "Hits replayed the reaction during cooldown");
+        }).thenExecuteAfter(50, () -> {
+            level.explode(null, dog.getX() + 1, dog.getY(), dog.getZ(), 1.6F, Level.ExplosionInteraction.NONE);
+            h.assertTrue(dog.dangerReaction().name().equals("DUCK") && dog.getDeltaMovement().horizontalDistance() < 0.3,
+                    "Nearby blast lacked a duck or knocked the dog back");
+        }).thenExecuteAfter(66, () -> {
+            dog.causeFallDamage(12, 1F, dog.damageSources().fall());
+            h.assertTrue(dog.dangerReaction().name().equals("TUMBLE"), "A serious fall gave no tumble");
+        }).thenExecuteAfter(35, () -> {
+            h.assertTrue(dog.dangerReaction().name().equals("NONE") && dog.getHealth() == health, "Dog stayed hurt or reacting");
+            owner.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            owner.interactOn(dog, InteractionHand.MAIN_HAND, Vec3.ZERO);
+            h.assertTrue(dog.isOrderedToSit(), "Recovered companion stopped accepting orders");
+            disconnect(owner);
+        }).thenSucceed();
+    }
+
+    static void combat(GameTestHelper h) {
+        var owner = player(h, 2.5, 2.5);
+        var dog = CompanionWhistleTests.dog(h, owner, 5, 5);
+        var zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 8, 1, 2);
+        var target = h.spawnWithNoFreeWill(EntityType.COW, 8, 1, 5);
+        float health = target.getHealth();
+        var at = dog.position().add(0, 0.26, 0);
+        var ray = target.position().subtract(dog.position()).normalize();
+        var from = at.subtract(ray.scale(2.8));
+        var arrow = new Arrow(h.getLevel(), from.x, from.y, from.z, new ItemStack(Items.ARROW), null);
+        arrow.setNoGravity(true);
+        arrow.setDeltaMovement(ray.scale(1.8));
+        h.assertTrue(h.getLevel().addFreshEntity(arrow), "Could not fire the arrow");
+        zombie.setTarget(dog);
+        h.assertTrue(zombie.getTarget() != dog && !zombie.canAttack(dog), "Tamed dog held hostile attention");
+        float zombieHealth = zombie.getHealth();
+        h.assertTrue(!dog.doHurtTarget(h.getLevel(), zombie) && zombie.getHealth() == zombieHealth, "Tamed dog damaged a hostile mob");
+        h.startSequence().thenWaitUntil(() -> h.assertTrue(target.getHealth() < health, "Dog intercepted an arrow aimed through it"))
+        .thenExecute(() -> {
+            h.assertTrue(dog.getHealth() == dog.getMaxHealth() && zombie.getTarget() != dog && dog.getTarget() == null,
+                    "Dog absorbed damage or retained a combat target");
+            disconnect(owner);
+        }).thenSucceed();
+    }
+
+    static void rescue(GameTestHelper h, boolean voidFall) {
+        var owner = player(h, 2.5, 2.5);
+        var dog = CompanionWhistleTests.dog(h, owner, 8, 8);
+        var id = dog.getUUID();
+        var toy = CompanionWhistleTests.named(new ItemStack(FrenchieRegistry.SQUEAKY_TOY.get()), "Pocket squeaker");
+        dog.setItemSlot(EquipmentSlot.OFFHAND, toy.copy());
+        float health = dog.getHealth();
+        h.startSequence().thenExecuteAfter(6, () -> {
+            if (voidFall) {
+                dog.snapTo(dog.getX(), h.getLevel().getMinY() - 90, dog.getZ(), 0, 0);
+            } else {
+                for (var pos : BlockPos.betweenClosed(7, 1, 7, 9, 4, 9)) {
+                    boolean wall = pos.getX() != 8 || pos.getZ() != 8 || pos.getY() == 4;
+                    h.setBlock(pos, wall ? Blocks.OBSIDIAN : Blocks.LAVA);
+                }
+                dog.igniteForSeconds(100);
+            }
+        }).thenWaitUntil(() -> {
+            var entity = h.getLevel().getEntity(id);
+            h.assertTrue(entity instanceof FrenchieEntity rescued && rescued.isAlive() && rescued.distanceToSqr(owner) < 36
+                            && h.getLevel().getFluidState(rescued.blockPosition()).isEmpty()
+                            && !rescued.isOnFire() && rescued.getHealth() == health
+                            && ItemStack.matches(rescued.getOffhandItem(), toy),
+                    "Staying dog did not escape " + (voidFall ? "the void" : "the lava trap") + " with its original toy");
+        }).thenExecute(() -> disconnect(owner)).thenSucceed();
+    }
+}

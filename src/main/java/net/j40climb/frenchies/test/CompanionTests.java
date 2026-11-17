@@ -18,6 +18,21 @@ public final class CompanionTests {
                 Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "default"),
                 new TestEnvironmentDefinition.AllOf());
         var yard = Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "companion_yard");
+        registerPlayTest(event, yard, "companion_whistle_selection", 650, CompanionWhistleTests::selection);
+        registerPlayTest(event, yard, "companion_whistle_dimension", 650, CompanionWhistleTests::dimension);
+        registerPlayTest(event, yard, "companion_whistle_damage", 650, CompanionSafetyTests::damage);
+        registerPlayTest(event, yard, "companion_whistle_reactions", 650, CompanionSafetyTests::reactions);
+        registerPlayTest(event, yard, "companion_whistle_combat", 650, CompanionSafetyTests::combat);
+        registerPlayTest(event, yard, "companion_whistle_void", 650, h -> CompanionSafetyTests.rescue(h, true));
+        registerPlayTest(event, yard, "companion_whistle_trapped", 650, h -> CompanionSafetyTests.rescue(h, false));
+        registerPlayTest(event, yard, "companion_whistle_packed_call", 650, h -> CompanionWhistleTests.courier(h, false, true));
+        registerPlayTest(event, yard, "companion_whistle_packed_dismiss", 650, h -> CompanionWhistleTests.courier(h, true, true));
+        registerPlayTest(event, yard, "companion_whistle_transit_call", 650, h -> CompanionWhistleTests.courier(h, false, false));
+        registerPlayTest(event, yard, "companion_whistle_transit_dismiss", 650, h -> CompanionWhistleTests.courier(h, true, false));
+        registerPlayTest(event, yard, "companion_whistle_boat_call", 650, h -> CompanionWhistleTests.boatOrPlay(h, true, false));
+        registerPlayTest(event, yard, "companion_whistle_boat_dismiss", 650, h -> CompanionWhistleTests.boatOrPlay(h, true, true));
+        registerPlayTest(event, yard, "companion_whistle_play_call", 650, h -> CompanionWhistleTests.boatOrPlay(h, false, false));
+        registerPlayTest(event, yard, "companion_whistle_play_dismiss", 650, h -> CompanionWhistleTests.boatOrPlay(h, false, true));
         registerPlayTest(event, yard, "play_bubble_toy", 230, BubblePlayTests::toy);
         registerPlayTest(event, yard, "play_bubble_audience", 230, BubblePlayTests::audience);
         registerPlayTest(event, yard, "play_bubble_pops", 200, BubblePlayTests::pops);

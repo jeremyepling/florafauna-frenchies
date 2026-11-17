@@ -1,6 +1,6 @@
 #Requires -Version 7.0
 # Two offline development clients connect only to a disposable loopback server.
-param([switch]$Offline, [ValidateSet('delivery','play')][string]$Scenario = 'delivery')
+param([switch]$Offline, [ValidateSet('delivery','play','whistle')][string]$Scenario = 'delivery')
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
@@ -50,7 +50,7 @@ try {
         $script.Replace((Join-Path $checkout 'build\moddev'), $launchDir) | Set-Content -LiteralPath (Join-Path $launchDir $scriptName)
     }
 
-    $phases = if ($Scenario -eq 'play') { @(1, 2) } else { @(1) }
+    $phases = if ($Scenario -in 'play', 'whistle') { @(1, 2) } else { @(1) }
     foreach ($phase in $phases) {
         Write-Host "Launching dedicated $Scenario phase $phase"
         Set-Content -LiteralPath (Join-Path $root 'phase') -Value $phase
