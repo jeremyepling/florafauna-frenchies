@@ -236,6 +236,7 @@ final class CompanionWhistleTests {
         var toy = named(new ItemStack(FrenchieRegistry.SQUEAKY_TOY.get()), "Away squeaker");
         dog.setItemSlot(EquipmentSlot.OFFHAND, toy.copy());
         equip(owner);
+        ServerPlayer[] returning = new ServerPlayer[1];
         AtomicBoolean reopened = new AtomicBoolean();
         Consumer<EntityJoinLevelEvent> readKennel = event -> {
             if (event.getLevel() == level && event.getEntity().getUUID().equals(id) && event.loadedFromDisk()) reopened.set(true);
@@ -256,6 +257,8 @@ final class CompanionWhistleTests {
         .thenExecute(() -> {
             NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, EntityJoinLevelEvent.class, readKennel);
             whistle(owner, true);
+            h.assertTrue(!reopened.get(), "The owner must leave before the remote entity is loaded");
+            disconnect(owner);
         })
         .thenWaitUntil(() -> h.assertTrue(reopened.get() && level.getEntity(id) == null,
                 "Remote dismissal never read and put away the unloaded dog"))
@@ -263,15 +266,17 @@ final class CompanionWhistleTests {
         .thenWaitUntil(() -> h.assertTrue(level.areEntitiesActuallyLoadedAndTicking(remote), "Test visit did not reopen kennel"))
         .thenExecuteAfter(30, () -> {
             h.assertTrue(level.getEntity(id) == null, "Reopening the kennel left a dismissed dog physically behind");
-            whistle(owner, false);
-        }).thenWaitUntil(() -> near(h, owner, id))
+            returning[0] = CompanionSafetyTests.reconnect(h, owner);
+            h.assertTrue(returning[0].getMainHandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get()), "Reconnect lost the player's whistle");
+            whistle(returning[0], false);
+        }).thenWaitUntil(() -> near(h, returning[0], id))
         .thenExecute(() -> {
-            var restored = near(h, owner, id);
+            var restored = near(h, returning[0], id);
             h.assertTrue(ItemStack.matches(toy, restored.getOffhandItem())
-                            && level.getEntities(FrenchieRegistry.FRENCHIE.get(), d -> d.isOwnedBy(owner)).size() == 1,
+                            && level.getEntities(FrenchieRegistry.FRENCHIE.get(), d -> d.isOwnedBy(returning[0])).size() == 1,
                     "Distant dismissal recreated the original or its named toy on return");
             tickets.removeTicketWithRadius(TicketType.FORCED, remote, 2);
-            disconnect(owner);
+            disconnect(returning[0]);
         }).thenSucceed();
     }
 

@@ -166,6 +166,19 @@ final class CompanionSafetyTests {
                 .thenExecute(() -> disconnect(owner)).thenSucceed();
     }
 
+    static ServerPlayer reconnect(GameTestHelper h, ServerPlayer owner) {
+        var level = h.getLevel();
+        var cookie = CommonListenerCookie.createInitial(owner.getGameProfile(), false);
+        // ConfigSync distinguishes an embedded GameTest player by its subclass, as GameTestHelper does.
+        var player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation()) {};
+        var connection = new Connection(PacketFlow.SERVERBOUND);
+        new EmbeddedChannel(connection);
+        level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+        net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
+        player.snapTo(h.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
+        return player;
+    }
+
     static void offlineVoid(GameTestHelper h) {
         var owner = player(h, 2.5, 2.5);
         var level = h.getLevel();
@@ -180,15 +193,7 @@ final class CompanionSafetyTests {
         }).thenWaitUntil(() -> h.assertTrue(level.getEntity(id) == null, "Offline owner's dog remained in the void"))
         .thenExecuteAfter(60, () -> {
             h.assertTrue(level.getEntity(id) == null, "The missing owner caused a premature or unsafe arrival");
-            var cookie = CommonListenerCookie.createInitial(owner.getGameProfile(), false);
-            // ConfigSync distinguishes an embedded GameTest player by its subclass, as GameTestHelper does.
-            var player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation()) {};
-            var connection = new Connection(PacketFlow.SERVERBOUND);
-            new EmbeddedChannel(connection);
-            level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
-            net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
-            player.snapTo(h.absoluteVec(new Vec3(2.5, 1, 2.5)), 0, 0);
-            returning[0] = player;
+            returning[0] = reconnect(h, owner);
         }).thenWaitUntil(() -> {
             var entity = level.getEntity(id);
             h.assertTrue(entity instanceof FrenchieEntity back && back.isOwnedBy(returning[0])
