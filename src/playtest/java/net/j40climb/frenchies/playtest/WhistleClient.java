@@ -90,7 +90,11 @@ public final class WhistleClient {
             case BLAST, PEEK, RELAXED, TUMBLE, STARTLE -> {
                 if (!(mc.level.getEntity(WhistleServer.COMPANION) instanceof FrenchieEntity dog)) return;
                 mc.options.hideGui = true;
-                mc.player.lookAt(Anchor.EYES, dog.getBoundingBox().getCenter());
+                var aim = dog.getBoundingBox().getCenter();
+                var sight = aim.subtract(mc.player.getEyePosition());
+                boolean framed = sight.lengthSqr() < 7 && mc.player.getLookAngle().dot(sight.normalize()) > 0.99;
+                mc.player.lookAt(Anchor.EYES, aim);
+                if (!framed) return;
                 if (step == Step.BLAST && dog.dangerReaction().name().equals("DUCK") && dog.dangerReactionAge(0f) >= 3) {
                     capture(mc, "visitor-blast-duck.png");
                     step = Step.PEEK;
