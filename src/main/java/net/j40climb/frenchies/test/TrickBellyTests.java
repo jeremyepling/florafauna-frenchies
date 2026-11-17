@@ -13,7 +13,7 @@ final class TrickBellyTests {
         var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 5, 1, 5);
         dog.tame(owner);
         dog.standUp();
-        owner.snapTo(dog.position().add(2, 0, 0), 0, 0);
+        owner.snapTo(dog.position().add(2.5, 0, 0), 0, 0);
         owner.setShiftKeyDown(true);
         owner.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BONE));
         float health = dog.getHealth();
@@ -25,6 +25,7 @@ final class TrickBellyTests {
                 .thenWaitUntil(() -> h.assertTrue(dog.trickStage() == 3, "Trick did not flop"))
                 .thenWaitUntil(() -> h.assertTrue(dog.trickStage() == 4, "Trick did not wiggle"))
                 .thenWaitUntil(() -> h.assertTrue(dog.trickStage() == 5, "Trick did not roll upright"))
+                .thenWaitUntil(() -> h.assertTrue(dog.trickStage() == 6, "Safe open ground did not allow a victory lap"))
                 .thenWaitUntil(() -> h.assertTrue(dog.trickStage() == 0, "Trick did not finish"))
                 .thenExecute(() -> h.assertTrue(dog.getHealth() == health && !dog.isOrderedToSit()
                         && dog.onGround(), "Trick damaged or stranded the Frenchie"))
