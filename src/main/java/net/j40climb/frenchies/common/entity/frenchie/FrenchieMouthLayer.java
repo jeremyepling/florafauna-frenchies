@@ -21,7 +21,7 @@ final class FrenchieMouthLayer extends RenderLayer<FrenchieRenderState, Frenchie
         getParentModel().translateToMouth(pose);
         if (state.noseBubbleFacing != null) {
             // Use the animated muzzle for position, retaining the same camera-facing film as a free bubble.
-            pose.translate(0, -4.9 / 16, 0.9 / 16);
+            pose.translate(0, -4.25 / 16, -0.65 / 16);
             var center = pose.last().pose().getTranslation(new org.joml.Vector3f());
             pose.last().set(state.noseBubbleFacing);
             pose.last().pose().setTranslation(center);
