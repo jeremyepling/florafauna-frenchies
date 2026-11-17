@@ -18,6 +18,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.cubemob.Slime;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
@@ -39,7 +40,7 @@ final class DogPlayServer {
     static final String WATCH_RELOAD = "Play fixture: watch restored dog";
     static final String BLOW_AGAIN = "Play fixture: blow again";
     private static final BlockPos YARD = new BlockPos(488, 220, 488);
-    private enum Step { JOIN, BUBBLES, OFFER, NOSE, BOW, RELOAD, RECRUIT, NIGHTFALL, SLEEP, WATCH, AWAY, RETURN, TARGET }
+    private enum Step { JOIN, BUBBLES, OFFER, NOSE, BOW, RELOAD, RECRUIT, NIGHTFALL, SLEEP, WATCH, AWAY, RETURN, SPAWN_SLIME, TARGET }
     private static Step step = Step.JOIN;
     private static long sleptAt;
     private static Vec3 bed;
@@ -47,6 +48,7 @@ final class DogPlayServer {
     private static long nextPuff;
     private static FrenchieEntity departingDog;
     private static List<PlayBubbleEntity> departingPuff;
+    private static Slime liveSlime;
 
     static boolean finished(ServerPlayer owner, ServerPlayer visitor, Path root, int phase) {
         var level = owner.level();
@@ -189,18 +191,26 @@ final class DogPlayServer {
                 level.getServer().clockManager().moveToTimeMarker(level.dimensionType().defaultClock().orElseThrow(), ClockTimeMarkers.NOON);
                 visitor.setGameMode(GameType.SURVIVAL);
                 visitor.teleportTo(level, YARD.getX() + 3.7, YARD.getY(), YARD.getZ() + 0.5, Set.of(), 90, 0, true);
-                var slime = EntityTypes.SLIME.create(level, EntitySpawnReason.COMMAND);
-                require(slime != null, "Could not create live vanilla slime");
-                slime.setSize(1, true);
-                slime.setUUID(SLIME);
-                slime.snapTo(YARD, 0, 0);
-                require(level.addFreshEntity(slime), "Could not spawn vanilla slime");
+                advance(Step.SPAWN_SLIME);
+            }
+            case SPAWN_SLIME -> {
+                var chunk = ChunkPos.containing(YARD);
+                if (!level.areEntitiesActuallyLoadedAndTicking(chunk) || !level.isPositionEntityTicking(YARD)
+                        || !visitor.connection.hasClientLoaded() || !owner.connection.hasClientLoaded()
+                        || !level.getChunkSource().chunkMap.isChunkTracked(visitor, chunk.x(), chunk.z())) break;
+                liveSlime = EntityTypes.SLIME.create(level, EntitySpawnReason.COMMAND);
+                require(liveSlime != null, "Could not create live vanilla slime");
+                liveSlime.setSize(1, true);
+                liveSlime.snapTo(YARD, 0, 0);
+                require(level.addFreshEntity(liveSlime), "Could not spawn vanilla slime");
                 advance(Step.TARGET);
             }
             case TARGET -> {
-                var slime = (Slime) level.getEntity(SLIME);
-                require(slime != null && slime.isAlive(), "Frenchie harmed the vanilla slime");
-                return slime.getTarget() == visitor && slime.distanceToSqr(visitor) < 4;
+                require(!liveSlime.isDeadOrDying() && liveSlime.getHealth() == liveSlime.getMaxHealth(),
+                        "Vanilla slime lost health after spawn: " + liveSlime.getHealth());
+                require(!liveSlime.isRemoved(), "Vanilla slime removed after spawn: " + liveSlime.getRemovalReason());
+                return level.getEntity(liveSlime.getUUID()) == liveSlime && liveSlime.getTarget() == visitor
+                        && liveSlime.distanceToSqr(visitor) < 4;
             }
         }
         return false;
