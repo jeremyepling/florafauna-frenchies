@@ -18,6 +18,11 @@ Taming your first dog gives you a **Frenchie Whistle**. Right-click to call your
 - **Blow bubbles.** Craft a bubble toy with a glass bottle, a slimeball and a stick in any arrangement. Right-click to blow a small fan of bubbles. Up to three nearby Frenchies can join in. A sitting dog watches from its spot, and a lucky hunter might catch one on its nose. You can blow another group after two seconds.
 - **Watch a Frenchie tease a slime.** Give an idle dog and a tiny slime a little room on level ground. The dog cocks its head, barks, bows and hops from side to side, then circles for another invitation. The slime can go about its business the whole time.
 - **Catch the zoomies.** A reunion, a finished delivery or a good game of fetch can earn a play bow, a couple of loops, and a belly-down sploot. A nearby Frenchie can join the fun.
+- **Ask for a trick.** Crouch and use a bone on your Frenchie to see its ambitious attempt at a backflip. Give it room for the victory lap.
+- **Offer belly rubs.** Crouch beside an idle Frenchie with empty hands for a moment, then use an empty hand to rub its belly. Walk away or give a command when playtime is over.
+- **Watch the drying routine.** After a real swim, a Frenchie shakes off and may roll on nearby grass or moss before dragging its belly forward.
+- **Play in snow.** On safe, shallow snow, a Frenchie may briefly dive and plow. A nearby snowball landing can also catch its attention.
+- **Bring a digging assistant.** Dig nearby dirt or sand with a shovel and an available Frenchie may dig beside you, then proudly carry its reusable toy stick. Its digging leaves the ground untouched.
 - **Take the boat.** Board with your dog following and it rides at the bow, leaving the passenger seat free. Its life jacket appears automatically on the water. When you step out, it looks for a safe landing.
 - **Follow its nose.** Use an ordinary compass on your dog and follow it toward your last death in this dimension. It waits if you fall behind and signals when you reach the spot.
 - **Listen for two barks.** An awake Frenchie turns toward a visible creeper within 12 blocks. A green creeper face flashes with each bark, even above the hotbar when you're carrying the dog. Warnings have an eight-second cooldown.
