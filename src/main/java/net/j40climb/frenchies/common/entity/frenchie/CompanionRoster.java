@@ -359,16 +359,14 @@ public final class CompanionRoster extends SavedData {
                     setDirty();
                     return;
                 }
-                if (now < e.due && dog.level() == owner.level()) {
-                    dog.getNavigation().moveTo(owner, 1.25);
-                    return;
-                }
+                if (now < e.due && dog.level() == owner.level()) return;
             } else if (e.state == State.CALLING && dog.level() == owner.level() && dog.distanceToSqr(owner) <= 16 * 16
                     && !dog.isPassenger() && !dog.mayBeLeashed() && dog.hasLineOfSight(owner) && dog.onGround()) {
                 dog.cancelForWhistle();
                 dog.perkToyEars();
                 FrenchieAwareness.bark(dog, 1.24f);
                 dog.getLookControl().setLookAt(owner);
+                if (dog.delivery().hasParcel()) tell(owner, "collect", e.name);
                 dog.getNavigation().moveTo(owner, 1.25);
                 e.state = State.APPROACHING;
                 e.due = now + 50;
