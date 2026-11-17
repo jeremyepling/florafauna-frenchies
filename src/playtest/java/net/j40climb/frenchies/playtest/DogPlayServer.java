@@ -7,12 +7,14 @@ import net.j40climb.frenchies.common.entity.frenchie.PlayPose;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.clock.ClockTimeMarkers;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.item.ItemStack;
@@ -23,6 +25,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,13 +38,15 @@ final class DogPlayServer {
     static final String WATCH_NOSE = "Play fixture: watch nose";
     static final String WATCH_RELOAD = "Play fixture: watch restored dog";
     static final String BLOW_AGAIN = "Play fixture: blow again";
-    private static final BlockPos YARD = new BlockPos(480, 220, 480);
+    private static final BlockPos YARD = new BlockPos(488, 220, 488);
     private enum Step { JOIN, BUBBLES, OFFER, NOSE, BOW, RELOAD, RECRUIT, NIGHTFALL, SLEEP, WATCH, AWAY, RETURN, TARGET }
     private static Step step = Step.JOIN;
     private static long sleptAt;
     private static Vec3 bed;
     private static int watching;
     private static long nextPuff;
+    private static FrenchieEntity departingDog;
+    private static List<PlayBubbleEntity> departingPuff;
 
     static boolean finished(ServerPlayer owner, ServerPlayer visitor, Path root, int phase) {
         var level = owner.level();
@@ -155,6 +160,9 @@ final class DogPlayServer {
                 require(dog.isFrenchieSleeping() && dog.position().distanceToSqr(bed) < 0.02,
                         "Sleeping spectator got up to chase the fresh bubbles");
                 if (++watching < 6) break;
+                departingDog = dog;
+                departingPuff = level.getEntitiesOfClass(PlayBubbleEntity.class, new AABB(YARD).inflate(12));
+                require(!departingPuff.isEmpty(), "No live bubbles at departure");
                 // This wild persistent dog stays in the yard without an owner to follow.
                 for (var player : new ServerPlayer[]{owner, visitor}) {
                     player.setGameMode(GameType.SPECTATOR);
@@ -163,15 +171,21 @@ final class DogPlayServer {
                 advance(Step.AWAY);
             }
             case AWAY -> {
-                if (dog != null || level.hasChunkAt(YARD)) break;
+                if (dog != null || !departingDog.isRemoved() || yardChunksLoaded(level)
+                        || departingPuff.stream().anyMatch(bubble -> !bubble.isRemoved() || level.getEntity(bubble.getUUID()) != null)) break;
+                require(departingDog.getRemovalReason() == Entity.RemovalReason.UNLOADED_TO_CHUNK,
+                        "Dog left for another reason: " + departingDog.getRemovalReason());
                 placePlayers(owner, visitor);
                 advance(Step.RETURN);
             }
             case RETURN -> {
                 if (dog == null) break;
-                require(dog.playPose() == PlayPose.NONE && !dog.bubblePlay().engaged()
-                                && level.getEntitiesOfClass(PlayBubbleEntity.class, new AABB(YARD).inflate(12)).isEmpty(),
-                        "Returning to unloaded terrain restored dangling bubble play");
+                require(dog != departingDog, "Server reused the original dog without unloading its entity");
+                require(dog.playPose() == PlayPose.NONE, "Reload retained pose " + dog.playPose());
+                require(!dog.bubblePlay().engaged(), "Reload retained an active bubble claim");
+                require(!dog.isOrderedToSit(), "Reload imposed a sitting order on the sleeping dog");
+                var restoredBubbles = level.getEntitiesOfClass(PlayBubbleEntity.class, new AABB(YARD).inflate(12));
+                require(restoredBubbles.isEmpty(), "Reload retained " + restoredBubbles.size() + " temporary bubbles");
                 level.getServer().clockManager().moveToTimeMarker(level.dimensionType().defaultClock().orElseThrow(), ClockTimeMarkers.NOON);
                 visitor.setGameMode(GameType.SURVIVAL);
                 visitor.teleportTo(level, YARD.getX() + 3.7, YARD.getY(), YARD.getZ() + 0.5, Set.of(), 90, 0, true);
@@ -187,6 +201,15 @@ final class DogPlayServer {
                 var slime = (Slime) level.getEntity(SLIME);
                 require(slime != null && slime.isAlive(), "Frenchie harmed the vanilla slime");
                 return slime.getTarget() == visitor && slime.distanceToSqr(visitor) < 4;
+            }
+        }
+        return false;
+    }
+
+    private static boolean yardChunksLoaded(ServerLevel level) {
+        for (int x = -16; x <= 16; x += 16) {
+            for (int z = -16; z <= 16; z += 16) {
+                if (level.hasChunkAt(YARD.offset(x, 0, z))) return true;
             }
         }
         return false;

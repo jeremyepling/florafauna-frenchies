@@ -108,20 +108,35 @@ final class SlimePlayTests {
 
     static void unsafeFooting(GameTestHelper h) {
         var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 1, 1, 5);
-        stationarySlime(h, 1);
-        float health = dog.getHealth();
-        double edge = h.absolutePos(new BlockPos(2, 1, 5)).getX();
+        var slime = stationarySlime(h, 1);
+        var center = h.absolutePos(new BlockPos(5, 1, 5));
+        int[] direction = new int[1];
+        int[] hot = new int[1];
+        Vec3[] start = new Vec3[1];
+        boolean[] crossed = {false};
         h.startSequence().thenWaitUntil(() -> h.assertTrue(dog.playPose() == SLIME_NOTICE, "Dog did not notice the slime"))
                 .thenExecute(() -> {
-                    // Cut the route immediately in front of the dog after it has seen a safe yard.
-                    for (int z = 0; z <= 10; z++) {
-                        h.setBlock(2, 0, z, Blocks.MAGMA_BLOCK);
-                        h.setBlock(3, 0, z, Blocks.AIR);
+                    // The dog may wander before noticing. Keep its entire current footprint
+                    // and at least one spare column of stone, then cut its route to the slime.
+                    start[0] = dog.position();
+                    direction[0] = dog.getX() < center.getX() + 0.5 ? 1 : -1;
+                    var box = dog.getBoundingBox();
+                    double front = direction[0] == 1 ? box.maxX : box.minX;
+                    hot[0] = (int) Math.floor(front) + 2 * direction[0];
+                    slime.snapTo(new BlockPos(hot[0] + 2 * direction[0], center.getY(), dog.getBlockZ()), 0, 0);
+                    for (int z = center.getZ() - 5; z <= center.getZ() + 5; z++) {
+                        var magma = new BlockPos(hot[0], center.getY() - 1, z);
+                        h.getLevel().setBlockAndUpdate(magma, Blocks.MAGMA_BLOCK.defaultBlockState());
+                        h.getLevel().setBlockAndUpdate(magma.offset(direction[0], 0, 0), Blocks.AIR.defaultBlockState());
                     }
                 })
-                .thenWaitUntil(() -> h.assertTrue(dog.playPose() == NONE, "Frenchie kept pursuing across unsafe footing"))
-                .thenExecute(() -> h.assertTrue(dog.getX() < edge && dog.getHealth() == health,
-                        "Frenchie stepped onto hot ground or fell across the gap"))
+                .thenWaitUntil(() -> {
+                    crossed[0] |= direction[0] == 1 ? dog.getBoundingBox().maxX > hot[0] : dog.getBoundingBox().minX < hot[0] + 1;
+                    h.assertTrue(dog.playPose() == NONE, "Frenchie kept pursuing across unsafe footing");
+                })
+                .thenExecute(() -> h.assertTrue(!crossed[0] && dog.getHealth() == dog.getMaxHealth(),
+                        "Frenchie crossed unsafe footing: started " + start[0] + ", hot column " + hot[0]
+                                + ", ended " + dog.position() + ", health " + dog.getHealth()))
                 .thenSucceed();
     }
 
