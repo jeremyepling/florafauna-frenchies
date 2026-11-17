@@ -5,6 +5,7 @@
   "frenchie.florafauna.whistle.choose": "Click a Frenchie to select your whistle companion.",
   "frenchie.florafauna.whistle.selected": "Your whistle now calls %s.",
   "frenchie.florafauna.whistle.none": "No Frenchie available. Tame one with a bone.",
+  "frenchie.florafauna.whistle.indexing": "Looking for Frenchies in older areas. Try your whistle again shortly.",
   "frenchie.florafauna.whistle.unavailable": "Couldn't find %s at their last known location.",
   "frenchie.florafauna.whistle.have": "You already have a Frenchie Whistle.",
   "frenchie.florafauna.whistle.received": "Frenchie Whistle received. Use it to call your companion.",

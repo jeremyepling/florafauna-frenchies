@@ -43,6 +43,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,20 +88,38 @@ public final class CompanionRoster extends SavedData {
 
     private static final SavedDataType<CompanionRoster> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "companions"),
-            () -> new CompanionRoster(Map.of(), Map.of()), RecordCodecBuilder.create(i -> i.group(
+            () -> new CompanionRoster(Map.of(), Map.of(), List.of()), RecordCodecBuilder.create(i -> i.group(
                     Codec.unboundedMap(UUIDUtil.STRING_CODEC, Entry.CODEC).fieldOf("dogs").forGetter(r -> r.dogs),
-                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, UUIDUtil.CODEC).fieldOf("selected").forGetter(r -> r.selected)
+                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, UUIDUtil.CODEC).fieldOf("selected").forGetter(r -> r.selected),
+                    Codec.STRING.listOf().optionalFieldOf("indexed", List.of()).forGetter(r -> List.copyOf(r.indexed))
             ).apply(i, CompanionRoster::new)));
 
     private final Map<UUID, Entry> dogs;
     private final Map<UUID, UUID> selected;
 
-    private CompanionRoster(Map<UUID, Entry> dogs, Map<UUID, UUID> selected) {
+    private final Set<String> indexed;
+    int scansInProgress;
+
+    private CompanionRoster(Map<UUID, Entry> dogs, Map<UUID, UUID> selected, List<String> indexed) {
+        this.indexed = new HashSet<>(indexed);
         this.dogs = new HashMap<>(dogs);
         this.selected = new HashMap<>(selected);
     }
 
-    private static CompanionRoster get(ServerLevel level) {
+    boolean indexed(ServerLevel level) {
+        return indexed.contains(level.dimension().identifier().toString());
+    }
+
+    void finishedIndex(ServerLevel level, boolean complete) {
+        scansInProgress--;
+        if (complete && indexed.add(level.dimension().identifier().toString())) setDirty();
+    }
+
+    void indexLegacy(UUID id, UUID owner, String name, GlobalPos pos, boolean following) {
+        if (!dogs.containsKey(id)) register(id, owner, name, pos, following);
+    }
+
+    static CompanionRoster get(ServerLevel level) {
         return level.getServer().getDataStorage().computeIfAbsent(TYPE);
     }
 
@@ -206,8 +226,9 @@ public final class CompanionRoster extends SavedData {
     }
 
     public static int replaceWhistle(ServerPlayer owner) {
-        if (!discover(owner).selected.containsKey(owner.getUUID())) {
-            tell(owner, "none");
+        var roster = discover(owner);
+        if (!roster.selected.containsKey(owner.getUUID())) {
+            tell(owner, roster.scansInProgress > 0 ? "indexing" : "none");
             return 0;
         }
         return giveWhistle(owner);
@@ -244,7 +265,7 @@ public final class CompanionRoster extends SavedData {
         var roster = discover(owner);
         var entries = roster.dogs.entrySet().stream().filter(e -> e.getValue().owner.equals(owner.getUUID()))
                 .sorted(Comparator.comparing((Map.Entry<UUID, Entry> e) -> e.getValue().name).thenComparing(Map.Entry::getKey)).toList();
-        if (entries.isEmpty()) tell(owner, "none");
+        if (entries.isEmpty()) tell(owner, roster.scansInProgress > 0 ? "indexing" : "none");
         else owner.sendSystemMessage(Component.translatable("frenchie.florafauna.whistle.choose"));
         for (var row : entries) {
             UUID id = row.getKey();
@@ -270,7 +291,7 @@ public final class CompanionRoster extends SavedData {
         UUID id = roster.selected.get(owner.getUUID());
         var e = roster.dogs.get(id);
         if (e == null || !e.owner.equals(owner.getUUID())) {
-            tell(owner, "none");
+            tell(owner, roster.scansInProgress > 0 ? "indexing" : "none");
             return;
         }
         if (dismiss && e.state == State.DISMISSING || !dismiss && (e.state == State.CALLING
