@@ -91,6 +91,7 @@ public class FrenchieRenderer extends MobRenderer<FrenchieEntity, FrenchieRender
         reusedState.hasVest = entity.hasFlotationVest();
         itemResolver.updateForLiving(reusedState.mouthItem, entity.getMouthItem(),
                 ItemDisplayContext.GROUND, entity);
+        reusedState.toyStick = entity.isShowingToyStick();
         reusedState.presenting = entity.handoffPhase() != 0;
         reusedState.toyEarLift = entity.toyEarLift(partialTick);
         reusedState.variant = entity.getVariant();

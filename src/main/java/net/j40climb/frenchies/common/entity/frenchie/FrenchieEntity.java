@@ -217,9 +217,12 @@ public class FrenchieEntity extends TamableAnimal {
     public ItemStack getMouthItem() {
         if (!getParcel().isEmpty()) return getParcel();
         if (!getOffhandItem().isEmpty()) return getOffhandItem();
-        return entityData.get(HAS_TOY_STICK) && digStage() != DiggingAssistantGoal.APPROACH
-                && digStage() != DiggingAssistantGoal.DIG
-                ? new ItemStack(Items.STICK) : ItemStack.EMPTY;
+        return isShowingToyStick() ? new ItemStack(Items.STICK) : ItemStack.EMPTY;
+    }
+
+    public boolean isShowingToyStick() {
+        return entityData.get(HAS_TOY_STICK) && getParcel().isEmpty() && getOffhandItem().isEmpty()
+                && digStage() != DiggingAssistantGoal.APPROACH && digStage() != DiggingAssistantGoal.DIG;
     }
 
     public int digStage() { return entityData.get(DIG_STAGE); }

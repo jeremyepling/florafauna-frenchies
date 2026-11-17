@@ -11,6 +11,7 @@ public class FrenchieRenderState extends LivingEntityRenderState {
     public boolean hasVest;
     public float turnLean;
     public final ItemStackRenderState mouthItem = new ItemStackRenderState();
+    public boolean toyStick;
     public boolean presenting;
     public float toyEarLift;
     public FrenchieVariant variant;
