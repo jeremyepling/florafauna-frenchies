@@ -180,7 +180,9 @@ final class BubblePlayTests {
                             + bubbles(owner).size() + ", sleeping=" + dog.isFrenchieSleeping()
                             + ", sitting=" + dog.isSitting() + ", warned=" + dog.isWarningFlash());
                 })
-                .thenWaitUntil(() -> h.assertTrue(dog.playPose() == BUBBLE_APPROACH, "Dog never pursued its bubble"))
+                .thenWaitUntil(() -> h.assertTrue(dog.playPose() == BUBBLE_APPROACH, "Dog never pursued its bubble; pose="
+                        + dog.playPose() + ", sleeping=" + dog.isFrenchieSleeping() + ", ordered sit=" + dog.isOrderedToSit()
+                        + ", warned=" + dog.isWarningFlash() + ", position=" + h.relativePos(dog.blockPosition())))
                 .thenExecute(() -> {
                     owner.snapTo(dog.position().add(0, 0, -1), 0, 0);
                     owner.setItemInHand(HAND, new ItemStack(Items.BUNDLE));
