@@ -18,7 +18,7 @@ $listener.Start()
 $port = $listener.LocalEndpoint.Port
 $listener.Stop()
 @(
-    'server-ip=127.0.0.1', "server-port=$port", 'online-mode=false', 'enforce-secure-profile=false',
+    'server-ip=127.0.0.1', "server-port=$port", 'online-mode=false', 'white-list=false', 'enforce-secure-profile=false',
     'level-name=world', 'level-type=minecraft:flat', 'level-seed=1234', 'generate-structures=false',
     'gamemode=survival', 'spawn-protection=0', 'view-distance=3', 'simulation-distance=3', 'max-players=2'
 ) | Set-Content -LiteralPath (Join-Path $root 'server/server.properties')
