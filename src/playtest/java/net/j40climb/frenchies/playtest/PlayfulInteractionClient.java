@@ -30,6 +30,8 @@ public final class PlayfulInteractionClient {
     private static int frames;
     private static boolean exit;
     private static boolean rejoined;
+    private static boolean stickPortrait;
+    private static int portraitTicks;
 
     private PlayfulInteractionClient() {}
 
@@ -41,6 +43,10 @@ public final class PlayfulInteractionClient {
             exit = true;
         } else if (text.equals(PlayfulInteractionServer.REJOIN)) {
             rejoined = true;
+            portraitTicks = 0;
+        } else if (text.equals(PlayfulInteractionServer.STICK)) {
+            stickPortrait = true;
+            portraitTicks = 0;
         } else if ("Owner".equals(ROLE)) {
             if (text.equals(PlayfulInteractionServer.TRICK)) ownerStep = OwnerStep.TRICK;
             else if (text.equals(PlayfulInteractionServer.BELLY)) ownerStep = OwnerStep.BELLY;
@@ -97,6 +103,8 @@ public final class PlayfulInteractionClient {
         if (!(mc.getEntityRenderDispatcher().getRenderer(dog) instanceof FrenchieRenderer)) return;
         mc.player.lookAt(Anchor.EYES, dog.getBoundingBox().getCenter());
         String stem = pose(dog);
+        if (stem != null && (stem.equals("dig-stick") || stem.equals("reload-upright-stick"))
+                && ++portraitTicks < 6) return;
         if (stem == null || captured.contains(stem)) {
             current = null;
             frames = 0;
@@ -110,13 +118,15 @@ public final class PlayfulInteractionClient {
             case "trick-spring", "trick-roll-up", "snow-pop" -> 4;
             case "trick-flop", "snow-dive" -> 5;
             case "dry-roll" -> 12;
+            case "belly-kick-high" -> 2;
+            case "belly-kick-low" -> 6;
             default -> 2;
         };
         long stageAge = stem.startsWith("trick-") ? dog.level().getGameTime() - dog.trickStageStart()
                 : stem.startsWith("belly-") ? dog.level().getGameTime() - dog.bellyStageStart()
                 : stem.startsWith("dry-") || stem.startsWith("snow-") ? (long) dog.weatherAge(0)
                 : (long) dog.digStageAge(0);
-        if (stageAge < age || ++frames < 2) return;
+        if (stageAge < age || ++frames < (stem.startsWith("belly-kick-") ? 1 : 2)) return;
         Screenshot.grab(mc.gameDirectory, "visitor-" + stem + ".png", mc.getMainRenderTarget(), 1, ignored -> {});
         captured.add(stem);
         current = null;
@@ -133,7 +143,8 @@ public final class PlayfulInteractionClient {
             case 6 -> "trick-lap";
             default -> switch (dog.bellyStage()) {
                 case 2 -> "belly-up";
-                case 3 -> "belly-kick";
+                case 3 -> dog.level().getGameTime() - dog.bellyStageStart() < 5
+                        ? "belly-kick-high" : "belly-kick-low";
                 default -> switch (dog.weatherStage()) {
                     case 1 -> "dry-shake";
                     case 3 -> "dry-shoulder";
@@ -144,8 +155,8 @@ public final class PlayfulInteractionClient {
                     case 9 -> "snow-pop";
                     default -> switch (dog.digStage()) {
                         case 2 -> "dig-paws";
-                        case 3 -> "dig-stick";
-                        default -> rejoined && dog.getMouthItem().is(Items.STICK) ? "reload-upright-stick" : null;
+                        default -> dog.getMouthItem().is(Items.STICK)
+                                ? rejoined ? "reload-upright-stick" : stickPortrait ? "dig-stick" : null : null;
                     };
                 };
             };
