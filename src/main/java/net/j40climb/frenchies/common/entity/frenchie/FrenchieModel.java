@@ -341,12 +341,12 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
             case TrickGoal.FLOP -> {
                 float progress = Math.clamp(t / 6F, 0F, 1F);
                 body.xRot = 0.45F + progress * 2.65F;
-                body.y -= progress * 4F;
+                body.y += progress * 2F;
                 splayPaws();
             }
             case TrickGoal.WIGGLE -> {
                 body.xRot = 3.1F;
-                body.y -= 4F;
+                body.y += 2F;
                 body.zRot = (float) Math.sin(t * 1.8F) * 0.22F;
                 splayPaws();
                 body.getChild("leg_back_right").xRot += (float) Math.sin(t * 2F) * 0.65F;
@@ -354,7 +354,7 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
             case TrickGoal.ROLL_UP -> {
                 float progress = Math.clamp(t / 11F, 0F, 1F);
                 body.xRot = 3.1F + progress * (float) Math.PI;
-                body.y -= 4F * (1F - progress);
+                body.y += 2F * (1F - progress);
                 splayPaws();
             }
             case TrickGoal.LAP -> {
@@ -369,7 +369,7 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
         float progress = state.bellyStage == BellyRubGoal.ROLL_OVER ? Math.clamp(t / 10F, 0F, 1F)
                 : state.bellyStage == BellyRubGoal.ROLL_UP ? 1F - Math.clamp(t / 11F, 0F, 1F) : 1F;
         body.zRot = progress * (float) Math.PI;
-        body.y -= 4F * progress;
+        body.y += 2F * progress;
         splayPaws();
         if (state.bellyStage == BellyRubGoal.RUBBING) {
             // One rear paw rises and falls far enough to be seen beyond the body.
