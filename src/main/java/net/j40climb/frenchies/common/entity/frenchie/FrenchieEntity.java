@@ -186,6 +186,7 @@ public class FrenchieEntity extends TamableAnimal {
         this.escapeDanger = new EscapeDangerGoal(this);
         this.goalSelector.addGoal(0, escapeDanger);
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new WhistleApproachGoal(this));
         this.goalSelector.addGoal(1, new BedtimeBuddyGoal(this));
         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
