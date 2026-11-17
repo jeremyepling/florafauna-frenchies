@@ -11,7 +11,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -145,7 +145,7 @@ final class WhistleServer {
                 owner.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                 owner.teleportTo(level, YARD.getX() + 0.5, YARD.getY() - 1, YARD.getZ() - 0.65, Set.of(), 0, 0, true);
                 companion.snapTo(YARD, -145, 0);
-                target = EntityType.COW.create(level, EntitySpawnReason.COMMAND);
+                target = EntityTypes.COW.create(level, EntitySpawnReason.COMMAND);
                 require(target != null, "Could not create the target for the melee swing");
                 target.setNoAi(true);
                 target.snapTo(YARD.getX() + 0.5, YARD.getY(), YARD.getZ() + 1.8, 0, 0);
