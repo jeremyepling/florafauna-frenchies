@@ -53,8 +53,10 @@ final class SlimeTeaseGoal extends Goal {
     // A dog can see over a fence or across a trench. Check the ground between the ring and the slime too.
     private boolean openSpaceBetween(Slime target) {
         double angle = bearing(target);
-        Vec3 close = new Vec3(target.getX() + 0.9 * Math.cos(angle), dog.getY(),
-                target.getZ() + 0.9 * Math.sin(angle));
+        // The axis-aligned footprints are widest across their diagonals.
+        double clearance = (dog.getBbWidth() + target.getBbWidth()) * Math.sqrt(0.5) + 0.1;
+        Vec3 close = new Vec3(target.getX() + clearance * Math.cos(angle), dog.getY(),
+                target.getZ() + clearance * Math.sin(angle));
         return PlaySafety.clearGroundSegment(dog, radialSpot(target), close);
     }
 
