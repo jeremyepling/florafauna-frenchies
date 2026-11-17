@@ -11,6 +11,8 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -29,12 +31,14 @@ final class WhistleServer {
     static final String DISMISS = "Whistle fixture: dismiss Violet";
     static final String CALL_ACTIVE = "Whistle fixture: call Pip";
     static final String CALL_COURIER = "Whistle fixture: call Violet";
+    static final String SWING = "Whistle fixture: swing through Pip";
     static final String LOOK = "Whistle fixture: watch Pip";
     private static final BlockPos YARD = new BlockPos(480, 210, 480);
     private static final BlockPos INN = YARD.east(640);
-    private enum Step { START, DISMISS, LEAVE, CALL, FOLLOW, PREPARE_PHOTO, PHOTO, SAVE, REJOIN, RESPAWN, LAST_CALL }
+    private enum Step { START, DISMISS, LEAVE, CALL, FOLLOW, PREPARE_PHOTO, PHOTO, TUMBLE, LINE_UP, THROUGH_DOG, ACCIDENT, SAVE, REJOIN, RESPAWN, LAST_CALL }
     private static Step step = Step.START;
     private static int ticks;
+    private static Cow target;
 
     static boolean finished(ServerPlayer owner, ServerPlayer visitor, Path root, int phase) {
         var level = owner.level();
@@ -98,9 +102,14 @@ final class WhistleServer {
                 require(courier == null, "Returning to the old area resurrected the dismissed dog");
                 checkPip(companion);
                 companion.sitDown();
-                companion.snapTo(YARD, 120, 0);
+                place(owner, YARD.offset(-5, 0, -4));
+                companion.setNoAi(true);
+                float yaw = -145;
+                companion.snapTo(YARD, yaw, 0);
+                companion.setYHeadRot(yaw);
+                companion.setYBodyRot(yaw);
                 visitor.setGameMode(GameType.SPECTATOR);
-                visitor.teleportTo(level, YARD.getX() + 2.6, YARD.getY() - 0.65, YARD.getZ() - 1.3,
+                visitor.teleportTo(level, YARD.getX() + 1.65, YARD.getY() - 1.03, YARD.getZ() - 0.85,
                         Set.of(), 0, 0, true);
                 cue(visitor, LOOK);
                 next(Step.PREPARE_PHOTO);
@@ -118,6 +127,44 @@ final class WhistleServer {
                             1.5F, net.minecraft.world.level.Level.ExplosionInteraction.NONE);
                     break;
                 }
+                next(Step.TUMBLE);
+            }
+            case TUMBLE -> {
+                if (!Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-tumble.png"))) {
+                    if (ticks % 80 == 0) companion.causeFallDamage(14, 1f, companion.damageSources().fall());
+                    break;
+                }
+                next(Step.LINE_UP);
+            }
+            case LINE_UP -> {
+                if (ticks < 75) break;
+                // Lower the attacker's feet so a vanilla survival swing crosses the short dog's torso.
+                var footprint = YARD.north(1).below();
+                level.setBlockAndUpdate(footprint.below(), Blocks.STONE.defaultBlockState());
+                level.setBlockAndUpdate(footprint, Blocks.AIR.defaultBlockState());
+                owner.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                owner.teleportTo(level, YARD.getX() + 0.5, YARD.getY() - 1, YARD.getZ() - 0.65, Set.of(), 0, 0, true);
+                companion.snapTo(YARD, -145, 0);
+                target = EntityType.COW.create(level, EntitySpawnReason.COMMAND);
+                require(target != null, "Could not create the target for the melee swing");
+                target.setNoAi(true);
+                target.snapTo(YARD.getX() + 0.5, YARD.getY(), YARD.getZ() + 1.8, 0, 0);
+                require(level.addFreshEntity(target), "Could not spawn the melee target behind Pip");
+                cue(owner, SWING);
+                next(Step.THROUGH_DOG);
+            }
+            case THROUGH_DOG -> {
+                if (target.getHealth() == target.getMaxHealth()) break;
+                require(companion.getHealth() == companion.getMaxHealth() && companion.dangerReaction().name().equals("NONE"),
+                        "Companion absorbed part of the melee swing aimed through it");
+                target.discard();
+                cue(owner, SWING);
+                next(Step.ACCIDENT);
+            }
+            case ACCIDENT -> {
+                if (!Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-accidental-hit.png"))) break;
+                require(companion.isAlive() && companion.getHealth() == companion.getMaxHealth(), "Direct swing injured Pip");
+                companion.setNoAi(false);
                 companion.standUp();
                 command(owner, "frenchie select " + COURIER);
                 next(Step.SAVE);

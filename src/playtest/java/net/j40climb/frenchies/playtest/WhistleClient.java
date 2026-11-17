@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
+import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -18,7 +19,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid = Frenchies.MOD_ID, value = Dist.CLIENT)
 public final class WhistleClient {
     private static final String ROLE = System.getProperty("florafauna_frenchies.whistleTest.client");
-    private enum Step { IDLE, DISMISS, CALL_ACTIVE, CALL_COURIER, RELEASE, BLAST, RELAXED, EXIT }
+    private enum Step { IDLE, DISMISS, CALL_ACTIVE, CALL_COURIER, RELEASE, SWING, BLAST, PEEK, RELAXED, TUMBLE, STARTLE, EXIT }
     private static Step step = Step.IDLE;
     private static int ticks;
 
@@ -29,6 +30,7 @@ public final class WhistleClient {
             case WhistleServer.DISMISS -> Step.DISMISS;
             case WhistleServer.CALL_ACTIVE -> Step.CALL_ACTIVE;
             case WhistleServer.CALL_COURIER -> Step.CALL_COURIER;
+            case WhistleServer.SWING -> Step.SWING;
             case WhistleServer.LOOK -> Step.BLAST;
             case DeliveryMultiplayerServer.DONE -> Step.EXIT;
             default -> null;
@@ -77,16 +79,33 @@ public final class WhistleClient {
                     step = Step.IDLE;
                 }
             }
-            case BLAST, RELAXED -> {
+            case SWING -> {
+                if (!(mc.level.getEntity(WhistleServer.COMPANION) instanceof FrenchieEntity dog)) return;
+                mc.player.lookAt(Anchor.EYES, dog.getBoundingBox().getCenter());
+                if (ticks < 10 || !(mc.hitResult instanceof EntityHitResult hit) || hit.getEntity() != dog) return;
+                KeyMapping.click(mc.options.keyAttack.getKey());
+                step = Step.IDLE;
+            }
+            case BLAST, PEEK, RELAXED, TUMBLE, STARTLE -> {
                 if (!(mc.level.getEntity(WhistleServer.COMPANION) instanceof FrenchieEntity dog)) return;
                 if (!mc.gui.hud.isHidden()) mc.gui.hud.toggle();
                 mc.player.lookAt(Anchor.EYES, dog.getBoundingBox().getCenter());
                 if (step == Step.BLAST && dog.dangerReaction().name().equals("DUCK") && dog.dangerReactionAge(0f) >= 3) {
                     capture(mc, "visitor-blast-duck.png");
+                    step = Step.PEEK;
+                    ticks = 0;
+                } else if (step == Step.PEEK && dog.dangerReaction().name().equals("DUCK") && dog.dangerReactionAge(0f) >= 15) {
+                    capture(mc, "visitor-cautious-peek.png");
                     step = Step.RELAXED;
                     ticks = 0;
                 } else if (step == Step.RELAXED && ticks >= 15 && dog.dangerReaction().name().equals("NONE")) {
                     capture(mc, "visitor-after-blast.png");
+                    step = Step.TUMBLE;
+                } else if (step == Step.TUMBLE && dog.dangerReaction().name().equals("TUMBLE") && dog.dangerReactionAge(0f) >= 2) {
+                    capture(mc, "visitor-tumble.png");
+                    step = Step.STARTLE;
+                } else if (step == Step.STARTLE && dog.dangerReaction().name().equals("STARTLE") && dog.dangerReactionAge(0f) >= 2) {
+                    capture(mc, "visitor-accidental-hit.png");
                     step = Step.IDLE;
                 }
             }
