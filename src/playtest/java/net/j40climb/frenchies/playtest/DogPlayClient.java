@@ -27,15 +27,18 @@ public final class DogPlayClient {
     @SubscribeEvent
     public static void message(ClientChatReceivedEvent.System event) {
         if (ROLE == null) return;
-        step = switch (event.getMessage().getString()) {
+        Step next = switch (event.getMessage().getString()) {
             case DogPlayServer.BLOW -> Step.BLOW;
             case DogPlayServer.BLOW_AGAIN -> Step.BLOW_AGAIN;
             case DogPlayServer.WATCH_BUBBLES -> Step.BUBBLES;
             case DogPlayServer.WATCH_BOW -> Step.BOW;
             case DogPlayServer.WATCH_RELOAD -> Step.RESTORED;
             case DeliveryMultiplayerServer.DONE -> Step.EXIT;
-            default -> step;
+            default -> null;
         };
+        if (next == null) return;
+        event.setCanceled(true);
+        step = next;
         frames = 0;
     }
 
@@ -49,7 +52,10 @@ public final class DogPlayClient {
         }
         if (mc.level == null || mc.player == null || mc.gui.screen() != null || mc.gameMode == null
                 || !(mc.level.getEntity(DogPlayServer.DOG) instanceof FrenchieEntity dog)) return;
-        mc.player.lookAt(Anchor.EYES, dog.getBoundingBox().getCenter());
+        mc.getToastManager().clear();
+        if (ROLE.equals("Visitor")) mc.options.hideGui = true;
+        var aim = dog.getBoundingBox().getCenter();
+        mc.player.lookAt(Anchor.EYES, aim);
         switch (step) {
             case BLOW, BLOW_AGAIN -> {
                 if (!mc.player.getMainHandItem().is(FrenchieRegistry.BUBBLE_TOY.get()) || ++frames < 8) return;
@@ -59,11 +65,21 @@ public final class DogPlayClient {
             }
             case BUBBLES -> {
                 var visible = mc.level.getEntitiesOfClass(PlayBubbleEntity.class, dog.getBoundingBox().inflate(7));
-                if (dog.playPose() == PlayPose.NONE || visible.isEmpty() || ++frames < 3) return;
+                if (dog.playPose() == PlayPose.NONE || visible.isEmpty()) return;
+                if (ROLE.equals("Visitor")) {
+                    var puff = visible.getFirst().position();
+                    for (int i = 1; i < visible.size(); i++) puff = puff.add(visible.get(i).position());
+                    mc.player.lookAt(Anchor.EYES, aim.lerp(puff.scale(1.0 / visible.size()), 0.58));
+                }
+                if (++frames < 6) return;
                 capture(mc, "bubbles");
             }
             case BOW -> {
-                if (mc.level.getEntity(DogPlayServer.SLIME) == null || dog.playPose() != PlayPose.SLIME_BOW) {
+                var slime = mc.level.getEntity(DogPlayServer.SLIME);
+                if (slime != null && ROLE.equals("Visitor")) {
+                    mc.player.lookAt(Anchor.EYES, aim.lerp(slime.getBoundingBox().getCenter(), 0.27));
+                }
+                if (slime == null || dog.playPose() != PlayPose.SLIME_BOW) {
                     frames = 0;
                     return;
                 }
