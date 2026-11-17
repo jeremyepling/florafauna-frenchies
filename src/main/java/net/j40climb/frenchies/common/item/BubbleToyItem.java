@@ -53,8 +53,8 @@ public final class BubbleToyItem extends Item {
             bubble.setPos(start);
             if (!level.noBlockCollision(bubble, bubble.getBoundingBox().expandTowards(mouth.subtract(start)))) continue;
             double lift = Mth.clamp(player.getLookAngle().y * 0.07, -0.03, 0.035);
-            bubble.setDeltaMovement(forward.scale(0.095 + level.random.nextDouble() * 0.025)
-                    .add(side.scale(fan * 0.105)).add(0, lift + level.random.nextDouble() * 0.009, 0));
+            bubble.setDeltaMovement(forward.scale(0.095 + level.getRandom().nextDouble() * 0.025)
+                    .add(side.scale(fan * 0.105)).add(0, lift + level.getRandom().nextDouble() * 0.009, 0));
             if (level.addFreshEntity(bubble)) bubbles.add(bubble);
         }
         if (bubbles.isEmpty()) return;
