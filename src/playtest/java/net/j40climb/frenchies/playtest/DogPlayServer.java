@@ -8,6 +8,7 @@ import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.clock.ClockTimeMarkers;
@@ -31,14 +32,16 @@ final class DogPlayServer {
     static final String BLOW = "Play fixture: blow bubbles";
     static final String WATCH_BUBBLES = "Play fixture: watch bubbles";
     static final String WATCH_BOW = "Play fixture: watch bow";
+    static final String WATCH_NOSE = "Play fixture: watch nose";
     static final String WATCH_RELOAD = "Play fixture: watch restored dog";
     static final String BLOW_AGAIN = "Play fixture: blow again";
     private static final BlockPos YARD = new BlockPos(480, 220, 480);
-    private enum Step { JOIN, BUBBLES, BOW, RELOAD, RECRUIT, NIGHTFALL, SLEEP, WATCH, AWAY, RETURN, TARGET }
+    private enum Step { JOIN, BUBBLES, OFFER, NOSE, BOW, RELOAD, RECRUIT, NIGHTFALL, SLEEP, WATCH, AWAY, RETURN, TARGET }
     private static Step step = Step.JOIN;
     private static long sleptAt;
     private static Vec3 bed;
     private static int watching;
+    private static long nextPuff;
 
     static boolean finished(ServerPlayer owner, ServerPlayer visitor, Path root, int phase) {
         var level = owner.level();
@@ -73,6 +76,26 @@ final class DogPlayServer {
             case BUBBLES -> {
                 if (!frames(root, "bubbles") || dog.bubblePlay().engaged()) break;
                 require(owner.getMainHandItem().is(FrenchieRegistry.BUBBLE_TOY.get()), "Blowing consumed the toy");
+                nextPuff = level.getGameTime() + 150;
+                advance(Step.OFFER);
+            }
+            case OFFER -> {
+                if (level.getGameTime() < nextPuff || !dog.onGround()) break;
+                dog.snapTo(YARD, -90, 0);
+                visitor.teleportTo(level, YARD.getX() + 1.65, YARD.getY() - 0.9, YARD.getZ() - 1.5,
+                        Set.of(), 0, 0, true);
+                var bubble = new PlayBubbleEntity(FrenchieRegistry.PLAY_BUBBLE.get(), level);
+                bubble.setPos(dog.position().add(2, 0.84, 0));
+                // Select the occasional nose outcome without bypassing pursuit or contact.
+                long seed = 0;
+                while (RandomSource.create(seed).nextInt(4) != 0) seed++;
+                bubble.getRandom().setSeed(seed);
+                require(level.addFreshEntity(bubble) && dog.bubblePlay().offer(bubble), "Could not offer the second bubble");
+                cue(visitor, WATCH_NOSE);
+                advance(Step.NOSE);
+            }
+            case NOSE -> {
+                if (!Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-nose.png")) || dog.bubblePlay().engaged()) break;
                 dog.snapTo(YARD.west(3), -90, 0);
                 visitor.teleportTo(level, YARD.getX() - 1.0, YARD.getY() - 0.85, YARD.getZ() - 2.7, Set.of(), 0, 0, true);
                 var slime = EntityTypes.SLIME.create(level, EntitySpawnReason.COMMAND);
