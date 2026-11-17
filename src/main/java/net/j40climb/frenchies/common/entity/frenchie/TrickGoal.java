@@ -53,7 +53,7 @@ final class TrickGoal extends Goal {
     @Override public boolean requiresUpdateEveryTick() { return true; }
 
     @Override public void start() {
-        requestUntil = 0;
+        requestUntil = -1;
         nextTrick = dog.level().getGameTime() + 160;
         center = dog.position();
         lapPoint = 0;
@@ -106,7 +106,7 @@ final class TrickGoal extends Goal {
     }
 
     @Override public void stop() {
-        requestUntil = 0;
+        requestUntil = -1;
         stage(NONE);
         dog.getNavigation().stop();
         dog.setDeltaMovement(Vec3.ZERO);
