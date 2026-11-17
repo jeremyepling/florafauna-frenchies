@@ -28,7 +28,13 @@ final class FrenchieMouthLayer extends RenderLayer<FrenchieRenderState, Frenchie
             PlayBubbleRenderer.submitFilm(pose, collector, light, state.isBaby ? 0.04F : 0.08F);
         } else {
             pose.mulPose(Axis.ZP.rotationDegrees(180));
-            pose.scale(0.72F, 0.72F, 0.72F);
+            if (state.toyStick) {
+                // Present the reusable prop crosswise so it reads as a stick, not a dot at the muzzle.
+                pose.mulPose(Axis.YP.rotationDegrees(90));
+                pose.scale(1.2F, 1.2F, 1.2F);
+            } else {
+                pose.scale(0.72F, 0.72F, 0.72F);
+            }
             state.mouthItem.submit(pose, collector, light, OverlayTexture.NO_OVERLAY, state.outlineColor);
         }
         pose.popPose();
