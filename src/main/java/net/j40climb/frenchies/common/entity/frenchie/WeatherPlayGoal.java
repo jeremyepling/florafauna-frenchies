@@ -27,6 +27,7 @@ final class WeatherPlayGoal extends Goal {
     private long nextSnow;
     private long nextSnowScan;
     private boolean dryingRequested;
+    private long dryingRequestUntil;
     private boolean startDrying;
     private @Nullable Vec3 snowInterest;
     private long snowInterestUntil;
@@ -40,12 +41,16 @@ final class WeatherPlayGoal extends Goal {
     }
 
     void observeWater() {
+        if (dryingRequested && dog.level().getGameTime() > dryingRequestUntil) dryingRequested = false;
         if (dog.isPassenger()) { swimTicks = dryTicks = 0; return; }
         if (dog.isInWater()) {
             ++swimTicks;
             dryTicks = 0;
         } else if (swimTicks > 0 && ++dryTicks >= 8) {
-            if (swimTicks >= 35 && dog.level().getGameTime() >= nextDrying) dryingRequested = true;
+            if (swimTicks >= 35 && dog.level().getGameTime() >= nextDrying) {
+                dryingRequested = true;
+                dryingRequestUntil = dog.level().getGameTime() + 60;
+            }
             swimTicks = dryTicks = 0;
         }
     }
