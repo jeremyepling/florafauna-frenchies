@@ -90,6 +90,21 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
         super.setupAnim(renderState);
         head.getChild("tongue").visible = renderState.captain;
 
+        if (renderState.playPose == PlayPose.SLIME_BOW || renderState.playPose == PlayPose.BUBBLE_BOW) {
+            // Pivot the chest down, stretch the forepaws out and keep the hind paws planted.
+            body.xRot = 0.42F;
+            body.y += 0.3F;
+            ModelPart left = body.getChild("leg_front_left");
+            ModelPart right = body.getChild("leg_front_right");
+            left.xRot = right.xRot = -1.12F;
+            left.z -= 0.65F;
+            right.z -= 0.65F;
+            body.getChild("leg_back_left").y += 1.9F;
+            body.getChild("leg_back_right").y += 1.9F;
+            applyHeadRotation(renderState.yRot, renderState.xRot * 0.4F);
+            head.xRot -= 0.25F;
+            return;
+        }
         if (renderState.celebrationStage == CelebrationGoal.BOW) {
             body.xRot = 0.32F;
             body.y += 1.2F;
@@ -150,8 +165,17 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
 
         // Apply idle animation
         this.idlingAnimation.apply(renderState.idleAnimationState, renderState.ageInTicks, 1.0F);
-        if (renderState.toyEarLift > 0 && !renderState.isSleeping && !renderState.isSitting) {
-            float lift = renderState.toyEarLift * (renderState.isBaby ? 0.15F : 0.3F);
+        float attention = renderState.toyEarLift;
+        if (renderState.playPose == PlayPose.SLIME_NOTICE || renderState.playPose == PlayPose.BUBBLE_NOSE) {
+            head.zRot += renderState.playPose == PlayPose.SLIME_NOTICE ? 0.23F : -0.15F;
+            attention = 1;
+        }
+        if (renderState.playPose == PlayPose.BUBBLE_WATCH && (renderState.isSleeping || renderState.isSitting)) {
+            head.yRot += Mth.clamp(renderState.yRot, -25F, 25F) * Mth.DEG_TO_RAD;
+            head.xRot -= 0.1F;
+        }
+        if (attention > 0 && !renderState.isSleeping && !renderState.isSitting) {
+            float lift = attention * (renderState.isBaby ? 0.15F : 0.3F);
             head.getChild("earL").zRot -= lift;
             head.getChild("earR").zRot += lift;
             head.getChild("earL").y -= lift;

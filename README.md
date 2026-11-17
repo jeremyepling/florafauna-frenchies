@@ -11,6 +11,8 @@ Take a French bulldog on your next expedition. It can ride on the bow while you 
 Frenchies come in fawn and brindle. To meet one in Creative, use the Frenchie Spawn Egg. Offer a bone to tame it, then right-click with an empty hand to switch between sitting and following. Feed two adult Frenchies glow berries to breed a pup.
 
 - **Play fetch.** Craft a squeaky toy with orange wool and a slimeball. Right-click to squeak it and watch the ears turn your way. Squeak a few times to draw a small audience, or crouch and right-click to throw it. When your dog brings it back, right-click with an empty hand to take it.
+- **Blow bubbles.** Craft a bubble toy with a glass bottle, a slimeball and a stick in any arrangement. Right-click to blow a small fan of bubbles. Up to three nearby Frenchies can join in. A sitting dog watches from its spot, and a lucky hunter might catch one on its nose. You can blow another group after two seconds.
+- **Watch a Frenchie tease a slime.** Give an idle dog and a tiny slime a little room on level ground. The dog cocks its head, barks, bows and hops from side to side, then circles for another invitation. The slime can go about its business the whole time.
 - **Catch the zoomies.** A reunion, a finished delivery or a good game of fetch can earn a play bow, a couple of loops, and a belly-down sploot. A nearby Frenchie can join the fun.
 - **Take the boat.** Board with your dog following and it rides at the bow, leaving the passenger seat free. Its life jacket appears automatically on the water. When you step out, it looks for a safe landing.
 - **Follow its nose.** Use an ordinary compass on your dog and follow it toward your last death in this dimension. It waits if you fall behind and signals when you reach the spot.

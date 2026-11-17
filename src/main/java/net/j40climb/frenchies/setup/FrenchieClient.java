@@ -5,6 +5,7 @@ import net.j40climb.frenchies.common.entity.frenchie.DeliveryPopupPayload;
 import net.j40climb.frenchies.common.entity.frenchie.DeliveryScreen;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieModel;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieRenderer;
+import net.j40climb.frenchies.common.entity.frenchie.PlayBubbleRenderer;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -22,6 +23,7 @@ public final class FrenchieClient {
     @SubscribeEvent
     public static void renderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(FrenchieRegistry.FRENCHIE.get(), FrenchieRenderer::new);
+        event.registerEntityRenderer(FrenchieRegistry.PLAY_BUBBLE.get(), PlayBubbleRenderer::new);
     }
 
     @SubscribeEvent

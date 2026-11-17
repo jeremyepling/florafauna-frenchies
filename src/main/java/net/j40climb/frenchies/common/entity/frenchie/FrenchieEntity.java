@@ -112,6 +112,40 @@ public class FrenchieEntity extends TamableAnimal {
     private static final EntityDataAccessor<Integer> HANDOFF = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Long> TOY_EARS_UNTIL = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.LONG);
     private ToyPlayGoal toyPlay;
+    private BubblePlayGoal bubblePlay;
+    private static final EntityDataAccessor<Byte> PLAY_POSE = SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.BYTE);
+    long nextSlimePlayAt;
+    private long nextPlayDangerCheck;
+    private boolean playDanger;
+
+    public PlayPose playPose() {
+        return PlayPose.byId(entityData.get(PLAY_POSE));
+    }
+
+    void setPlayPose(PlayPose pose) {
+        entityData.set(PLAY_POSE, (byte) pose.ordinal());
+    }
+
+    public BubblePlayGoal bubblePlay() {
+        return bubblePlay;
+    }
+
+    boolean canPlay() {
+        return !isOrderedToSit() && !isSitting() && !isFrenchieSleeping() && canWatchPlay();
+    }
+
+    boolean canWatchPlay() {
+        if (!isAlive() || isNoAi() || personalityInterrupted() || hasCompanionJob() || hasToyJob()
+                || celebration.requestedOrRunning() || isPassenger() || isLeashed() || isInLove()
+                || isInWater() || isInLava() || isOnFire() || isFullyFrozen() || hurtTime > 0 || getTarget() != null
+                || deliveryDialog != null && deliveryDialog.isOpen()) return false;
+        long now = level().getGameTime();
+        if (now >= nextPlayDangerCheck) {
+            playDanger = PlaySafety.dangerNearby(this);
+            nextPlayDangerCheck = now + 4;
+        }
+        return !playDanger;
+    }
 
     public int handoffPhase() { return entityData.get(HANDOFF); }
     public ItemStack getParcel() { return entityData.get(PARCEL); }
@@ -155,9 +189,12 @@ public class FrenchieEntity extends TamableAnimal {
         this.goalSelector.addGoal(4, toyPlay);
         this.celebration = new CelebrationGoal(this);
         this.goalSelector.addGoal(5, celebration);
-        this.goalSelector.addGoal(6, new RandomStrollGoal(this, 1.0));
-        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
-        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        this.bubblePlay = new BubblePlayGoal(this);
+        this.goalSelector.addGoal(6, bubblePlay);
+        this.goalSelector.addGoal(7, new SlimeTeaseGoal(this));
+        this.goalSelector.addGoal(8, new RandomStrollGoal(this, 1.0));
+        this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
+        this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -217,6 +254,7 @@ public class FrenchieEntity extends TamableAnimal {
         builder.define(PARCEL, ItemStack.EMPTY);
         builder.define(TOY_EARS_UNTIL, 0L);
         builder.define(CELEBRATION_STAGE, CelebrationGoal.NONE);
+        builder.define(PLAY_POSE, (byte) PlayPose.NONE.ordinal());
         builder.define(JOB, (byte) 0);
         builder.define(WAITING_RECIPIENT, Optional.empty());
     }
@@ -364,7 +402,7 @@ public class FrenchieEntity extends TamableAnimal {
             }
             return InteractionResult.SUCCESS;
         }
-        if (itemstack.is(FrenchieRegistry.SQUEAKY_TOY.get())) {
+        if (itemstack.is(FrenchieRegistry.SQUEAKY_TOY.get()) || itemstack.is(FrenchieRegistry.BUBBLE_TOY.get())) {
             return itemstack.getItem().use(level(), pPlayer, pHand);
         }
         if (isPassenger()) return InteractionResult.SUCCESS;
@@ -393,7 +431,8 @@ public class FrenchieEntity extends TamableAnimal {
             boolean empty = itemstack.isEmpty();
             if (pHand == InteractionHand.MAIN_HAND && empty && !hasCompanionJob()) {
                 ItemStack offhand = pPlayer.getOffhandItem();
-                if (offhand.getItem() instanceof BundleItem || offhand.is(Items.COMPASS) || offhand.is(FrenchieRegistry.SQUEAKY_TOY.get()) || isFood(offhand)) {
+                if (offhand.getItem() instanceof BundleItem || offhand.is(Items.COMPASS) || offhand.is(FrenchieRegistry.SQUEAKY_TOY.get())
+                        || offhand.is(FrenchieRegistry.BUBBLE_TOY.get()) || isFood(offhand)) {
                     return InteractionResult.PASS;
                 }
             }
@@ -470,6 +509,7 @@ public class FrenchieEntity extends TamableAnimal {
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
         output.putLong("NextCelebration", nextCelebration);
+        output.putLong("NextSlimePlay", nextSlimePlayAt);
         output.putLong("OwnerAwaySince", ownerAwaySince);
         output.putInt("Variant", this.getTypeVariant());
         output.putString("Pose", this.getPose().name());
@@ -484,6 +524,7 @@ public class FrenchieEntity extends TamableAnimal {
     public void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
         nextCelebration = input.getLongOr("NextCelebration", 0L);
+        nextSlimePlayAt = input.getLongOr("NextSlimePlay", 0L);
         ownerAwaySince = input.getLongOr("OwnerAwaySince", -1L);
         trail.load(input);
         delivery.load(input);

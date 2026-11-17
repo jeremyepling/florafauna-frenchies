@@ -2,10 +2,12 @@ package net.j40climb.frenchies.setup;
 
 import net.j40climb.frenchies.Frenchies;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
+import net.j40climb.frenchies.common.entity.frenchie.PlayBubbleEntity;
 import net.j40climb.frenchies.common.entity.frenchie.WellRestedEffect;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackData;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackWarning;
 import net.j40climb.frenchies.common.item.SqueakyToyItem;
+import net.j40climb.frenchies.common.item.BubbleToyItem;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -44,6 +46,12 @@ public final class FrenchieRegistry {
                     .sized(0.9f, 0.9f).build(FRENCHIE_KEY));
 
     public static final DeferredItem<SqueakyToyItem> SQUEAKY_TOY = ITEMS.registerItem("squeaky_toy", SqueakyToyItem::new);
+    public static final DeferredItem<BubbleToyItem> BUBBLE_TOY = ITEMS.registerItem("bubble_toy", BubbleToyItem::new);
+
+    public static final Supplier<EntityType<PlayBubbleEntity>> PLAY_BUBBLE = ENTITY_TYPES.register("play_bubble",
+            () -> EntityType.Builder.of(PlayBubbleEntity::new, MobCategory.MISC)
+                    .sized(0.20F, 0.20F).noSave().noSummon().noLootTable().clientTrackingRange(4).updateInterval(2)
+                    .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "play_bubble"))));
 
     public static final DeferredItem<Item> FRENCHIE_SPAWN_EGG = ITEMS.registerItem("frenchie_spawn_egg", properties ->
             new SpawnEggItem(properties.spawnEgg(FRENCHIE.get())));
