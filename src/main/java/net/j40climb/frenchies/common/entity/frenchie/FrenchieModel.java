@@ -90,6 +90,12 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
         super.setupAnim(renderState);
         head.getChild("tongue").visible = renderState.captain;
 
+        if (renderState.dangerReaction != DangerReaction.NONE) {
+            if (renderState.captain || renderState.isSitting) sitPoseAnimation.applyStatic();
+            applyDangerReaction(renderState);
+            return;
+        }
+
         if (renderState.playPose == PlayPose.SLIME_BOW || renderState.playPose == PlayPose.BUBBLE_BOW) {
             // Pivot the chest down, stretch the forepaws out and keep the hind paws planted.
             body.xRot = 0.42F;
@@ -180,6 +186,44 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
             head.getChild("earR").zRot += lift;
             head.getChild("earL").y -= lift;
             head.getChild("earR").y -= lift;
+        }
+    }
+
+    private void applyDangerReaction(FrenchieRenderState state) {
+        float t = Math.clamp(state.dangerAge / state.dangerReaction.duration, 0, 1);
+        float envelope = (float) Math.sin(Math.PI * t);
+        applyHeadRotation(state.yRot, state.xRot);
+        switch (state.dangerReaction) {
+            case STARTLE -> {
+                if (!state.isSitting && !state.captain && t < 0.5F) {
+                    body.y -= 1.8F * (float) Math.sin(Math.PI * t * 2);
+                }
+                head.zRot += 0.34F * envelope;
+                head.yRot -= 0.28F * envelope;
+                head.getChild("earL").zRot -= 0.30F * envelope;
+            }
+            case DUCK -> {
+                float crouch = Math.min(t * 8, 1) * Math.clamp((0.70F - t) * 4, 0, 1);
+                body.y += 1.4F * crouch;
+                head.y += 0.9F * crouch;
+                head.xRot += 0.32F * crouch;
+                head.getChild("earL").zRot += 1.05F * crouch;
+                head.getChild("earR").zRot -= 1.05F * crouch;
+                float peek = (float) Math.sin(Math.PI * Math.clamp((t - 0.45F) / 0.55F, 0, 1));
+                head.yRot += 0.42F * peek;
+                head.xRot -= 0.23F * peek;
+            }
+            case TUMBLE -> {
+                if (t < 0.55F) {
+                    float roll = t / 0.55F;
+                    body.zRot += 2 * (float) Math.PI * roll;
+                    body.y -= 2.0F * (float) Math.sin(Math.PI * roll);
+                } else {
+                    float shake = (t - 0.55F) / 0.45F;
+                    head.yRot += (float) (0.45 * Math.sin(4 * Math.PI * shake) * (1 - shake));
+                }
+            }
+            default -> {}
         }
     }
 
