@@ -104,23 +104,21 @@ final class WhistleServer {
                 companion.sitDown();
                 place(owner, YARD.offset(-5, 0, -4));
                 companion.setNoAi(true);
-                float yaw = -145;
-                companion.snapTo(YARD, yaw, 0);
-                companion.setYHeadRot(yaw);
-                companion.setYBodyRot(yaw);
+                companion.snapTo(YARD, -145, 0);
                 visitor.setGameMode(GameType.SPECTATOR);
-                visitor.teleportTo(level, YARD.getX() + 1.65, YARD.getY() - 1.03, YARD.getZ() - 0.85,
-                        Set.of(), 0, 0, true);
+                frame(visitor, companion);
                 cue(visitor, LOOK);
                 next(Step.PREPARE_PHOTO);
             }
             case PREPARE_PHOTO -> {
+                frame(visitor, companion);
                 if (ticks < 25) break;
                 level.explode(null, companion.getX() - 1.4, companion.getY(), companion.getZ(), 1.5F,
                         net.minecraft.world.level.Level.ExplosionInteraction.NONE);
                 next(Step.PHOTO);
             }
             case PHOTO -> {
+                frame(visitor, companion);
                 if (!Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-blast-duck.png"))
                         || !Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-after-blast.png"))) {
                     if (ticks % 100 == 0) level.explode(null, companion.getX() - 1.4, companion.getY(), companion.getZ(),
@@ -130,6 +128,7 @@ final class WhistleServer {
                 next(Step.TUMBLE);
             }
             case TUMBLE -> {
+                frame(visitor, companion);
                 if (!Files.isRegularFile(root.resolve("Visitor/screenshots/visitor-tumble.png"))) {
                     if (ticks % 80 == 0) companion.causeFallDamage(14, 1f, companion.damageSources().fall());
                     break;
@@ -277,6 +276,19 @@ final class WhistleServer {
             }
         }
         return false;
+    }
+
+    private static void frame(ServerPlayer visitor, FrenchieEntity dog) {
+        var center = Vec3.atBottomCenterOf(YARD);
+        if (dog.position().distanceToSqr(center) > 0.01) dog.snapTo(center, -145, 0);
+        dog.setDeltaMovement(Vec3.ZERO);
+        dog.setYRot(-145);
+        dog.setYHeadRot(-145);
+        dog.setYBodyRot(-145);
+        var camera = center.add(1.15, -1.03, -1.35);
+        if (visitor.position().distanceToSqr(camera) > 0.02) {
+            visitor.teleportTo(visitor.level(), camera.x, camera.y, camera.z, Set.of(), visitor.getYRot(), visitor.getXRot(), true);
+        }
     }
 
     private static void checkPip(FrenchieEntity dog) {
