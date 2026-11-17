@@ -372,9 +372,14 @@ public class FrenchieModel extends EntityModel<FrenchieRenderState> {
         body.y += 2F * progress;
         splayPaws();
         if (state.bellyStage == BellyRubGoal.RUBBING) {
-            // One rear paw rises and falls far enough to be seen beyond the body.
-            body.getChild("leg_back_right").xRot = 0.8F + (float) Math.sin(t * 1.5F) * 1.0F;
-            body.getChild("leg_back_right").zRot = 0.55F;
+            // Move one hind paw beyond the flank so its full kick silhouette reads at play distance.
+            float kick = Mth.sin(t * 0.85F);
+            ModelPart leg = body.getChild("leg_back_right");
+            leg.x -= 2.0F;
+            leg.z += 1.0F;
+            leg.xRot = 0.65F + kick * 1.45F;
+            leg.zRot = 0.8F + kick * 0.35F;
+            body.zRot += kick * 0.08F;
         }
     }
 
