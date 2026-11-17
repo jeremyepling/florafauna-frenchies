@@ -33,9 +33,9 @@ public final class BubblePlayGoal extends Goal {
     public boolean offer(PlayBubbleEntity bubble) {
         long now = dog.level().getGameTime();
         if (running || engaged() || now < nextInvitation || dog.level() != bubble.level()
-                || dog.distanceToSqr(bubble) > 12 * 12 || !dog.hasLineOfSight(bubble) || !dog.canWatchPlay()) return false;
+                || dog.distanceToSqr(bubble) > 12 * 12 || !dog.hasLineOfSight(bubble)) return false;
         boolean resting = dog.isOrderedToSit() || dog.isSitting() || dog.isFrenchieSleeping();
-        if (!resting && (!dog.canPlay() || !dog.onGround())) return false;
+        if (!dog.canWatchPlay() || (!resting && !dog.onGround())) return false;
         if (!bubble.claim(dog)) return false;
         targetId = bubble.getId();
         watchOnly = resting;
@@ -63,6 +63,10 @@ public final class BubblePlayGoal extends Goal {
         }
         dog.getLookControl().setLookAt(bubble, 20, 15);
         dog.getLookControl().tick();
+    }
+
+    void wakeUp() {
+        if (sleepySpectator) stop();
     }
 
     private boolean available() {
