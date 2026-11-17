@@ -223,8 +223,10 @@ final class CompanionWhistleTests {
         var kennel = ChunkPos.containing(owner.blockPosition().east(880)).getMiddleBlockPosition(owner.getBlockY() + 14);
         var remote = ChunkPos.containing(kennel);
         var tickets = level.getChunkSource();
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) level.getChunk(remote.x() + dx, remote.z() + dz);
+        }
         tickets.addTicketWithRadius(TicketType.FORCED, remote, 2);
-        level.getChunkAt(kennel);
         for (var floor : BlockPos.betweenClosed(kennel.offset(-2, -1, -2), kennel.offset(2, -1, 2))) {
             level.setBlockAndUpdate(floor, Blocks.STONE.defaultBlockState());
         }
