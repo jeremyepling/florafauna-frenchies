@@ -5,7 +5,7 @@ import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.item.ItemStack;
@@ -85,8 +85,8 @@ final class CompanionSafetyTests {
     static void combat(GameTestHelper h) {
         var owner = player(h, 2.5, 2.5);
         var dog = CompanionWhistleTests.dog(h, owner, 5, 5);
-        var zombie = h.spawnWithNoFreeWill(EntityType.ZOMBIE, 8, 1, 2);
-        var target = h.spawnWithNoFreeWill(EntityType.COW, 8, 1, 5);
+        var zombie = h.spawnWithNoFreeWill(EntityTypes.ZOMBIE, 8, 1, 2);
+        var target = h.spawnWithNoFreeWill(EntityTypes.COW, 8, 1, 5);
         float health = target.getHealth();
         var at = dog.position().add(0, 0.26, 0);
         var ray = target.position().subtract(dog.position()).normalize();

@@ -66,7 +66,7 @@ final class EscapeDangerGoal extends Goal {
         repath = 9;
         var level = (ServerLevel) dog.level();
         var exits = new HashSet<BlockPos>();
-        for (BlockPos pos : BlockPos.withinManhattan(dog.blockPosition(), 3, 2, 3)) {
+        for (BlockPos pos : BlockPos.withinBoxByManhattanDistance(dog.blockPosition(), 3, 2, 3)) {
             if (CompanionRoster.safeAt(level, pos) != null) exits.add(pos.immutable());
             if (exits.size() >= 12) break;
         }

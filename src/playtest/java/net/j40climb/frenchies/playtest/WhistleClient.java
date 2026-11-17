@@ -48,14 +48,14 @@ public final class WhistleClient {
             return;
         }
         if (mc.player == null || mc.level == null || mc.gameMode == null) return;
-        if (mc.screen instanceof DeathScreen) {
+        if (mc.gui.screen() instanceof DeathScreen) {
             mc.player.respawn();
             return;
         }
         ticks++;
         switch (step) {
             case DISMISS, CALL_ACTIVE, CALL_COURIER -> {
-                if (mc.screen instanceof DeliveryScreen) mc.setScreen(null);
+                if (mc.gui.screen() instanceof DeliveryScreen) mc.gui.setScreen(null);
                 if (!mc.player.getMainHandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) {
                     ticks = 0;
                     return;
@@ -66,7 +66,7 @@ public final class WhistleClient {
                 }
                 mc.options.keyShift.setDown(dismiss);
                 mc.player.setXRot(-75);
-                if (ticks < 12 || mc.player.isShiftKeyDown() != dismiss || mc.screen != null) return;
+                if (ticks < 12 || mc.player.isShiftKeyDown() != dismiss || mc.gui.screen() != null) return;
                 KeyMapping.click(mc.options.keyUse.getKey());
                 step = Step.RELEASE;
                 ticks = 0;
@@ -79,7 +79,7 @@ public final class WhistleClient {
             }
             case BLAST, RELAXED -> {
                 if (!(mc.level.getEntity(WhistleServer.COMPANION) instanceof FrenchieEntity dog)) return;
-                mc.options.hideGui = true;
+                if (!mc.gui.hud.isHidden()) mc.gui.hud.toggle();
                 mc.player.lookAt(Anchor.EYES, dog.getBoundingBox().getCenter());
                 if (step == Step.BLAST && dog.dangerReaction().name().equals("DUCK") && dog.dangerReactionAge(0f) >= 3) {
                     capture(mc, "visitor-blast-duck.png");
@@ -94,6 +94,6 @@ public final class WhistleClient {
     }
 
     private static void capture(Minecraft mc, String filename) {
-        Screenshot.grab(mc.gameDirectory, filename, mc.getMainRenderTarget(), 1, ignored -> {});
+        Screenshot.grab(mc.gameDirectory, filename, mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
     }
 }

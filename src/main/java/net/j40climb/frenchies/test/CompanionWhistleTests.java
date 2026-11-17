@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -129,7 +129,6 @@ final class CompanionWhistleTests {
                             && ItemStack.matches(parcel, dog.getParcel()),
                     "Confirmation did not transfer the component-bearing bundle to the dog");
             if (pack) {
-                owner.setItemSlot(EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
                 owner.setShiftKeyDown(true);
                 owner.interactOn(dog, HAND, Vec3.ZERO);
                 owner.setShiftKeyDown(false);
@@ -211,7 +210,7 @@ final class CompanionWhistleTests {
         var id = dog.getUUID();
         var sequence = h.startSequence();
         if (boat) {
-            var vessel = h.spawn(EntityType.OAK_BOAT, 5, 1, 6);
+            var vessel = h.spawn(EntityTypes.OAK_BOAT, 5, 1, 6);
             owner.interactOn(vessel, HAND, Vec3.ZERO);
             sequence.thenWaitUntil(() -> h.assertTrue(dog.getVehicle() == vessel, "Frenchie did not board owner's boat"));
         } else {

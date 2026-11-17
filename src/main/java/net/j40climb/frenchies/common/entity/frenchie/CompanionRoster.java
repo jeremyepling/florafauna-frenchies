@@ -448,7 +448,7 @@ public final class CompanionRoster extends SavedData {
 
     public static @Nullable Vec3 safeLanding(ServerPlayer owner) {
         var level = owner.level();
-        for (var pos : BlockPos.withinManhattan(owner.blockPosition(), 4, 3, 4)) {
+        for (var pos : BlockPos.withinBoxByManhattanDistance(owner.blockPosition(), 4, 3, 4)) {
             var landing = safeAt(level, pos);
             if (landing != null && level.clip(new ClipContext(landing.add(0, 0.4, 0), owner.getEyePosition(),
                     ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner)).getType() == HitResult.Type.MISS) return landing;

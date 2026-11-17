@@ -137,7 +137,7 @@ final class WhistleServer {
             }
             case RESPAWN -> {
                 require(courier == null, "Player death recalled a deliberately dismissed courier");
-                if (!owner.isAlive() || owner.position().distanceToSqr(INN.getCenter()) > 36
+                if (!owner.isAlive() || owner.position().distanceToSqr(Vec3.atCenterOf(INN)) > 36
                         || companion == null || companion.distanceToSqr(owner) >= 36) break;
                 checkPip(companion);
                 require(owner.getLastDeathLocation().isPresent(), "Respawn did not record the old location");
