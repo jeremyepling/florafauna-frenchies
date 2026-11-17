@@ -15,6 +15,7 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -305,14 +306,20 @@ public final class CompanionRoster extends SavedData {
         e.due = now;
         e.warned = false;
         roster.setDirty();
-        roster.process(owner, id, e, now);
+        roster.process(owner.level().getServer(), owner, id, e, now);
     }
 
     @SubscribeEvent
     public static void respawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.isEndConquered() || !(event.getEntity() instanceof ServerPlayer owner)) return;
         var roster = discover(owner);
-        for (var e : roster.dogs.values()) {
+        var pack = owner.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
+        UUID packedId = pack != null && pack.hasCarriedFrenchie()
+                ? pack.frenchieNBT().read("UUID", UUIDUtil.CODEC).orElse(null) : null;
+        for (var row : roster.dogs.entrySet()) {
+            // A packed companion has already rejoined the respawned owner, including its paused job.
+            if (row.getKey().equals(packedId)) continue;
+            var e = row.getValue();
             if (e.owner.equals(owner.getUUID()) && e.state != State.DISMISSED && e.state != State.DISMISSING) {
                 e.state = State.CALLING;
                 e.due = 0;
@@ -333,7 +340,7 @@ public final class CompanionRoster extends SavedData {
             var e = row.getValue();
             if (e.state == State.DISMISSED || e.state == State.ACTIVE && (!e.following || now % 40 != 0)) continue;
             var owner = server.getPlayerList().getPlayer(e.owner);
-            if (!DeliveryGoal.available(owner)) continue;
+            if (!DeliveryGoal.available(owner) && e.state != State.DISMISSING) continue;
             if (e.state == State.ACTIVE) {
                 if (e.location.dimension().equals(owner.level().dimension())
                         && ChunkPos.containing(e.location.pos()).getChessboardDistance(owner.chunkPosition()) <= 2) continue;
@@ -341,17 +348,18 @@ public final class CompanionRoster extends SavedData {
                 e.due = now;
                 roster.setDirty();
             }
-            roster.process(owner, row.getKey(), e, now);
+            roster.process(server, owner, row.getKey(), e, now);
         }
     }
 
-    private void process(ServerPlayer owner, UUID id, Entry e, long now) {
+    private void process(MinecraftServer server, @Nullable ServerPlayer owner, UUID id, Entry e, long now) {
+        // A dismissal requested before logout only needs the source endpoint to finish.
+        if (owner == null && e.state != State.DISMISSING) return;
         if (e.state == State.RETURNING) {
             if (now >= e.due) arrive(owner, id, e, now);
             return;
         }
-        var server = owner.level().getServer();
-        var live = owner.level().getEntityInAnyDimension(id);
+        var live = server.overworld().getEntityInAnyDimension(id);
         if (live instanceof FrenchieEntity dog && ownedBy(dog, e.owner)) {
             if (e.state == State.APPROACHING) {
                 if (dog.isOrderedToSit() || dog.hasCompanionJob() || dog.level() == owner.level() && dog.distanceToSqr(owner) <= 6.25) {
@@ -373,12 +381,12 @@ public final class CompanionRoster extends SavedData {
                 setDirty();
                 return;
             }
-            if (e.state == State.DISMISSING && dog.level() == owner.level() && dog.distanceToSqr(owner) <= 256) {
+            if (e.state == State.DISMISSING && owner != null && dog.level() == owner.level() && dog.distanceToSqr(owner) <= 256) {
                 FrenchieAwareness.bark(dog, 1.10f);
             }
             storeLive(dog, e);
         } else if (e.saved == null) {
-            var pack = owner.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
+            var pack = owner == null ? null : owner.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
             if (pack != null && pack.hasCarriedFrenchie() && matches(pack.frenchieNBT(), id, e.owner)) {
                 e.saved = pack.frenchieNBT();
                 owner.setData(FrenchieRegistry.FRENCH_FRONTPACK_DATA, FrontpackData.DEFAULT);
@@ -393,7 +401,7 @@ public final class CompanionRoster extends SavedData {
                     level.getChunkSource().addTicketWithRadius(FrenchieRegistry.COURIER_STOP.get(), chunk, 2);
                     if (!level.areEntitiesActuallyLoadedAndTicking(chunk) || now < e.due + 100) return;
                 }
-                tell(owner, "unavailable", e.name);
+                if (owner != null) tell(owner, "unavailable", e.name);
                 e.state = State.ACTIVE;
                 e.following = false;
                 setDirty();
@@ -421,6 +429,19 @@ public final class CompanionRoster extends SavedData {
         dog.removeLeash();
         dog.discard();
         setDirty();
+    }
+
+    /** An unloaded dog can wake before the server's next roster tick. Honor dismissal before running its old job. */
+    static boolean finishPendingDismissal(FrenchieEntity dog, ServerLevel level) {
+        var roster = level.getServer().getDataStorage().get(TYPE);
+        if (roster == null) return false;
+        var entry = roster.dogs.get(dog.getUUID());
+        if (entry == null || entry.state != State.DISMISSING || !ownedBy(dog, entry.owner)) return false;
+        roster.storeLive(dog, entry);
+        entry.state = State.DISMISSED;
+        entry.following = false;
+        roster.setDirty();
+        return true;
     }
 
     static void emergency(FrenchieEntity dog) {

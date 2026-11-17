@@ -728,6 +728,7 @@ public class FrenchieEntity extends TamableAnimal {
     @Override
     public void tick() {
         if (isTame() && level() instanceof ServerLevel level) {
+            if (CompanionRoster.finishPendingDismissal(this, level)) return;
             escapeDanger.checkFooting(level);
             if (isRemoved()) return;
         }
