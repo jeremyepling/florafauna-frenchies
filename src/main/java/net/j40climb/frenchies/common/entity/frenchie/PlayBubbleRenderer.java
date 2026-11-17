@@ -27,18 +27,30 @@ public final class PlayBubbleRenderer extends EntityRenderer<PlayBubbleEntity, E
     }
 
     @Override
+    public void extractRenderState(PlayBubbleEntity bubble, EntityRenderState state, float partialTick) {
+        super.extractRenderState(bubble, state, partialTick);
+        // The attached film is rendered with the dog's interpolated head by FrenchieMouthLayer.
+        state.isInvisible |= bubble.noseDogId() != -1;
+    }
+
+    @Override
     public void submit(EntityRenderState state, PoseStack poses, SubmitNodeCollector nodes, CameraRenderState camera) {
+        if (state.isInvisible) return;
         poses.pushPose();
         poses.translate(0, 0.09, 0);
         poses.mulPose(camera.orientation);
-        nodes.submitCustomGeometry(poses, FILM, (pose, vertices) -> {
-            vertex(vertices, pose, state.lightCoords, -0.11F, -0.11F, 0, 1);
-            vertex(vertices, pose, state.lightCoords, 0.11F, -0.11F, 1, 1);
-            vertex(vertices, pose, state.lightCoords, 0.11F, 0.11F, 1, 0);
-            vertex(vertices, pose, state.lightCoords, -0.11F, 0.11F, 0, 0);
-        });
+        submitFilm(poses, nodes, state.lightCoords, 0.11F);
         poses.popPose();
         super.submit(state, poses, nodes, camera);
+    }
+
+    static void submitFilm(PoseStack poses, SubmitNodeCollector nodes, int light, float radius) {
+        nodes.submitCustomGeometry(poses, FILM, (pose, vertices) -> {
+            vertex(vertices, pose, light, -radius, -radius, 0, 1);
+            vertex(vertices, pose, light, radius, -radius, 1, 1);
+            vertex(vertices, pose, light, radius, radius, 1, 0);
+            vertex(vertices, pose, light, -radius, radius, 0, 0);
+        });
     }
 
     private static void vertex(VertexConsumer buffer, PoseStack.Pose pose, int light, float x, float y, int u, int v) {
