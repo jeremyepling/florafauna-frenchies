@@ -9,6 +9,7 @@ import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 import java.util.function.Consumer;
@@ -23,6 +24,13 @@ public final class CompanionTests {
         var yard = Identifier.fromNamespaceAndPath(Frenchies.MOD_ID, "companion_yard");
         registerPlayTest(event, yard, "companion_whistle_unloaded_dismiss", 1800, CompanionWhistleTests::unloadedDismiss);
         registerPlayTest(event, yard, "companion_whistle_offline_void", 350, CompanionSafetyTests::offlineVoid);
+        registerPlayTest(event, yard, "companion_whistle_fall", 180, CompanionSafetyTests::falling);
+        registerPlayTest(event, yard, "companion_whistle_escape_magma", 250, h -> CompanionSafetyTests.contact(h, Blocks.MAGMA_BLOCK));
+        registerPlayTest(event, yard, "companion_whistle_cactus", 250, h -> CompanionSafetyTests.contact(h, Blocks.CACTUS));
+        registerPlayTest(event, yard, "companion_whistle_fire", 250, h -> CompanionSafetyTests.contact(h, Blocks.FIRE));
+        registerPlayTest(event, yard, "companion_whistle_suffocation", 250, h -> CompanionSafetyTests.contact(h, Blocks.STONE));
+        registerPlayTest(event, yard, "companion_whistle_drowning", 350, h -> CompanionSafetyTests.contact(h, Blocks.WATER));
+        registerPlayTest(event, yard, "companion_whistle_freezing", 250, h -> CompanionSafetyTests.contact(h, Blocks.POWDER_SNOW));
         registerPlayTest(event, yard, "companion_whistle_selection", 650, CompanionWhistleTests::selection);
         registerPlayTest(event, yard, "companion_whistle_dimension", 4000, CompanionWhistleTests::dimension);
         registerPlayTest(event, yard, "companion_whistle_damage", 650, CompanionSafetyTests::damage);

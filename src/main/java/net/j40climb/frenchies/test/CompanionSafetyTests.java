@@ -16,6 +16,7 @@ import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -110,6 +111,59 @@ final class CompanionSafetyTests {
                     "Dog absorbed damage or retained a combat target");
             disconnect(owner);
         }).thenSucceed();
+    }
+
+    static void contact(GameTestHelper h, Block hazard) {
+        var owner = player(h, 2.5, 2.5);
+        var dog = CompanionWhistleTests.dog(h, owner, 7, 7);
+        var id = dog.getUUID();
+        var level = h.getLevel();
+        var feet = dog.blockPosition();
+        var toy = CompanionWhistleTests.named(new ItemStack(FrenchieRegistry.SQUEAKY_TOY.get()), "Yard squeaker");
+        dog.setItemSlot(EquipmentSlot.OFFHAND, toy.copy());
+        var health = dog.getHealth();
+        h.startSequence().thenExecuteAfter(5, () -> {
+            if (hazard == Blocks.WATER || hazard == Blocks.STONE) {
+                // A sealed, two-block-deep shaft prevents floating to the surface or walking out.
+                for (var pos : BlockPos.betweenClosed(feet.offset(-1, 0, -1), feet.offset(1, 2, 1))) {
+                    boolean inside = pos.getX() == feet.getX() && pos.getZ() == feet.getZ() && pos.getY() < feet.getY() + 2;
+                    level.setBlockAndUpdate(pos, inside ? hazard.defaultBlockState() : Blocks.OBSIDIAN.defaultBlockState());
+                }
+            } else {
+                if (hazard == Blocks.CACTUS) level.setBlockAndUpdate(feet.below(), Blocks.SAND.defaultBlockState());
+                var block = hazard == Blocks.MAGMA_BLOCK ? feet.below() : feet;
+                level.setBlockAndUpdate(block, hazard.defaultBlockState());
+                h.assertTrue(level.getBlockState(block).is(hazard), "Physical hazard did not survive placement");
+            }
+        }).thenWaitUntil(() -> {
+            var current = level.getEntity(id);
+            h.assertTrue(current instanceof FrenchieEntity rescued && rescued.isAlive()
+                            && !rescued.blockPosition().equals(feet) && !rescued.isInWall()
+                            && level.getFluidState(rescued.blockPosition()).isEmpty()
+                            && !level.getBlockState(rescued.blockPosition()).is(hazard)
+                            && (hazard != Blocks.MAGMA_BLOCK || !level.getBlockState(rescued.blockPosition().below()).is(hazard))
+                            && rescued.getHealth() == health && !rescued.isOnFire() && !rescued.isFreezing()
+                            && ItemStack.matches(toy, rescued.getOffhandItem()),
+                    "Physical hazard did not release a healthy companion with its original toy: " + hazard);
+            if (hazard == Blocks.MAGMA_BLOCK) {
+                h.assertTrue(current == dog, "Single exposed magma block forced an emergency transfer despite four walkable exits");
+            }
+        }).thenExecute(() -> disconnect(owner)).thenSucceed();
+    }
+
+    static void falling(GameTestHelper h) {
+        var owner = player(h, 3.5, 3.5);
+        var dog = CompanionWhistleTests.dog(h, owner, 6, 5);
+        var health = dog.getHealth();
+        h.startSequence().thenWaitUntil(() -> h.assertTrue(dog.onGround(), "Drop fixture did not settle"))
+                .thenExecute(() -> {
+                    dog.setPos(dog.position().add(0, 12, 0));
+                    dog.setOnGround(false);
+                    dog.setDeltaMovement(0, -0.25, 0);
+                }).thenWaitUntil(() -> h.assertTrue(dog.onGround() && dog.dangerReaction().name().equals("TUMBLE")
+                                && dog.getHealth() == health && dog.hurtTime == 0,
+                        "Falling twelve blocks did not end in a brief, harmless tumble"))
+                .thenExecute(() -> disconnect(owner)).thenSucceed();
     }
 
     static void offlineVoid(GameTestHelper h) {
