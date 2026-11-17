@@ -57,7 +57,7 @@ public final class CompanionTests {
         registerStructureTest(event, defaultEnv, "companion_zoomies_laps", yard, 550, h -> CompanionTravelTests.zoomies(h, true));
         registerStructureTest(event, defaultEnv, "companion_zoomies_crops", yard, 550, h -> CompanionTravelTests.zoomies(h, false));
         registerTest(event, defaultEnv, "frenchie_warning_sight", FrenchieAwarenessGameTests::warningSight);
-        registerTest(event, defaultEnv, "frenchie_bedtime", FrenchieAwarenessGameTests::bedtime);
+        registerStructureTest(event, defaultEnv, "frenchie_bedtime", yard, 100, FrenchieAwarenessGameTests::bedtime);
         registerTest(event, defaultEnv, "frenchie_owner_orders", FrenchieGameTests::ownerOrders);
         registerTest(event, defaultEnv, "frenchie_death_trail", FrenchieTrackingGameTests::trackDeath);
         registerTest(event, defaultEnv, "frenchie_delivery_creative_parcel", FrenchieDeliveryGameTests::creativeParcel);
