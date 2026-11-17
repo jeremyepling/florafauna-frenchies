@@ -15,16 +15,16 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 
 final class FrenchieAwarenessGameTests {
     static void warningSight(GameTestHelper h) {
-        for (BlockPos pos : BlockPos.betweenClosed(1, 1, 1, 3, 2, 1)) h.setBlock(pos, Blocks.AIR);
-        var dog = h.spawnWithNoFreeWill(FrenchieRegistry.FRENCHIE.get(), 1, 1, 1);
+        for (BlockPos pos : BlockPos.betweenClosed(4, 1, 5, 6, 2, 5)) h.setBlock(pos, Blocks.AIR);
+        var dog = h.spawnWithNoFreeWill(FrenchieRegistry.FRENCHIE.get(), 4, 1, 5);
         dog.tame(h.makeMockPlayer(GameType.SURVIVAL));
         dog.sitDown();
-        var creeper = h.spawnWithNoFreeWill(EntityType.CREEPER, 3, 1, 1);
-        h.setBlock(2, 1, 1, Blocks.STONE);
-        h.setBlock(2, 2, 1, Blocks.STONE);
+        var creeper = h.spawnWithNoFreeWill(EntityType.CREEPER, 6, 1, 5);
+        h.setBlock(5, 1, 5, Blocks.STONE);
+        h.setBlock(5, 2, 5, Blocks.STONE);
         h.assertTrue(FrenchieAwareness.findCreeper(h.getLevel(), dog) == null, "A solid wall must block the warning");
-        h.setBlock(2, 1, 1, Blocks.AIR);
-        h.setBlock(2, 2, 1, Blocks.AIR);
+        h.setBlock(5, 1, 5, Blocks.AIR);
+        h.setBlock(5, 2, 5, Blocks.AIR);
         h.startSequence().thenWaitUntil(() -> {
             h.assertTrue(FrenchieAwareness.findCreeper(h.getLevel(), dog) == creeper, "A nearby visible creeper should trigger the alarm");
             h.assertTrue(dog.isWarningFlash(), "The visible creeper should trigger a warning");
