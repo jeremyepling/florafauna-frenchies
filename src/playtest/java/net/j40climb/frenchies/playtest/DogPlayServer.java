@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,8 +34,11 @@ final class DogPlayServer {
     static final String WATCH_RELOAD = "Play fixture: watch restored dog";
     static final String BLOW_AGAIN = "Play fixture: blow again";
     private static final BlockPos YARD = new BlockPos(480, 220, 480);
-    private enum Step { JOIN, BUBBLES, BOW, RELOAD, RECRUIT, AWAY, RETURN, TARGET }
+    private enum Step { JOIN, BUBBLES, BOW, RELOAD, RECRUIT, NIGHTFALL, SLEEP, WATCH, AWAY, RETURN, TARGET }
     private static Step step = Step.JOIN;
+    private static long sleptAt;
+    private static Vec3 bed;
+    private static int watching;
 
     static boolean finished(ServerPlayer owner, ServerPlayer visitor, Path root, int phase) {
         var level = owner.level();
@@ -70,6 +74,7 @@ final class DogPlayServer {
                 if (!frames(root, "bubbles") || dog.bubblePlay().engaged()) break;
                 require(owner.getMainHandItem().is(FrenchieRegistry.BUBBLE_TOY.get()), "Blowing consumed the toy");
                 dog.snapTo(YARD.west(3), -90, 0);
+                visitor.teleportTo(level, YARD.getX() - 1.0, YARD.getY() - 0.85, YARD.getZ() - 2.7, Set.of(), 0, 0, true);
                 var slime = EntityType.SLIME.create(level, EntitySpawnReason.COMMAND);
                 require(slime != null, "Could not create slime");
                 slime.setUUID(SLIME);
@@ -104,7 +109,29 @@ final class DogPlayServer {
                 advance(Step.RECRUIT);
             }
             case RECRUIT -> {
-                if (!dog.bubblePlay().engaged()) break;
+                if (dog.playPose() != PlayPose.BUBBLE_APPROACH) break;
+                level.getServer().clockManager().moveToTimeMarker(level.dimensionType().defaultClock().orElseThrow(), ClockTimeMarkers.MIDNIGHT);
+                advance(Step.NIGHTFALL);
+            }
+            case NIGHTFALL -> {
+                if (!dog.isFrenchieSleeping()) break;
+                require(dog.playPose() == PlayPose.NONE && !dog.bubblePlay().engaged(),
+                        "Going to sleep left a running bubble goal");
+                sleptAt = level.getGameTime();
+                advance(Step.SLEEP);
+            }
+            case SLEEP -> {
+                if (level.getGameTime() < sleptAt + 150) break;
+                require(dog.isFrenchieSleeping(), "Frenchie got up before the second puff");
+                bed = dog.position();
+                cue(owner, BLOW_AGAIN);
+                advance(Step.WATCH);
+            }
+            case WATCH -> {
+                if (dog.playPose() != PlayPose.BUBBLE_WATCH) break;
+                require(dog.isFrenchieSleeping() && dog.position().distanceToSqr(bed) < 0.02,
+                        "Sleeping spectator got up to chase the fresh bubbles");
+                if (++watching < 6) break;
                 // This wild persistent dog stays in the yard without an owner to follow.
                 for (var player : new ServerPlayer[]{owner, visitor}) {
                     player.setGameMode(GameType.SPECTATOR);
@@ -122,6 +149,7 @@ final class DogPlayServer {
                 require(dog.playPose() == PlayPose.NONE && !dog.bubblePlay().engaged()
                                 && level.getEntitiesOfClass(PlayBubbleEntity.class, new AABB(YARD).inflate(12)).isEmpty(),
                         "Returning to unloaded terrain restored dangling bubble play");
+                level.getServer().clockManager().moveToTimeMarker(level.dimensionType().defaultClock().orElseThrow(), ClockTimeMarkers.NOON);
                 visitor.setGameMode(GameType.SURVIVAL);
                 visitor.teleportTo(level, YARD.getX() + 3.7, YARD.getY(), YARD.getZ() + 0.5, Set.of(), 90, 0, true);
                 var slime = EntityType.SLIME.create(level, EntitySpawnReason.COMMAND);
