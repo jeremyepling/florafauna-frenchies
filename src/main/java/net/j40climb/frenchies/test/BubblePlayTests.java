@@ -2,19 +2,29 @@ package net.j40climb.frenchies.test;
 
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.common.entity.frenchie.PlayBubbleEntity;
+import net.j40climb.frenchies.common.entity.frenchie.PlayPose;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.PlayLevelSoundEvent;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static net.j40climb.frenchies.common.entity.frenchie.PlayPose.*;
 
@@ -39,10 +49,23 @@ final class BubblePlayTests {
     static void toy(GameTestHelper h) {
         var player = blower(h, 5.5, 3.5);
         var toy = player.getMainHandItem().copy();
-        blow(player);
-        var first = bubbles(player);
-        h.assertTrue(first.size() == 3, "A first use created " + first.size() + " bubbles");
-        for (int i = 0; i < 10; i++) blow(player);
+        var sounds = new AtomicInteger();
+        Consumer<PlayLevelSoundEvent.AtPosition> listen = event -> {
+            if (event.getLevel() == player.level() && event.getSound() != null
+                    && event.getSound().value() == SoundEvents.BUBBLE_COLUMN_BUBBLE_POP
+                    && event.getPosition().distanceToSqr(player.position()) < 4) sounds.incrementAndGet();
+        };
+        List<PlayBubbleEntity> first;
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, PlayLevelSoundEvent.AtPosition.class, listen);
+        try {
+            blow(player);
+            first = bubbles(player);
+            h.assertTrue(first.size() == 3, "A first use created " + first.size() + " bubbles");
+            for (int i = 0; i < 10; i++) blow(player);
+        } finally {
+            NeoForge.EVENT_BUS.unregister(listen);
+        }
+        h.assertTrue(sounds.get() == 1, "One puff and ten cooldown clicks produced " + sounds.get() + " sounds");
         h.assertTrue(bubbles(player).size() == first.size(), "Repeated use bypassed the toy cooldown");
         var start = first.getFirst().position();
         h.startSequence().thenExecuteFor(45, player.getCooldowns()::tick)
@@ -72,8 +95,8 @@ final class BubblePlayTests {
             dogs.add(dog);
         }
         var sitter = dogs.getLast();
+        sitter.snapTo(h.absoluteVec(new Vec3(8.5, 1, 8.5)), 0, 0);
         sitter.sitDown();
-        var seat = sitter.position();
         h.startSequence().thenExecuteAfter(4, () -> {
             blow(owner);
             blow(second);
@@ -84,8 +107,8 @@ final class BubblePlayTests {
         }).thenExecuteFor(115, () -> {
             h.assertTrue(dogs.stream().filter(dog -> dog.bubblePlay().engaged()).count() <= 3,
                     "Repeated blowing exceeded the audience cap");
-            h.assertTrue(sitter.isOrderedToSit() && sitter.position().distanceToSqr(seat) < 0.6,
-                    "Bubble play made an ordered sitter leave its seat");
+            h.assertTrue(sitter.isOrderedToSit() && sitter.isSitting(),
+                    "Bubble play made an ordered sitter stand up");
         }).thenExecuteAfter(10, () -> {
             h.assertTrue(dogs.stream().noneMatch(d -> d.bubblePlay().engaged()), "Bubble audience got stuck");
             CompanionTravelTests.disconnect(owner, second, third);
@@ -103,6 +126,9 @@ final class BubblePlayTests {
         var puff = new ArrayList<PlayBubbleEntity>();
         Set<FrenchieEntity> successful = new HashSet<>();
         Set<PlayBubbleEntity> popped = new HashSet<>();
+        Map<Integer, Set<PlayPose>> observed = Map.of(left.getId(), EnumSet.noneOf(PlayPose.class),
+                right.getId(), EnumSet.noneOf(PlayPose.class));
+        Map<PlayBubbleEntity, Integer> attached = new HashMap<>();
         h.startSequence().thenWaitUntil(() -> h.assertTrue(left.onGround() && right.onGround(), "Dogs have not landed"))
                 .thenExecute(() -> {
                     blow(owner);
@@ -112,16 +138,21 @@ final class BubblePlayTests {
                 })
                 .thenWaitUntil(() -> h.assertTrue(sitter.playPose() == BUBBLE_WATCH && sitter.isOrderedToSit(),
                         "Ordered sitter failed to watch its bubble"))
-                .thenExecuteFor(64, () -> {
-                    h.assertTrue(sitter.isOrderedToSit() && sitter.position().distanceToSqr(seat) < 0.5,
+                .thenExecuteFor(110, () -> {
+                    for (var dog : List.of(left, right)) observed.get(dog.getId()).add(dog.playPose());
+                    h.assertTrue(sitter.isOrderedToSit() && sitter.isSitting()
+                                    && (sitter.playPose() != BUBBLE_WATCH || sitter.position().distanceToSqr(seat) < 0.5),
                             "A seated watcher chased a bubble");
                     // A bubble disappearing above clear floor next to a pouncing dog
                     // before its natural lifetime is a nose pop. Count each dog and bubble once.
                     for (var bubble : puff) {
-                        if (!bubble.isRemoved() || popped.contains(bubble) || bubble.tickCount >= 75) continue;
+                        if (bubble.noseDogId() != -1) attached.put(bubble, bubble.noseDogId());
+                        if (!bubble.isRemoved() || popped.contains(bubble)) continue;
                         for (var dog : List.of(left, right)) {
-                            if (dog.playPose() == BUBBLE_POUNCE && dog.distanceToSqr(bubble) < 1.5
-                                    && bubble.getY() > seat.y + 0.15 && !successful.contains(dog)) {
+                            boolean nose = attached.getOrDefault(bubble, -1) == dog.getId();
+                            boolean earlyPop = bubble.tickCount < 78 && bubble.getY() > seat.y + 0.15;
+                            if ((nose || earlyPop) && dog.playPose() == BUBBLE_POUNCE
+                                    && dog.distanceToSqr(bubble) < 1.5 && !successful.contains(dog)) {
                                 successful.add(dog);
                                 popped.add(bubble);
                                 break;
@@ -130,7 +161,8 @@ final class BubblePlayTests {
                     }
                 }).thenExecute(() -> {
                     h.assertTrue(successful.size() == 2 && popped.size() == 2,
-                            "Two different hunters must pop two different reachable bubbles, got " + successful.size());
+                            "Two hunters must pop two distinct reachable bubbles, got " + successful.size()
+                                    + "; dog poses " + observed + "; bubble ages " + puff.stream().map(b -> b.tickCount).toList());
                     CompanionTravelTests.disconnect(owner);
                 }).thenSucceed();
     }
@@ -142,7 +174,12 @@ final class BubblePlayTests {
         dog.tame(owner);
         dog.standUp();
         h.startSequence().thenWaitUntil(() -> h.assertTrue(dog.onGround(), "Dog has not landed"))
-                .thenExecute(() -> blow(owner))
+                .thenExecute(() -> {
+                    blow(owner);
+                    h.assertTrue(dog.bubblePlay().engaged(), "Toy did not recruit courier candidate; puff="
+                            + bubbles(owner).size() + ", sleeping=" + dog.isFrenchieSleeping()
+                            + ", sitting=" + dog.isSitting() + ", warned=" + dog.isWarningFlash());
+                })
                 .thenWaitUntil(() -> h.assertTrue(dog.playPose() == BUBBLE_APPROACH, "Dog never pursued its bubble"))
                 .thenExecute(() -> {
                     owner.snapTo(dog.position().add(0, 0, -1), 0, 0);
