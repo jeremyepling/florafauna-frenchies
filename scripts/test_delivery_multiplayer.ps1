@@ -1,11 +1,10 @@
 #Requires -Version 7.0
 # Two offline development clients connect only to a disposable loopback server.
-param([switch]$Offline)
+param([switch]$Offline, [ValidateSet('delivery','play')][string]$Scenario = 'delivery')
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $checkout = Split-Path $PSScriptRoot -Parent
-$Scenario = 'delivery'
 $runId = [guid]::NewGuid().ToString('N')
 $root = Join-Path $checkout ".tmp/$Scenario-multiplayer/$runId"
 $roles = 'Server', 'Owner', 'Visitor'
@@ -40,7 +39,7 @@ try {
     Write-Host "Multiplayer test world and logs: $root"
     $options = @('--console=plain')
     if ($Offline) { $options += '--offline' }
-    & .\gradlew.bat @options "-PdeliveryTestId=$runId" "-PdeliveryTestPort=$port" playtestClasses `
+    & .\gradlew.bat @options "-PdeliveryTestId=$runId" "-PdeliveryTestPort=$port" "-PmultiplayerScenario=$Scenario" playtestClasses `
         createDeliveryServerLaunchScript createDeliveryOwnerLaunchScript createDeliveryVisitorLaunchScript *> (Join-Path $root 'prepare.log')
     if ($LASTEXITCODE -ne 0) { throw "Could not prepare the multiplayer launchers. See $root/prepare.log" }
 
@@ -57,7 +56,7 @@ try {
         $script.Replace((Join-Path $checkout 'build\moddev'), $launchDir) | Set-Content -LiteralPath (Join-Path $launchDir $scriptName)
     }
 
-    $phases = @(1)
+    $phases = if ($Scenario -eq 'play') { @(1, 2) } else { @(1) }
     foreach ($phase in $phases) {
         Write-Host "Launching dedicated $Scenario phase $phase"
         Set-Content -LiteralPath (Join-Path $root 'phase') -Value $phase
