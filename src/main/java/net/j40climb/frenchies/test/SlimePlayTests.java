@@ -87,6 +87,42 @@ final class SlimePlayTests {
                 .thenSucceed();
     }
 
+    static void warning(GameTestHelper h) {
+        var owner = CompanionTravelTests.player(h, 9, 9);
+        var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 2, 1, 5);
+        dog.tame(owner);
+        dog.standUp();
+        stationarySlime(h, 1);
+        h.startSequence().thenWaitUntil(() -> h.assertTrue(dog.playPose() == SLIME_BOW, "No bow before the warning"))
+                .thenExecute(() -> {
+                    var threat = h.spawn(EntityTypes.CREEPER, 3, 1, 2);
+                    threat.setNoAi(true);
+                }).thenWaitUntil(() -> h.assertTrue(dog.isWarningFlash() && dog.playPose() == NONE,
+                        "Visible creeper failed to take priority over the bow"))
+                .thenWaitUntil(() -> h.assertTrue(!dog.isWarningFlash(), "Missing gap between warning barks"))
+                .thenWaitUntil(() -> h.assertTrue(dog.isWarningFlash() && dog.playPose() == NONE, "Missing second warning"))
+                .thenExecute(() -> CompanionTravelTests.disconnect(owner)).thenSucceed();
+    }
+
+    static void unsafeFooting(GameTestHelper h) {
+        var dog = h.spawn(FrenchieRegistry.FRENCHIE.get(), 1, 1, 5);
+        stationarySlime(h, 1);
+        float health = dog.getHealth();
+        double edge = h.absolutePos(new BlockPos(2, 1, 5)).getX();
+        h.startSequence().thenWaitUntil(() -> h.assertTrue(dog.playPose() == SLIME_NOTICE, "Dog did not notice the slime"))
+                .thenExecute(() -> {
+                    // Cut the route immediately in front of the dog after it has seen a safe yard.
+                    for (int z = 0; z <= 10; z++) {
+                        h.setBlock(2, 0, z, Blocks.MAGMA_BLOCK);
+                        h.setBlock(3, 0, z, Blocks.AIR);
+                    }
+                })
+                .thenWaitUntil(() -> h.assertTrue(dog.playPose() == NONE, "Frenchie kept pursuing across unsafe footing"))
+                .thenExecute(() -> h.assertTrue(dog.getX() < edge && dog.getHealth() == health,
+                        "Frenchie stepped onto hot ground or fell across the gap"))
+                .thenSucceed();
+    }
+
     static void vanilla(GameTestHelper h) {
         // The GameTest mock server player always reports Creative. A passive fixture
         // golem exercises the other vanilla slime target without killing the tiny slime.
