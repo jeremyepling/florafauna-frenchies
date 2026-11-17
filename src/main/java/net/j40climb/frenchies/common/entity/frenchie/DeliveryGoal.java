@@ -31,6 +31,7 @@ final class DeliveryGoal extends Goal {
     private @Nullable GlobalPos home;
     private @Nullable UUID recipient;
     private ItemStack parcel = ItemStack.EMPTY;
+    private boolean retained;
     private boolean goingHome;
     private boolean returning;
     private boolean atDestination;
@@ -105,6 +106,7 @@ final class DeliveryGoal extends Goal {
     }
 
     boolean startHome(ServerPlayer owner, GlobalPos bed) {
+        if (retained) return false;
         if (!dog.isAlive() || !dog.isOwnedBy(owner) || dog.hasCompanionJob()) return false;
         var level = owner.level().getServer().getLevel(bed.dimension());
         if (level == null || (level.hasChunkAt(bed.pos()) && !isBedHead(level, bed.pos()))) return false;
@@ -146,6 +148,13 @@ final class DeliveryGoal extends Goal {
     }
 
     void collect(ServerPlayer owner, InteractionHand emptyHand) {
+        if (retained) {
+            owner.setItemInHand(emptyHand, parcel);
+            parcel = ItemStack.EMPTY;
+            retained = false;
+            dog.syncParcel(parcel);
+            return;
+        }
         boolean delivered = !returning && recipient == null && atDestination;
         boolean homeOrder = goingHome;
         CourierTrips.forget(dog);
@@ -157,6 +166,20 @@ final class DeliveryGoal extends Goal {
         dog.getNavigation().stop();
         dog.sitDown();
         tell(owner, homeOrder ? "home_stopped" : delivered ? "collected" : "returned");
+    }
+
+    /** The parcel stays in its original slot, but has no address or running goal. */
+    void cancelForCompanion() {
+        retained = hasParcel();
+        goingHome = false;
+        home = null;
+        recipient = null;
+        departure = null;
+        reaction = 0;
+        returning = false;
+        atDestination = false;
+        completedDelivery = false;
+        CourierTrips.forget(dog);
     }
 
     boolean recall(ServerPlayer owner) {
@@ -178,7 +201,7 @@ final class DeliveryGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        return hasParcel() || goingHome || reaction != 0;
+        return hasParcel() && !retained || goingHome || reaction != 0;
     }
 
     @Override
@@ -349,6 +372,10 @@ final class DeliveryGoal extends Goal {
 
     void save(ValueOutput output) {
         if (completedDelivery) output.putBoolean("FrenchieCompletedDelivery", true);
+        if (retained && hasParcel()) {
+            output.store("FrenchieParcel", ItemStack.CODEC, parcel);
+            output.putBoolean("FrenchieParcelRetained", true);
+        }
         if (!canUse()) return;
         if (reaction != 0) {
             output.putInt("FrenchieHandoffReaction", reaction);
@@ -370,6 +397,7 @@ final class DeliveryGoal extends Goal {
         home = input.read("FrenchieHomeBed", GlobalPos.CODEC).orElse(null);
         parcel = input.read("FrenchieParcel", ItemStack.CODEC).orElse(ItemStack.EMPTY);
         dog.syncParcel(parcel);
+        retained = hasParcel() && input.getBooleanOr("FrenchieParcelRetained", false);
         completedDelivery = input.getBooleanOr("FrenchieCompletedDelivery", false);
         reaction = parcel.isEmpty() ? input.getIntOr("FrenchieHandoffReaction", 0) : 0;
         reactionTicks = Math.clamp(input.getIntOr("FrenchieHandoffTicks", 0), 0, 60);

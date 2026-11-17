@@ -385,6 +385,9 @@ public class FrenchieEntity extends TamableAnimal {
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand, Vec3 location) {
+        if (player.getItemInHand(hand).is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) {
+            return FrenchieRegistry.FRENCHIE_WHISTLE.get().use(level(), player, hand);
+        }
         // Accept before vanilla mob interactions can consume a held name tag, lead or other item.
         if (isAlive() && entityData.get(WAITING_RECIPIENT).filter(ref -> ref.matches(player)).isPresent()) {
             if (player instanceof ServerPlayer recipient) delivery.accept(recipient);
@@ -433,6 +436,7 @@ public class FrenchieEntity extends TamableAnimal {
                     this.setTarget(null);
                     this.level().broadcastEntityEvent(this, (byte)7);
                     toggleSitting();
+                    if (pPlayer instanceof ServerPlayer owner) CompanionRoster.tamed(owner, this);
                 }
                 return InteractionResult.SUCCESS;
             }
@@ -444,7 +448,7 @@ public class FrenchieEntity extends TamableAnimal {
             if (pHand == InteractionHand.MAIN_HAND && empty && !hasCompanionJob()) {
                 ItemStack offhand = pPlayer.getOffhandItem();
                 if (offhand.getItem() instanceof BundleItem || offhand.is(Items.COMPASS) || offhand.is(FrenchieRegistry.SQUEAKY_TOY.get())
-                        || offhand.is(FrenchieRegistry.BUBBLE_TOY.get()) || isFood(offhand)) {
+                        || offhand.is(FrenchieRegistry.BUBBLE_TOY.get()) || offhand.is(FrenchieRegistry.FRENCHIE_WHISTLE.get()) || isFood(offhand)) {
                     return InteractionResult.PASS;
                 }
             }
@@ -453,7 +457,10 @@ public class FrenchieEntity extends TamableAnimal {
             }
             if (level().isClientSide()) return InteractionResult.SUCCESS;
             deliveryDialog = null;
-            if (hasCompanionJob()) {
+            if (delivery.hasParcel() && !delivery.canUse() && pPlayer instanceof ServerPlayer owner) {
+                if (empty) delivery.collect(owner, pHand);
+                else owner.sendOverlayMessage(Component.translatable("frenchie.florafauna.whistle.collect", getName()));
+            } else if (hasCompanionJob()) {
                 if (empty && pPlayer instanceof ServerPlayer owner) {
                     if (delivery.canUse()) delivery.collect(owner, pHand);
                     else {
@@ -479,6 +486,20 @@ public class FrenchieEntity extends TamableAnimal {
             return InteractionResult.SUCCESS;
         }
         return super.mobInteract(pPlayer, pHand);
+    }
+
+    void cancelForWhistle() {
+        deliveryDialog = null;
+        delivery.cancelForCompanion();
+        trail.cancel();
+        goalSelector.getAvailableGoals().stream().filter(WrappedGoal::isRunning).forEach(WrappedGoal::stop);
+        toyPlay.stop();
+        celebration.stop();
+        bubblePlay.stop();
+        setPlayPose(PlayPose.NONE);
+        standUp();
+        setFrenchieSleeping(false);
+        syncCompanionJob();
     }
 
     private void orderMessage(Player owner, String key) {
@@ -592,6 +613,7 @@ public class FrenchieEntity extends TamableAnimal {
             } else {
                 tripOrigin = null;
             }
+            if (isTame() && !isRemoved()) CompanionRoster.track(this);
             checkReunion();
             updateSleepState();
             syncCompanionJob();

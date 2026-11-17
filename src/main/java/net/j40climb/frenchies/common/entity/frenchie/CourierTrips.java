@@ -113,6 +113,7 @@ public final class CourierTrips extends SavedData {
     static void departAfterTicks(FrenchieEntity dog, @Nullable UUID player, @Nullable GlobalPos bed, boolean returning, long ticks) {
         if (dog.isRemoved()) return;
         var server = ((ServerLevel) dog.level()).getServer();
+        CompanionRoster.packing(dog);
         dog.stopRiding();
         dog.ejectPassengers();
         if (dog.isLeashed()) dog.dropLeash();
@@ -141,6 +142,35 @@ public final class CourierTrips extends SavedData {
             data.recallWaiting(server);
             data.deliverDue(server, now);
         }
+    }
+
+    static void index(ServerPlayer owner, CompanionRoster roster) {
+        var data = owner.level().getServer().getDataStorage().get(TYPE);
+        if (data == null) return;
+        for (var trip : data.trips) {
+            if (trip.owner.equals(owner.getUUID())) roster.indexStored(owner, trip.dog, trip.from);
+        }
+        data.stops.forEach((id, stop) -> {
+            if (stop.owner.equals(owner.getUUID())) roster.indexStop(owner, id, stop.position);
+        });
+    }
+
+    /** Move only the selected dog's authoritative save out of transit. */
+    static @Nullable CompoundTag take(MinecraftServer server, UUID owner, UUID dog) {
+        var data = server.getDataStorage().get(TYPE);
+        if (data == null) return null;
+        var iterator = data.trips.iterator();
+        while (iterator.hasNext()) {
+            var trip = iterator.next();
+            if (trip.owner.equals(owner) && trip.dog.read("UUID", UUIDUtil.CODEC).filter(dog::equals).isPresent()
+                    && trip.dog.read("Owner", UUIDUtil.CODEC).filter(owner::equals).isPresent()) {
+                iterator.remove();
+                data.stops.remove(dog);
+                data.setDirty();
+                return trip.dog;
+            }
+        }
+        return null;
     }
 
     /** Recall this owner's traveling or waiting couriers, including from unloaded beds. */

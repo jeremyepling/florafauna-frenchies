@@ -7,6 +7,7 @@ import net.j40climb.frenchies.common.entity.frenchie.WellRestedEffect;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackData;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackElytraRecipe;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.FrontpackWarning;
+import net.j40climb.frenchies.common.item.FrenchieWhistleItem;
 import net.j40climb.frenchies.common.item.SqueakyToyItem;
 import net.j40climb.frenchies.common.item.BubbleToyItem;
 import net.minecraft.core.Holder;
@@ -63,6 +64,11 @@ public final class FrenchieRegistry {
     public static final DeferredItem<Item> FRENCHIE_SPAWN_EGG = ITEMS.registerItem("frenchie_spawn_egg", properties ->
             new SpawnEggItem(properties.spawnEgg(FRENCHIE.get())));
 
+    public static final DeferredItem<FrenchieWhistleItem> FRENCHIE_WHISTLE =
+            ITEMS.registerItem("frenchie_whistle", FrenchieWhistleItem::new,
+                    new Item.Properties().stacksTo(1).component(DataComponents.LORE, new ItemLore(List.of(
+                            Component.translatable("item.florafauna.frenchie_whistle.use"),
+                            Component.translatable("item.florafauna.frenchie_whistle.select")))));
     public static final DeferredItem<SqueakyToyItem> SQUEAKY_TOY = ITEMS.registerItem("squeaky_toy", SqueakyToyItem::new);
     public static final DeferredItem<BubbleToyItem> BUBBLE_TOY = ITEMS.registerItem("bubble_toy", BubbleToyItem::new);
 
