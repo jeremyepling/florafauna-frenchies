@@ -16,6 +16,7 @@ public final class BubblePlayGoal extends Goal {
     private boolean recovering;
     private int stageTicks;
     private int blockedTicks;
+    private int pounces;
 
     public BubblePlayGoal(FrenchieEntity dog) {
         this.dog = dog;
@@ -89,6 +90,7 @@ public final class BubblePlayGoal extends Goal {
         running = true;
         deadline = dog.level().getGameTime() + (watchOnly ? 32 : 90);
         blockedTicks = 0;
+        pounces = 0;
         if (!watchOnly) halt();
         stage(PlayPose.BUBBLE_WATCH);
     }
@@ -124,6 +126,10 @@ public final class BubblePlayGoal extends Goal {
             }
             case BUBBLE_APPROACH -> approach(bubble);
             case BUBBLE_BOW -> {
+                // Look control alone turns the head only partway when a drifting bubble passes the shoulder.
+                dog.lookAt(bubble, 35, 25);
+                dog.setYBodyRot(dog.getYRot());
+                dog.setYHeadRot(dog.getYRot());
                 if (stageTicks >= 8) pounce(bubble);
             }
             case BUBBLE_POUNCE -> {
@@ -135,6 +141,8 @@ public final class BubblePlayGoal extends Goal {
                         bubble.pop(true);
                         recover();
                     }
+                } else if (stageTicks > 2 && dog.onGround() && pounces < 2) {
+                    stage(PlayPose.BUBBLE_APPROACH);
                 } else if (stageTicks >= 12 || stageTicks > 2 && dog.onGround()) {
                     deadline = 0;
                 }
@@ -178,7 +186,8 @@ public final class BubblePlayGoal extends Goal {
     }
 
     private void pounce(PlayBubbleEntity bubble) {
-        Vec3 offset = bubble.position().subtract(dog.position()).multiply(1, 0, 1);
+        Vec3 intercept = bubble.position().add(bubble.getDeltaMovement().scale(3));
+        Vec3 offset = intercept.subtract(dog.position()).multiply(1, 0, 1);
         if (offset.lengthSqr() > 1.25 * 1.25) {
             stage(PlayPose.BUBBLE_APPROACH);
             return;
@@ -189,6 +198,7 @@ public final class BubblePlayGoal extends Goal {
             return;
         }
         dog.setDeltaMovement(reach.scale(0.17).add(0, 0.26, 0));
+        ++pounces;
         stage(PlayPose.BUBBLE_POUNCE);
     }
 
