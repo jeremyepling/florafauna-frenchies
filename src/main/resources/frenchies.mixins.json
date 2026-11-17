@@ -3,5 +3,6 @@
   "package": "net.j40climb.frenchies.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": ["BoatCaptainMixin"],
+  "client": ["CompanionAttackMixin"],
   "injectors": { "defaultRequire": 1 }
 }

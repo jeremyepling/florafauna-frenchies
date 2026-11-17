@@ -11,12 +11,14 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Util;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -30,6 +32,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.storage.ValueInput;
@@ -53,6 +56,12 @@ public class FrenchieEntity extends TamableAnimal {
     public final AnimationState sleepToStandAnimationState = new AnimationState();
     private static final EntityDataAccessor<Integer> CELEBRATION_STAGE =
             SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Byte> DANGER_REACTION =
+            SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Long> DANGER_START =
+            SynchedEntityData.defineId(FrenchieEntity.class, EntityDataSerializers.LONG);
+    private EscapeDangerGoal escapeDanger;
+    private long nextDangerReaction;
     private CelebrationGoal celebration;
     long nextCelebration;
     private long ownerAwaySince = -1;
@@ -155,7 +164,8 @@ public class FrenchieEntity extends TamableAnimal {
     }
 
     boolean personalityInterrupted() {
-        return entityData.get(BEDTIME) != 0 || level().getGameTime() - warningStart() < FrenchieAwareness.WARNING_TICKS;
+        return dangerReaction() != DangerReaction.NONE || escapeDanger != null && escapeDanger.canUse() || entityData.get(BEDTIME) != 0
+                || level().getGameTime() - warningStart() < FrenchieAwareness.WARNING_TICKS;
     }
 
     private final DeathTrackingGoal trail = new DeathTrackingGoal(this);
@@ -172,6 +182,8 @@ public class FrenchieEntity extends TamableAnimal {
 
     @Override
     protected void registerGoals() {
+        this.escapeDanger = new EscapeDangerGoal(this);
+        this.goalSelector.addGoal(0, escapeDanger);
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new BedtimeBuddyGoal(this));
         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
@@ -254,6 +266,8 @@ public class FrenchieEntity extends TamableAnimal {
         builder.define(PARCEL, ItemStack.EMPTY);
         builder.define(TOY_EARS_UNTIL, 0L);
         builder.define(CELEBRATION_STAGE, CelebrationGoal.NONE);
+        builder.define(DANGER_REACTION, (byte) 0);
+        builder.define(DANGER_START, 0L);
         builder.define(PLAY_POSE, (byte) PlayPose.NONE.ordinal());
         builder.define(JOB, (byte) 0);
         builder.define(WAITING_RECIPIENT, Optional.empty());
@@ -379,6 +393,126 @@ public class FrenchieEntity extends TamableAnimal {
 
     public boolean hasFlotationVest() {
         return getVehicle() instanceof AbstractBoat boat && boat.isInWater();
+    }
+
+    public DangerReaction dangerReaction() {
+        DangerReaction reaction = DangerReaction.byId(entityData.get(DANGER_REACTION));
+        return dangerReactionAge(0) < reaction.duration ? reaction : DangerReaction.NONE;
+    }
+
+    public float dangerReactionAge(float partialTick) {
+        return level().getGameTime() - entityData.get(DANGER_START) + partialTick;
+    }
+
+    void reactToDanger(DangerReaction reaction) {
+        long now = level().getGameTime();
+        if (now < nextDangerReaction) return;
+        nextDangerReaction = now + 60;
+        entityData.set(DANGER_START, now);
+        entityData.set(DANGER_REACTION, (byte) reaction.ordinal());
+        interruptPlay();
+        setFrenchieSleeping(false);
+    }
+
+    public void interruptPlay() {
+        for (WrappedGoal goal : goalSelector.getAvailableGoals()) {
+            var behavior = goal.getGoal();
+            if (goal.isRunning() && (behavior == toyPlay || behavior == bubblePlay || behavior == celebration
+                    || behavior instanceof SlimeTeaseGoal)) goal.stop();
+        }
+        // An invitation, thrown toy or sleeping spectator can be pending outside the goal selector.
+        toyPlay.stop();
+        bubblePlay.stop();
+        celebration.stop();
+    }
+
+    @Override
+    public void setTame(boolean tamed, boolean applySideEffects) {
+        super.setTame(tamed, applySideEffects);
+        if (tamed) {
+            setHealth(getMaxHealth());
+            clearFire();
+            setTicksFrozen(0);
+        }
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
+        if (!isTame() || source.is(DamageTypes.GENERIC_KILL)) return super.hurtServer(level, source, damage);
+        if (source.is(DamageTypes.FELL_OUT_OF_WORLD)) CompanionRoster.emergency(this);
+        else if (source.is(DamageTypeTags.IS_EXPLOSION)) reactToDanger(DangerReaction.DUCK);
+        else if (source.is(DamageTypeTags.IS_FALL)) reactToDanger(DangerReaction.TUMBLE);
+        else reactToDanger(DangerReaction.STARTLE);
+        return false;
+    }
+
+    @Override
+    public boolean causeFallDamage(double distance, float multiplier, DamageSource source) {
+        if (!isTame()) return super.causeFallDamage(distance, multiplier, source);
+        if (level() instanceof ServerLevel && calculateFallDamage(distance, multiplier) > 0) {
+            reactToDanger(DangerReaction.TUMBLE);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean ignoreExplosion(Explosion explosion) {
+        if (!isTame()) return super.ignoreExplosion(explosion);
+        if (level() instanceof ServerLevel && distanceToSqr(explosion.center()) <= Math.pow(2 * explosion.radius(), 2)) {
+            reactToDanger(DangerReaction.DUCK);
+        }
+        return true;
+    }
+
+    @Override
+    public void setRemainingFireTicks(int ticks) {
+        super.setRemainingFireTicks(isTame() ? Math.min(ticks, 0) : ticks);
+    }
+
+    @Override
+    public boolean canFreeze() {
+        return !isTame() && super.canFreeze();
+    }
+
+    @Override
+    public boolean showVehicleHealth() {
+        return !isTame() && super.showVehicleHealth();
+    }
+
+    @Override
+    public boolean isInvulnerable() {
+        // Vanilla combat predicates and the Warden's anger sensor both consult this flag.
+        return isTame() || super.isInvulnerable();
+    }
+
+    @Override
+    public boolean canBeHitByProjectile() {
+        return !isTame() && super.canBeHitByProjectile();
+    }
+
+    @Override
+    public boolean doHurtTarget(ServerLevel level, Entity target) {
+        return !isTame() && super.doHurtTarget(level, target);
+    }
+
+    @Override
+    public boolean canAttack(LivingEntity target) {
+        return !isTame() && super.canAttack(target);
+    }
+
+    @Override
+    public void knockback(double power, double x, double z) {
+        if (!isTame()) super.knockback(power, x, z);
+    }
+
+    @Override
+    public boolean isPushable() {
+        return !isTame() && super.isPushable();
+    }
+
+    @Override
+    protected void pushEntities() {
+        if (!isTame()) super.pushEntities();
     }
 
     /* Interact */
@@ -522,6 +656,7 @@ public class FrenchieEntity extends TamableAnimal {
         super.addAdditionalSaveData(output);
         output.putLong("NextCelebration", nextCelebration);
         output.putLong("NextSlimePlay", nextSlimePlayAt);
+        if (nextDangerReaction > level().getGameTime()) output.putLong("NextDangerReaction", nextDangerReaction);
         output.putLong("OwnerAwaySince", ownerAwaySince);
         output.putInt("Variant", this.getTypeVariant());
         output.putString("Pose", this.getPose().name());
@@ -537,6 +672,7 @@ public class FrenchieEntity extends TamableAnimal {
         super.readAdditionalSaveData(input);
         nextCelebration = input.getLongOr("NextCelebration", 0L);
         nextSlimePlayAt = input.getLongOr("NextSlimePlay", 0L);
+        nextDangerReaction = input.getLongOr("NextDangerReaction", 0L);
         ownerAwaySince = input.getLongOr("OwnerAwaySince", -1L);
         trail.load(input);
         delivery.load(input);
@@ -565,7 +701,12 @@ public class FrenchieEntity extends TamableAnimal {
 
     @Override
     public void tick() {
+        if (isTame() && level() instanceof ServerLevel level) {
+            escapeDanger.checkFooting(level);
+            if (isRemoved()) return;
+        }
         super.tick();
+        if (isRemoved()) return;
 
         if(this.level().isClientSide()) {
             // Idle animation
@@ -688,6 +829,11 @@ public class FrenchieEntity extends TamableAnimal {
     /* Sleeping */
 
     private void updateSleepState() {
+        if (escapeDanger.canUse() || dangerReaction() != DangerReaction.NONE) {
+            entityData.set(BEDTIME, (byte) 0);
+            setFrenchieSleeping(false);
+            return;
+        }
         var bed = BedtimeBuddyGoal.ownerBed(this);
         boolean settled = bed != null && BedtimeBuddyGoal.besideBed(this, bed);
         if (settled && !isBedtimeBuddy() && getOwner() instanceof ServerPlayer owner) {
