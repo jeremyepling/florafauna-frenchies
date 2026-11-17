@@ -15,7 +15,10 @@ public final class FrenchieWhistleItem extends Item {
 
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
-        if (player instanceof ServerPlayer owner) CompanionRoster.whistle(owner, owner.isShiftKeyDown());
+        if (player instanceof ServerPlayer owner) {
+            CompanionRoster.whistle(owner, owner.isShiftKeyDown());
+            owner.getCooldowns().addCooldown(owner.getItemInHand(hand), 8);
+        }
         return InteractionResult.SUCCESS;
     }
 }

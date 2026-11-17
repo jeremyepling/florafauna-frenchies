@@ -15,7 +15,6 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -121,7 +120,7 @@ public final class CompanionRoster extends SavedData {
         var roster = get(level);
         UUID owner = dog.getOwnerReference().getUUID();
         var e = roster.dogs.get(dog.getUUID());
-        boolean following = !dog.isOrderedToSit() && !dog.hasCompanionJob() && !dog.isLeashed();
+        boolean following = !dog.isOrderedToSit() && !dog.hasCompanionJob() && !dog.mayBeLeashed();
         if (e == null || !e.owner.equals(owner)) {
             roster.register(dog.getUUID(), owner, dog.getName().getString(), GlobalPos.of(level.dimension(), dog.blockPosition()), following);
             return;
@@ -274,6 +273,8 @@ public final class CompanionRoster extends SavedData {
             tell(owner, "none");
             return;
         }
+        if (dismiss && e.state == State.DISMISSING || !dismiss && (e.state == State.CALLING
+                || e.state == State.APPROACHING || e.state == State.RETURNING)) return;
         owner.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(), SoundEvents.NOTE_BLOCK_FLUTE.value(),
                 SoundSource.PLAYERS, 0.65f, dismiss ? 1.15f : 1.75f);
         tell(owner, dismiss ? "dismiss" : "call", e.name);
@@ -342,7 +343,7 @@ public final class CompanionRoster extends SavedData {
                     return;
                 }
             } else if (e.state == State.CALLING && dog.level() == owner.level() && dog.distanceToSqr(owner) <= 16 * 16
-                    && !dog.isPassenger() && !dog.isLeashed() && dog.hasLineOfSight(owner) && dog.onGround()) {
+                    && !dog.isPassenger() && !dog.mayBeLeashed() && dog.hasLineOfSight(owner) && dog.onGround()) {
                 dog.cancelForWhistle();
                 dog.perkToyEars();
                 FrenchieAwareness.bark(dog, 1.24f);
@@ -394,10 +395,11 @@ public final class CompanionRoster extends SavedData {
         dog.cancelForWhistle();
         dog.stopRiding();
         dog.ejectPassengers();
-        if (dog.isLeashed()) dog.dropLeash();
         var out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, dog.registryAccess());
         dog.saveWithoutId(out);
         entry.saved = out.buildResult();
+        // The saved leash comes back attached to the owner. Removing its live link must not drop a second lead.
+        dog.removeLeash();
         dog.discard();
         setDirty();
     }
@@ -436,6 +438,7 @@ public final class CompanionRoster extends SavedData {
         dog.setTicksFrozen(0);
         dog.setAirSupply(dog.getMaxAirSupply());
         if (!level.addFreshEntity(dog)) return;
+        if (dog.mayBeLeashed()) dog.setLeashedTo(owner, true);
         e.saved = null;
         e.state = State.ACTIVE;
         e.warned = false;
