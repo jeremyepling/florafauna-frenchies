@@ -22,12 +22,13 @@ public final class PlayBubbleEntity extends Entity {
     private static final EntityDataAccessor<Integer> NOSE_DOG =
             SynchedEntityData.defineId(PlayBubbleEntity.class, EntityDataSerializers.INT);
     private final InterpolationHandler interpolation = new InterpolationHandler(this, 2);
-    private final int lifetime = 78 + getRandom().nextInt(23);
+    private final long expiresAt;
     private int claimant = -1;
-    private int landedAt;
+    private long landedAt;
 
     public PlayBubbleEntity(EntityType<? extends PlayBubbleEntity> type, Level level) {
         super(type, level);
+        expiresAt = level.getGameTime() + 78 + getRandom().nextInt(23);
     }
 
     @Override
@@ -52,7 +53,7 @@ public final class PlayBubbleEntity extends Entity {
     }
 
     void settleOn(FrenchieEntity dog) {
-        landedAt = tickCount;
+        landedAt = level().getGameTime();
         entityData.set(NOSE_DOG, dog.getId());
         setDeltaMovement(Vec3.ZERO);
         setPos(nosePosition(dog));
@@ -74,12 +75,12 @@ public final class PlayBubbleEntity extends Entity {
             return;
         }
         if (noseDogId() != -1) {
-            if (tickCount - landedAt > 18 || !(level().getEntity(noseDogId()) instanceof FrenchieEntity dog) || !dog.isAlive()) {
+            if (level().getGameTime() - landedAt > 18 || !(level().getEntity(noseDogId()) instanceof FrenchieEntity dog) || !dog.isAlive()) {
                 pop(false);
             } else {
                 setPos(nosePosition(dog));
             }
-        } else if (tickCount >= lifetime) {
+        } else if (level().getGameTime() >= expiresAt) {
             pop(false);
         } else {
             Vec3 velocity = getDeltaMovement();
