@@ -2,6 +2,7 @@ package net.j40climb.frenchies.test;
 
 import net.j40climb.frenchies.Frenchies;
 import net.j40climb.frenchies.common.entity.frenchie.DiggingAssistantGameTests;
+import net.j40climb.frenchies.common.entity.frenchie.AmbientSnowGameTests;
 import net.j40climb.frenchies.common.entity.frenchie.PlayInterruptionGameTests;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -63,6 +64,7 @@ public final class CompanionTests {
         registerPlayTest(event, yard, "play_digging_assistant", 200, DiggingAssistantGameTests::sequenceAndCustody);
         registerPlayTest(event, yard, "play_digging_interrupt", 150, DiggingAssistantGameTests::commandInterrupts);
         registerPlayTest(event, yard, "play_weather_snowball", 250, WeatherPlayTests::snowball);
+        registerPlayTest(event, yard, "play_weather_snow_ambient", 250, AmbientSnowGameTests::diveWithoutSnowball);
         registerPlayTest(event, yard, "play_weather_swim", 200, WeatherPlayTests::swim);
         registerPlayTest(event, yard, "play_trick_backflop", 200, TrickBellyTests::trick);
         registerPlayTest(event, yard, "play_belly_rub", 200, TrickBellyTests::belly);
