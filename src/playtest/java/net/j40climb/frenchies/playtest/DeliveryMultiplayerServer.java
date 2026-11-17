@@ -42,16 +42,23 @@ public final class DeliveryMultiplayerServer {
     private static Step step = Step.JOIN;
     private static Step previous;
     private static Path root;
+    private static boolean testingPlay;
+    private static int phase = 1;
     private static long confirmTick;
     private static boolean recipientClicked;
 
     @SubscribeEvent
     public static void start(ServerStartedEvent event) throws IOException {
         String path = System.getProperty("florafauna_frenchies.deliveryTest.root");
+        if (path == null) {
+            path = System.getProperty("florafauna_frenchies.playTest.root");
+            testingPlay = path != null;
+        }
         if (path == null) return;
         root = Path.of(path).toRealPath();
         require(event.getServer().getWorldPath(LevelResource.ROOT).toRealPath().equals(root.resolve("server/world")), "Wrong server world");
-        Files.writeString(root.resolve("ready-1"), "ready");
+        phase = Integer.parseInt(Files.readString(root.resolve("phase")).trim());
+        Files.writeString(root.resolve("ready-" + phase), "ready");
     }
 
     @SubscribeEvent
@@ -72,6 +79,10 @@ public final class DeliveryMultiplayerServer {
         var recipient = server.getPlayerList().getPlayerByName("FFVisitor");
         if (owner == null || recipient == null || !owner.connection.hasClientLoaded() || !recipient.connection.hasClientLoaded()) return;
         try {
+            if (testingPlay) {
+                if (DogPlayServer.finished(owner, recipient, root, phase)) finish(owner, recipient, "PASS");
+                return;
+            }
             if (previous != step) {
                 LogUtils.getLogger().info("Two-client companion case reached {}", step);
                 previous = step;
@@ -167,7 +178,7 @@ public final class DeliveryMultiplayerServer {
     }
 
     private static void finish(ServerPlayer owner, ServerPlayer recipient, String result) throws IOException {
-        Files.writeString(root.resolve("phase-1.result"), result);
+        Files.writeString(root.resolve("phase-" + phase + ".result"), result);
         owner.sendSystemMessage(Component.literal(DONE));
         recipient.sendSystemMessage(Component.literal(DONE));
         step = Step.EXIT;
