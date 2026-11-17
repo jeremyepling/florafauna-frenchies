@@ -1,6 +1,7 @@
 package net.j40climb.frenchies.test;
 
 import net.j40climb.frenchies.Frenchies;
+import net.j40climb.frenchies.common.entity.frenchie.DiggingAssistantGameTests;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;
@@ -58,6 +59,8 @@ public final class CompanionTests {
         registerPlayTest(event, yard, "play_slime_unsafe_footing", 150, SlimePlayTests::unsafeFooting);
         registerPlayTest(event, yard, "play_slime_blocked", 200, SlimePlayTests::blocked);
         registerPlayTest(event, yard, "play_slime_vanilla", 250, SlimePlayTests::vanilla);
+        registerPlayTest(event, yard, "play_digging_assistant", 200, DiggingAssistantGameTests::sequenceAndCustody);
+        registerPlayTest(event, yard, "play_digging_interrupt", 150, DiggingAssistantGameTests::commandInterrupts);
         registerPlayTest(event, yard, "companion_fetch", 550, CompanionTravelTests::fetch);
         registerStructureTest(event, defaultEnv, "companion_captain", yard, 550, CompanionTravelTests::captain);
         registerPlayTest(event, yard, "companion_zoomies_interrupt", 550, CompanionTravelTests::interruptCelebration);
