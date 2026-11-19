@@ -84,7 +84,8 @@ public final class Playtest {
         Screen screen = mc.gui.screen();
         if (screen == null || screen == lastUpgradePrompt) return;
         Component label;
-        if (screen instanceof BackupConfirmScreen && screen.getTitle().equals(Component.translatable("selectWorld.backupQuestion.file_fixing_required"))) {
+        if (screen instanceof BackupConfirmScreen && (screen.getTitle().equals(Component.translatable("selectWorld.backupQuestion.file_fixing_required"))
+                || screen.getTitle().equals(Component.translatable("selectWorld.backupQuestion.experimental")))) {
             label = BackupConfirmScreen.BACKUP_AND_JOIN;
         } else if (screen instanceof ConfirmScreen && screen.getTitle().equals(Component.translatable("upgradeWorld.done"))) {
             label = CommonComponents.GUI_YES;
