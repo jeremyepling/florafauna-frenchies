@@ -211,7 +211,7 @@ final class DogPlayServer {
                 slime.snapTo(YARD, 0, 0);
                 require(level.addFreshEntity(slime), "Could not spawn vanilla slime");
             //?} else {
-            /*    advance(Step.SPAWN_SLIME);
+                /*advance(Step.SPAWN_SLIME);
             }
             case SPAWN_SLIME -> {
                 var chunk = ChunkPos.containing(YARD);

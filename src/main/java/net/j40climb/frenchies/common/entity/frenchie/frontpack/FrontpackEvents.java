@@ -151,7 +151,7 @@ public class FrontpackEvents {
         if (position != null) releaseAt(player, level, data, position);
     }
     //?} else {
-    /*    if (position == null) return;
+        /*if (position == null) return;
     *///?}
 
     //? if <26.3 {
@@ -159,7 +159,7 @@ public class FrontpackEvents {
         var dog = FrenchieRegistry.FRENCHIE.get().create(level, EntitySpawnReason.TRIGGERED);
         if (dog == null) return false;
     //?} else {
-    /*    var dog = type.create(level, EntitySpawnReason.TRIGGERED);
+        /*var dog = type.create(level, EntitySpawnReason.TRIGGERED);
         if (dog == null) return;
     *///?}
         dog.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), data.frenchieNBT()));
