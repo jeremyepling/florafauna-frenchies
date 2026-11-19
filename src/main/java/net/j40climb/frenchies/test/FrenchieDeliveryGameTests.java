@@ -462,15 +462,7 @@ final class FrenchieDeliveryGameTests {
         // Keep both the bed and its landing floor in a previously untouched chunk.
         BlockPos bed = ChunkPos.containing(start.east(640)).getMiddleBlockPosition(start.getY() + 12);
         var chunk = ChunkPos.containing(bed);
-        // Entity ticking needs a fully generated two-chunk border. Build that terrain before the
-        // accelerated test starts so background world generation does not consume its tick budget.
-        for (var nearby : ChunkPos.rangeClosed(chunk, 2).toList()) {
-            level.getChunk(nearby.x(), nearby.z());
-        }
-        platform(h, bed);
-        var bedState = Blocks.BLUE_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
-        level.setBlock(bed.west(), bedState.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
-        level.setBlock(bed, bedState.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
+        prepareRemoteBed(h, bed);
         owner.getInventory().clearContent();
         owner.setItemInHand(HAND, parcel());
         owner.setGameMode(GameType.SURVIVAL);
@@ -561,6 +553,22 @@ final class FrenchieDeliveryGameTests {
             disconnect(owner);
         }
         h.succeed();
+    }
+
+    static void prepareRemoteBed(GameTestHelper h, BlockPos bed) {
+        var level = h.getLevel();
+        // Entity ticking needs a fully generated two-chunk border. Build that terrain before the
+        // accelerated test starts so background world generation does not consume its tick budget.
+        for (var nearby : ChunkPos.rangeClosed(ChunkPos.containing(bed), 2).toList()) {
+            level.getChunk(nearby.x(), nearby.z());
+        }
+        platform(h, bed);
+        for (var pos : BlockPos.betweenClosed(bed.offset(-2, 0, -2), bed.offset(2, 1, 2))) {
+            level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        }
+        var bedState = Blocks.BLUE_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
+        level.setBlock(bed.west(), bedState.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
+        level.setBlock(bed, bedState.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
     }
 
     private static void platform(GameTestHelper h, BlockPos feet) {

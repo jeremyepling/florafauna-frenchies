@@ -5,7 +5,6 @@ package net.j40climb.frenchies.test;
 *///?}
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
@@ -35,13 +34,7 @@ final class FrenchieRecallGameTests {
         h.assertTrue(!dog.hasCompanionJob() && dog.isOrderedToSit(), "Missing bed must preserve the sit order");
 
         var bed = ChunkPos.containing(dog.blockPosition().west(640)).getMiddleBlockPosition(dog.getBlockY() + 12);
-        level.getChunkAt(bed);
-        for (var floor : BlockPos.betweenClosed(bed.offset(-2, -1, -2), bed.offset(2, -1, 2))) {
-            level.setBlockAndUpdate(floor, Blocks.STONE.defaultBlockState());
-        }
-        var state = Blocks.BLUE_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
-        level.setBlock(bed.west(), state.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
-        level.setBlock(bed, state.setValue(BedBlock.PART, BedPart.HEAD), Block.UPDATE_CLIENTS);
+        FrenchieDeliveryGameTests.prepareRemoteBed(h, bed);
         owner.setRespawnPosition(new ServerPlayer.RespawnConfig(
                 LevelData.RespawnData.of(level.dimension(), bed, 0, 0), false), false);
         command(owner, "home");
