@@ -99,7 +99,9 @@ public final class PlayfulInteractionClient {
     }
 
     private static void observer(Minecraft mc, FrenchieEntity dog) {
+        //? if <26.3 {
         mc.options.hideGui = true;
+        //?}
         if (!(mc.getEntityRenderDispatcher().getRenderer(dog) instanceof FrenchieRenderer)) return;
         mc.player.lookAt(Anchor.EYES, dog.getBoundingBox().getCenter());
         String stem = pose(dog);
@@ -127,7 +129,11 @@ public final class PlayfulInteractionClient {
                 : stem.startsWith("dry-") || stem.startsWith("snow-") ? (long) dog.weatherAge(0)
                 : (long) dog.digStageAge(0);
         if (stageAge < age || ++frames < (stem.startsWith("belly-kick-") ? 1 : 2)) return;
+        //? if <26.3 {
         Screenshot.grab(mc.gameDirectory, "visitor-" + stem + ".png", mc.getMainRenderTarget(), 1, ignored -> {});
+        //?} else {
+        /*Screenshot.grab(mc.gameDirectory, "visitor-" + stem + ".png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+        *///?}
         captured.add(stem);
         current = null;
         frames = 0;

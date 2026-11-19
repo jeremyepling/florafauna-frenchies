@@ -79,7 +79,11 @@ public final class DeliveryMultiplayerClient {
                         || !mc.screen.getNarrationMessage().getString().contains(Component.translatable("dimension.minecraft.overworld").getString())
                         || !mc.screen.getNarrationMessage().getString().contains(DeliveryPlaytest.eta(DeliveryMultiplayerServer.ETA))
                         || ++frames < 5) return;
+                //? if <26.3 {
                 Screenshot.grab(mc.gameDirectory, "courier-envelope.png", mc.getMainRenderTarget(), 1, ignored -> {});
+                //?} else {
+                /*Screenshot.grab(mc.gameDirectory, "courier-envelope.png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+                *///?}
                 step = Step.CONFIRM;
             }
             case CONFIRM -> {
@@ -96,7 +100,11 @@ public final class DeliveryMultiplayerClient {
                 step = Step.CAPTURE;
             }
             case CAPTURE -> {
+                //? if <26.3 {
                 Screenshot.grab(mc.gameDirectory, "courier-arrival.png", mc.getMainRenderTarget(), 1, ignored -> {});
+                //?} else {
+                /*Screenshot.grab(mc.gameDirectory, "courier-arrival.png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+                *///?}
                 step = Step.ACCEPT;
             }
             case ACCEPT -> {

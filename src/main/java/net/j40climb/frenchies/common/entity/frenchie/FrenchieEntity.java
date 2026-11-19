@@ -614,8 +614,13 @@ public class FrenchieEntity extends TamableAnimal {
     }
 
     @Override
+    //? if <26.3 {
     public void knockback(double power, double x, double z) {
         if (!isTame()) super.knockback(power, x, z);
+    //?} else {
+    /*public void knockback(double power, double x, double z, DamageSource source, float damage, boolean comesFromEffect) {
+        if (!isTame()) super.knockback(power, x, z, source, damage, comesFromEffect);
+    *///?}
     }
 
     @Override

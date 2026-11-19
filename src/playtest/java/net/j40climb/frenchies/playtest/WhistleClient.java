@@ -89,7 +89,11 @@ public final class WhistleClient {
             }
             case BLAST, PEEK, RELAXED, TUMBLE, STARTLE -> {
                 if (!(mc.level.getEntity(WhistleServer.COMPANION) instanceof FrenchieEntity dog)) return;
+                //? if <26.3 {
                 mc.options.hideGui = true;
+                //?} else {
+                /*if (!mc.gui.hud.isHidden()) mc.gui.hud.toggle();
+                *///?}
                 var aim = dog.getBoundingBox().getCenter();
                 var sight = aim.subtract(mc.player.getEyePosition());
                 boolean framed = sight.lengthSqr() < 7 && mc.player.getLookAngle().dot(sight.normalize()) > 0.99;
@@ -118,6 +122,10 @@ public final class WhistleClient {
     }
 
     private static void capture(Minecraft mc, String filename) {
+        //? if <26.3 {
         Screenshot.grab(mc.gameDirectory, filename, mc.getMainRenderTarget(), 1, ignored -> {});
+        //?} else {
+        /*Screenshot.grab(mc.gameDirectory, filename, mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+        *///?}
     }
 }

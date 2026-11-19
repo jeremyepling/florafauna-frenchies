@@ -2,7 +2,11 @@ package net.j40climb.frenchies.common.entity.frenchie;
 
 import net.j40climb.frenchies.Frenchies;
 import net.minecraft.server.level.ServerLevel;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?} else {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

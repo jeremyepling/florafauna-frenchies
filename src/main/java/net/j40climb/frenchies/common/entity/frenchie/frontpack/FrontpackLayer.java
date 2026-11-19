@@ -20,19 +20,29 @@ import net.minecraft.util.context.ContextKey;
  */
 public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> {
 
+    //? if <26.3 {
     static final ContextKey<Boolean> WORN = new ContextKey<>(
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_worn"));
+    //?}
     static final ContextKey<FrenchieVariant> CARRIED_COAT = new ContextKey<>(
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_coat"));
+    //? if <26.3 {
     static final ContextKey<Integer> FABRIC_TINT = new ContextKey<>(
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_fabric_tint"));
     static final Identifier FABRIC = Identifier.withDefaultNamespace("textures/block/white_wool.png");
+    //?}
 
     private final FrontpackModel frontpackModel;
+    //? if <26.3 {
     private final FrontpackModel dyedFabricModel;
+    //?}
 
     // Variant-specific textures for the entire frontpack model
+    //? if <26.3 {
     static final Identifier FAWN_TEXTURE =
+    //?} else {
+    /*private static final Identifier FAWN_TEXTURE =
+    *///?}
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE,
                     "textures/entity/frenchie/frenchie_fawn_texture.png");
 
@@ -47,7 +57,9 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
         this.frontpackModel = new FrontpackModel(
                 modelSet.bakeLayer(FrontpackModel.LAYER_LOCATION)
         );
+        //? if <26.3 {
         this.dyedFabricModel = new FrontpackModel(modelSet.bakeLayer(FrontpackModel.LAYER_LOCATION), true);
+        //?}
     }
 
     @Override
@@ -55,7 +67,11 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
                       int packedLight, AvatarRenderState renderState, float yRot, float xRot) {
 
         FrenchieVariant coat = renderState.getRenderData(CARRIED_COAT);
+        //? if <26.3 {
         if (!Boolean.TRUE.equals(renderState.getRenderData(WORN)) || renderState.isInvisible) return;
+        //?} else {
+        /*if (coat == null || renderState.isInvisible) return;
+        *///?}
 
         Identifier texture = coat == FrenchieVariant.BRINDLE ? BRINDLE_TEXTURE : FAWN_TEXTURE;
 
@@ -80,11 +96,13 @@ public class FrontpackLayer extends RenderLayer<AvatarRenderState, PlayerModel> 
                 0 // No outline
         );
 
+        //? if <26.3 {
         Integer tint = renderState.getRenderData(FABRIC_TINT);
         if (tint != null) {
             renderColoredCutoutModel(dyedFabricModel, FABRIC, poseStack, nodeCollector, packedLight,
                     renderState, tint, renderState.outlineColor);
         }
+        //?}
         poseStack.popPose();
     }
 

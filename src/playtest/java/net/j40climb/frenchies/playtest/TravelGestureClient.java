@@ -18,7 +18,11 @@ import net.minecraft.commands.arguments.EntityAnchorArgument.Anchor;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.EntityHitResult;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?} else {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.minecraft.world.entity.Marker;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
@@ -103,7 +107,11 @@ public final class TravelGestureClient {
         Vec3 eye = target.add(flight ? new Vec3(0.94, -0.38, 0.52) : new Vec3(0.6, 0.28, 1.25));
         camera.snapTo(eye.subtract(0, camera.getEyeHeight(), 0));
         camera.lookAt(Anchor.EYES, target);
+        //? if <26.3 {
         mc.options.hideGui = true;
+        //?} else {
+        /*if (!mc.gui.hud.isHidden()) mc.gui.hud.toggle();
+        *///?}
         mc.options.setCameraType(CameraType.FIRST_PERSON);
         if (mc.getCameraEntity() != camera) mc.setCameraEntity(camera);
         if (++framingTicks < 5) return;
@@ -115,7 +123,11 @@ public final class TravelGestureClient {
             if (framingTicks == 24) {
                 com.mojang.logging.LogUtils.getLogger().info("{} travel tongue fixed at {} radians across 20 ticks", step, pose.tonguePitch);
                 String name = flight ? "elytra-tongue.png" : "captain-tongue.png";
+                //? if <26.3 {
                 Screenshot.grab(mc.gameDirectory, name, mc.getMainRenderTarget(), 1, ignored -> {});
+                //?} else {
+                /*Screenshot.grab(mc.gameDirectory, name, mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+                *///?}
             }
             return;
         }
@@ -150,7 +162,11 @@ public final class TravelGestureClient {
         if (samples == 4) leftYaw = observed.yaw;
         String name = (flight ? "elytra" : "captain") + (samples >= 4 ? "-gaze-" : "-gesture-") + frame;
         com.mojang.logging.LogUtils.getLogger().info("{} at phase {}: {}", name, phase, observed);
+        //? if <26.3 {
         Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), 1, ignored -> {});
+        //?} else {
+        /*Screenshot.grab(mc.gameDirectory, name + ".png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+        *///?}
         if (++samples == (flight ? 8 : 4)) {
             mc.setCameraEntity(mc.player);
             camera = null;
@@ -164,7 +180,11 @@ public final class TravelGestureClient {
             var state = (AvatarRenderState) mc.getEntityRenderDispatcher().getRenderer(owner).createRenderState(owner, 0.5F);
             var part = mc.getEntityModels().bakeLayer(FrontpackModel.LAYER_LOCATION);
             new FrontpackModel(part).setupAnim(state);
+            //? if <26.3 {
             body = part.getChild("root").getChild("carried_dog").getChild("frenchie").getChild("body");
+            //?} else {
+            /*body = part.getChild("root").getChild("frenchie").getChild("body");
+            *///?}
         } else {
             var state = (FrenchieRenderState) mc.getEntityRenderDispatcher().getRenderer(dog).createRenderState(dog, 0.5F);
             var part = mc.getEntityModels().bakeLayer(FrenchieModel.FRENCHIE);

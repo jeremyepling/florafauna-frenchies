@@ -54,7 +54,11 @@ public final class DogPlayClient {
         if (mc.level == null || mc.player == null || mc.screen != null || mc.gameMode == null
                 || !(mc.level.getEntity(DogPlayServer.DOG) instanceof FrenchieEntity dog)) return;
         mc.getToastManager().clear();
+        //? if <26.3 {
         if (ROLE.equals("Visitor")) mc.options.hideGui = true;
+        //?} else {
+        /*if (ROLE.equals("Visitor") && !mc.gui.hud.isHidden()) mc.gui.hud.toggle();
+        *///?}
         var aim = dog.getBoundingBox().getCenter();
         mc.player.lookAt(Anchor.EYES, aim);
         switch (step) {
@@ -106,7 +110,11 @@ public final class DogPlayClient {
 
     private static void capture(Minecraft mc, String stem) {
         String name = ROLE.toLowerCase(Locale.ROOT) + "-" + stem + ".png";
+        //? if <26.3 {
         Screenshot.grab(mc.gameDirectory, name, mc.getMainRenderTarget(), 1, ignored -> {});
+        //?} else {
+        /*Screenshot.grab(mc.gameDirectory, name, mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+        *///?}
         step = Step.WAIT;
     }
 }

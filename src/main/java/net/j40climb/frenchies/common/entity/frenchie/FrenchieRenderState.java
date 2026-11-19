@@ -23,11 +23,16 @@ public class FrenchieRenderState extends LivingEntityRenderState {
     public int bellyStage;
     public float bellyAge;
     public PlayPose playPose = PlayPose.NONE;
+    //? if >=26.3 {
+    /*public PoseStack.Pose noseBubbleFacing;
+    *///?}
     public DangerReaction dangerReaction = DangerReaction.NONE;
     public float dangerAge;
     public int weatherStage;
     public float weatherAge;
+    //? if <26.3 {
     public PoseStack.Pose noseBubbleFacing;
+    //?}
     public boolean isSleeping;
     public boolean isSwimming;
     public boolean isSitting;

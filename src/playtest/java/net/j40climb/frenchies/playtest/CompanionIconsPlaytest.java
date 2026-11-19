@@ -1,11 +1,16 @@
 package net.j40climb.frenchies.playtest;
 
+//? if >=26.3 {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Optional;
 import java.util.Set;
+//? if <26.3 {
 import java.util.UUID;
+//?}
 import java.util.function.Predicate;
 import javax.imageio.ImageIO;
 import net.j40climb.frenchies.Frenchies;
@@ -28,8 +33,10 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.clock.ClockTimeMarkers;
 import net.minecraft.world.entity.EntitySpawnReason;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+//?}
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -47,7 +54,11 @@ final class CompanionIconsPlaytest {
     private static Predicate<Minecraft> flashVisible;
 
     static void steps(Playtest t) {
+        //? if <26.3 {
         UUID[] dogId = new UUID[1];
+        //?} else {
+        /*int[] dogId = new int[1];
+        *///?}
         int[] creeperId = new int[1];
         t.server("Give the owner a compass and record a death at the end of the path", p -> {
             var level = p.level();
@@ -62,20 +73,30 @@ final class CompanionIconsPlaytest {
             p.getInventory().clearContent();
             p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.COMPASS));
             p.setLastDeathLocation(Optional.of(GlobalPos.of(level.dimension(), START.east(26))));
+        //? if <26.3 {
         });
         t.awaitClient("Arrive at the arena and load the dog's chunk", mc -> mc.player.blockPosition().equals(START.south(2))
                 && mc.level.getBlockState(START.below()).is(Blocks.SMOOTH_STONE));
         t.server("Spawn and tame Pip in the tracked arena", p -> {
             var level = p.level();
+        //?}
             var dog = FrenchieRegistry.FRENCHIE.get().spawn(level, START, EntitySpawnReason.COMMAND);
             Playtest.require(dog != null, "Frenchie did not spawn");
             dog.tame(p);
             dog.sitDown();
             dog.setCustomName(Component.literal("Pip"));
+            //? if <26.3 {
             dogId[0] = dog.getUUID();
+            //?} else {
+            /*dogId[0] = dog.getId();
+            *///?}
         });
         t.client("Frame the dog in first person", mc -> {
+            //? if <26.3 {
             mc.options.hideGui = false;
+            //?} else {
+            /*if (mc.gui.hud.isHidden()) mc.gui.hud.toggle();
+            *///?}
             mc.options.setCameraType(CameraType.FIRST_PERSON);
         });
         clickDog(t, dogId, false);
@@ -128,11 +149,15 @@ final class CompanionIconsPlaytest {
                 mc.level.getEntity(dogId[0]) instanceof FrenchieEntity dog && dog.isDeathTracking());
         t.server("Stand beside Pip to lift the tracking dog", p -> {
             var dog = (FrenchieEntity)p.level().getEntity(dogId[0]);
+            //? if <26.3 {
             p.setItemSlot(EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
+            //?}
             p.teleportTo(p.level(), dog.getX() - 1.5, dog.getY(), dog.getZ() + 1, Set.of(), 100, 15, true);
         });
+        //? if <26.3 {
         t.awaitClient("Verify the owner is wearing the carrier", mc ->
                 mc.player.getItemBySlot(EquipmentSlot.CHEST).is(FrenchieRegistry.FRONT_PACK.get()));
+        //?}
         clickDog(t, dogId, true);
         t.awaitClient("Verify the packed dog kept its tracking icon and name", mc -> {
             var pack = mc.player.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
@@ -170,7 +195,11 @@ final class CompanionIconsPlaytest {
                 : tag.getSiblings().isEmpty();
     }
 
+    //? if <26.3 {
     private static void clickDog(Playtest t, UUID[] id, boolean crouch) {
+    //?} else {
+    /*private static void clickDog(Playtest t, int[] id, boolean crouch) {
+    *///?}
         t.client("Set the owner's crouch state", mc -> mc.options.keyShift.setDown(crouch));
         t.awaitClient("Aim at the Frenchie within interaction reach", mc -> {
             if (!(mc.level.getEntity(id[0]) instanceof FrenchieEntity dog)) return false;
@@ -200,7 +229,11 @@ final class CompanionIconsPlaytest {
         if (flashVisible == null) return;
         Minecraft mc = Minecraft.getInstance();
         if (flashVisible.test(mc)) {
+            //? if <26.3 {
             Screenshot.grab(mc.gameDirectory, flashScreenshot + ".png", mc.getMainRenderTarget(), 1, ignored -> {});
+            //?} else {
+            /*Screenshot.grab(mc.gameDirectory, flashScreenshot + ".png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+            *///?}
             flashVisible = null;
         }
     }

@@ -73,7 +73,11 @@ public final class CompanionClient {
             }
             case FETCH -> {
                 if (!dog.getOffhandItem().is(FrenchieRegistry.SQUEAKY_TOY.get()) || mc.player.distanceToSqr(dog) > 8) return;
+                //? if <26.3 {
                 Screenshot.grab(mc.gameDirectory, "toy.png", mc.getMainRenderTarget(), 1, ignored -> {});
+                //?} else {
+                /*Screenshot.grab(mc.gameDirectory, "toy.png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+                *///?}
                 step = Step.TAKE;
                 return;
             }
@@ -86,7 +90,11 @@ public final class CompanionClient {
             }
             case BOW -> {
                 if (dog.celebrationStage() != 1 || ++poseTicks < 2) return;
+                //? if <26.3 {
                 Screenshot.grab(mc.gameDirectory, "bow.png", mc.getMainRenderTarget(), 1, ignored -> {});
+                //?} else {
+                /*Screenshot.grab(mc.gameDirectory, "bow.png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+                *///?}
                 step = Step.SPLOOT;
                 poseTicks = 0;
                 return;
@@ -97,7 +105,11 @@ public final class CompanionClient {
                     return;
                 }
                 if (++poseTicks < 8) return;
+                //? if <26.3 {
                 Screenshot.grab(mc.gameDirectory, "sploot.png", mc.getMainRenderTarget(), 1, ignored -> {});
+                //?} else {
+                /*Screenshot.grab(mc.gameDirectory, "sploot.png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+                *///?}
             }
         }
         step = Step.WAIT;

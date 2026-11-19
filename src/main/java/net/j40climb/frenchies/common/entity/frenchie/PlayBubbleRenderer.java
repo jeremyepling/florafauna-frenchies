@@ -14,7 +14,11 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 
 public final class PlayBubbleRenderer extends EntityRenderer<PlayBubbleEntity, EntityRenderState> {
+    //? if <26.3 {
     private static final RenderType FILM = RenderTypes.entityTranslucentCullItemTarget(
+    //?} else {
+    /*private static final RenderType FILM = RenderTypes.entityTranslucentCull(
+    *///?}
             Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "textures/entity/play_bubble.png"));
 
     public PlayBubbleRenderer(EntityRendererProvider.Context context) {
@@ -38,7 +42,11 @@ public final class PlayBubbleRenderer extends EntityRenderer<PlayBubbleEntity, E
         if (state.isInvisible) return;
         poses.pushPose();
         poses.translate(0, 0.09, 0);
+        //? if <26.3 {
         poses.mulPose(camera.orientation);
+        //?} else {
+        /*poses.rotate(camera.orientation);
+        *///?}
         submitFilm(poses, nodes, state.lightCoords, 0.11F);
         poses.popPose();
         super.submit(state, poses, nodes, camera);

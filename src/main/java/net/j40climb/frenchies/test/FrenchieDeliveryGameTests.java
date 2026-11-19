@@ -15,16 +15,22 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
+//? if <26.3 {
 import net.minecraft.world.entity.EquipmentSlot;
+//?}
 import net.minecraft.world.entity.animal.wolf.WolfSoundVariants;
 import net.minecraft.world.entity.player.Inventory;
+//? if <26.3 {
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.InventoryMenu;
+//?}
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
+//? if <26.3 {
 import net.minecraft.world.item.component.DyedItemColor;
+//?}
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
@@ -36,7 +42,9 @@ import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.phys.Vec3;
+//? if <26.3 {
 import net.minecraft.world.phys.AABB;
+//?}
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
@@ -50,6 +58,7 @@ import java.util.function.Consumer;
 
 final class FrenchieDeliveryGameTests {
     private static final InteractionHand HAND = InteractionHand.MAIN_HAND;
+    //? if <26.3 {
 
     static void unequipPackedCourier(GameTestHelper h) {
         var owner = networkedPlayer(h);
@@ -125,6 +134,7 @@ final class FrenchieDeliveryGameTests {
         stack.set(DataComponents.DYED_COLOR, new DyedItemColor(color));
         return stack;
     }
+    //?}
 
     static void compassOrders(GameTestHelper h) {
         var owner = networkedPlayer(h);
@@ -211,7 +221,9 @@ final class FrenchieDeliveryGameTests {
             h.assertTrue(dog.isDelivering() && !dog.isDeathTracking(), "Compass interrupted the active delivery");
 
             owner.setItemInHand(HAND, ItemStack.EMPTY);
+            //? if <26.3 {
             owner.setItemSlot(EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
+            //?}
             owner.setShiftKeyDown(true);
             click(owner, dog);
             var pack = FrenchieRegistry.FRENCH_FRONTPACK_DATA;
@@ -264,7 +276,11 @@ final class FrenchieDeliveryGameTests {
         var barks = new AtomicInteger();
         Consumer<PlayLevelSoundEvent.AtPosition> onBark = sound -> {
             if (sound.getLevel() == level && bark.equals(sound.getSound())
+                    //? if <26.3 {
                     && sound.getPosition().distanceToSqr(moved.getBottomCenter()) < 36) barks.incrementAndGet();
+                    //?} else {
+                    /*&& sound.getPosition().distanceToSqr(Vec3.atBottomCenterOf(moved)) < 36) barks.incrementAndGet();
+                    *///?}
         };
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, PlayLevelSoundEvent.AtPosition.class, onBark);
         recipient.snapTo(address, 0, 0);
@@ -458,7 +474,15 @@ final class FrenchieDeliveryGameTests {
         // Keep both the bed and its landing floor in a previously untouched chunk.
         BlockPos bed = ChunkPos.containing(start.east(640)).getMiddleBlockPosition(start.getY() + 12);
         var chunk = ChunkPos.containing(bed);
+        //? if <26.3 {
         level.getChunkAt(bed);
+        //?} else {
+        /*// Entity ticking needs a fully generated two-chunk border. Build that terrain before the
+        // accelerated test starts so background world generation does not consume its tick budget.
+        for (var nearby : ChunkPos.rangeClosed(chunk, 2).toList()) {
+            level.getChunk(nearby.x(), nearby.z());
+        }
+        *///?}
         platform(h, bed);
         var bedState = Blocks.BLUE_BED.defaultBlockState().setValue(BedBlock.FACING, Direction.EAST);
         level.setBlock(bed.west(), bedState.setValue(BedBlock.PART, BedPart.FOOT), Block.UPDATE_CLIENTS);
@@ -499,7 +523,11 @@ final class FrenchieDeliveryGameTests {
                     owner.snapTo(bed.north(2), 0, 0);
                 })
                 .thenWaitUntil(() -> h.assertTrue(level.getEntity(id) instanceof FrenchieEntity waiting
+                                //? if <26.3 {
                                 && waiting.isDelivering() && waiting.position().distanceToSqr(bed.getBottomCenter()) < 36,
+                                //?} else {
+                                /*&& waiting.isDelivering() && waiting.position().distanceToSqr(Vec3.atBottomCenterOf(bed)) < 36,
+                                *///?}
                         "No waiting courier at the distant bed after the owner's visit"))
                 .thenExecute(() -> {
                     var waiting = (FrenchieEntity) level.getEntity(id);

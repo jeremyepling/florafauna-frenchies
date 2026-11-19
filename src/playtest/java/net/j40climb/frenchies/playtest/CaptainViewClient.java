@@ -84,7 +84,11 @@ public final class CaptainViewClient {
                     || !(mc.level.getEntity(CompanionServer.CAPTAIN) instanceof FrenchieEntity dog)
                     || dog.getVehicle() != boat) return;
             mc.options.setCameraType(CameraType.FIRST_PERSON);
+            //? if <26.3 {
             mc.options.hideGui = false;
+            //?} else {
+            /*if (mc.gui.hud.isHidden()) mc.gui.hud.toggle();
+            *///?}
             mc.getToastManager().clear();
             mc.player.setYRot(boat.getYRot());
             mc.player.setXRot(4);
@@ -99,7 +103,11 @@ public final class CaptainViewClient {
         }
         if (boat.getControllingPassenger() != mc.player) return;
         mc.options.setCameraType(CameraType.FIRST_PERSON);
+        //? if <26.3 {
         mc.options.hideGui = false;
+        //?} else {
+        /*if (mc.gui.hud.isHidden()) mc.gui.hud.toggle();
+        *///?}
         mc.getToastManager().clear();
         // A driver looking along the bow, with the horizon a few degrees above the crosshair.
         mc.player.setYRot(boat.getYRot());
@@ -142,6 +150,10 @@ public final class CaptainViewClient {
     }
 
     private static void capture(Minecraft mc, String name) {
+        //? if <26.3 {
         Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), 1, ignored -> {});
+        //?} else {
+        /*Screenshot.grab(mc.gameDirectory, name + ".png", mc.gameRenderer.mainRenderTarget(), 1, ignored -> {});
+        *///?}
     }
 }

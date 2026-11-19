@@ -4,7 +4,11 @@ import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?} else {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -93,9 +97,13 @@ final class SlimePlayTests {
         dog.tame(owner);
         dog.standUp();
         stationarySlime(h, 1);
+        //? if <26.3 {
         h.startSequence().thenWaitUntil(() -> h.assertTrue(dog.playPose() == SLIME_BOW, "No bow before the warning; pose="
                         + dog.playPose() + ", sleeping=" + dog.isFrenchieSleeping() + ", ordered sit=" + dog.isOrderedToSit()
                         + ", position=" + h.relativePos(dog.blockPosition())))
+        //?} else {
+        /*h.startSequence().thenWaitUntil(() -> h.assertTrue(dog.playPose() == SLIME_BOW, "No bow before the warning; " + CompanionTravelTests.playState(h, dog)))
+        *///?}
                 .thenExecute(() -> {
                     var threat = h.spawn(EntityType.CREEPER, 3, 1, 2);
                     threat.setNoAi(true);

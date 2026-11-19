@@ -1,12 +1,17 @@
 package net.j40climb.frenchies.test;
 
+//? if >=26.3 {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieAwareness;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.util.Mth;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?}
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;

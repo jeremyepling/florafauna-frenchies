@@ -268,7 +268,11 @@ public final class CourierTrips extends SavedData {
                 var fromLevel = level != null ? level : server.getLevel(trip.from.dimension());
                 var from = destination == null ? trip.from.pos() : destination;
                 int seconds = fromLevel == null || owner == null ? 3
+                        //? if <26.3 {
                         : DeliveryGoal.travelSeconds(fromLevel, from.getBottomCenter(), owner.level(), owner.position());
+                        //?} else {
+                        /*: DeliveryGoal.travelSeconds(fromLevel, Vec3.atBottomCenterOf(from), owner.level(), owner.position());
+                        *///?}
                 iterator.set(new Trip(trip.dog, trip.owner, Optional.empty(), Optional.empty(), trip.from, now + 20L * seconds));
                 setDirty();
                 DeliveryGoal.tell(owner, trip.dog.getBooleanOr("FrenchieGoingHome", false) ? "home_unavailable"
@@ -278,7 +282,11 @@ public final class CourierTrips extends SavedData {
         }
     }
 
+    //? if <26.3 {
     public static @Nullable Vec3 findLanding(ServerLevel level, BlockPos target, @Nullable ServerPlayer player) {
+    //?} else {
+    /*private static @Nullable Vec3 findLanding(ServerLevel level, BlockPos target, @Nullable ServerPlayer player) {
+    *///?}
         Vec3 fallback = null;
         for (BlockPos pos : BlockPos.withinManhattan(target, 2, 2, 2)) {
             if (!level.isInWorldBounds(pos) || !level.hasChunkAt(pos) || !level.getFluidState(pos).isEmpty()) continue;

@@ -11,7 +11,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?} else {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
@@ -36,6 +40,21 @@ final class CompanionTravelTests {
         player.getInventory().clearContent();
         player.snapTo(h.absoluteVec(new Vec3(x, 1, z)), 0, 0);
         return player;
+    //? if >=26.3 {
+    /*}
+
+    static String playState(GameTestHelper h, FrenchieEntity dog) {
+        var owner = dog.getOwner();
+        var goals = dog.getGoalSelector().getAvailableGoals().stream().filter(goal -> goal.isRunning())
+                .map(goal -> goal.getGoal().getClass().getSimpleName()).toList();
+        var neighbors = dog.level().getEntities(dog, dog.getBoundingBox().inflate(8)).stream()
+                .map(entity -> entity.getType().toShortString() + "@" + h.relativePos(entity.blockPosition())).toList();
+        return "pose=" + dog.playPose() + ", dog=" + h.relativeVec(dog.position()) + ", ticks=" + dog.tickCount
+                + ", owner=" + (owner == null ? "-" : h.relativeVec(owner.position()))
+                + ", ground=" + dog.onGround() + ", asleep=" + dog.isFrenchieSleeping()
+                + ", sit=" + dog.isOrderedToSit() + ", warned=" + dog.isWarningFlash()
+                + ", goals=" + goals + ", nearby=" + neighbors;
+    *///?}
     }
 
     static void disconnect(ServerPlayer... players) {

@@ -11,7 +11,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntitySpawnReason;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?} else {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -47,7 +51,11 @@ final class CaptainCourse {
             for (int x : new int[] {-9, 9}) {
                 var pos = launch.offset(x, 1, z);
                 for (int height = 0; height < 4; height++) {
+                    //? if <26.3 {
                     var block = height % 2 == 0 ? Blocks.WHITE_CONCRETE : x < 0 ? Blocks.RED_CONCRETE : Blocks.BLUE_CONCRETE;
+                    //?} else {
+                    /*var block = height % 2 == 0 ? Blocks.CONCRETE.white() : x < 0 ? Blocks.CONCRETE.red() : Blocks.CONCRETE.blue();
+                    *///?}
                     level.setBlockAndUpdate(pos.above(height), block.defaultBlockState());
                 }
                 level.setBlockAndUpdate(pos.above(4), Blocks.SEA_LANTERN.defaultBlockState());
@@ -134,7 +142,11 @@ final class CaptainCourse {
                 require(Files.isRegularFile(output.resolve("rowing-right.png")) && Files.isRegularFile(output.resolve("rowing-straight.png"))
                                 && Files.isRegularFile(output.resolve("rowing-glance.png")),
                         "Missing driver's turn or forward frame");
+                //? if <26.3 {
                 require(boat.distanceToSqr(launch.getBottomCenter()) > 12 && dog.getVehicle() == boat
+                //?} else {
+                /*require(boat.distanceToSqr(net.minecraft.world.phys.Vec3.atBottomCenterOf(launch)) > 12 && dog.getVehicle() == boat
+                *///?}
                         && guest.getVehicle() == boat && owner.getVehicle() == boat, "Passengers or forward motion lost while rowing");
                 message(owner, "leave");
                 step = Step.EXIT;

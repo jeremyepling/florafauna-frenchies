@@ -11,7 +11,11 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?} else {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -192,7 +196,11 @@ final class WhistleServer {
             }
             case RESPAWN -> {
                 require(courier == null, "Player death recalled a deliberately dismissed courier");
+                //? if <26.3 {
                 if (!owner.isAlive() || owner.position().distanceToSqr(INN.getCenter()) > 36
+                //?} else {
+                /*if (!owner.isAlive() || owner.position().distanceToSqr(Vec3.atCenterOf(INN)) > 36
+                *///?}
                         || companion == null || companion.distanceToSqr(owner) >= 36) break;
                 checkPip(companion);
                 require(owner.getLastDeathLocation().isPresent(), "Respawn did not record the old location");
@@ -288,7 +296,11 @@ final class WhistleServer {
     }
 
     private static void frame(ServerPlayer visitor, FrenchieEntity dog) {
+        //? if <26.3 {
         var center = YARD.getBottomCenter();
+        //?} else {
+        /*var center = Vec3.atBottomCenterOf(YARD);
+        *///?}
         if (dog.position().distanceToSqr(center) > 0.01) dog.snapTo(center, -145, 0);
         dog.setDeltaMovement(Vec3.ZERO);
         dog.setYRot(-145);

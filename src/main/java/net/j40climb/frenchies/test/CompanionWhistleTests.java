@@ -12,7 +12,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.InteractionHand;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?} else {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
@@ -137,7 +141,9 @@ final class CompanionWhistleTests {
                             && ItemStack.matches(parcel, dog.getParcel()),
                     "Confirmation did not transfer the component-bearing bundle to the dog");
             if (pack) {
+                //? if <26.3 {
                 owner.setItemSlot(EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
+                //?}
                 owner.setShiftKeyDown(true);
                 owner.interactOn(dog, HAND, Vec3.ZERO);
                 owner.setShiftKeyDown(false);

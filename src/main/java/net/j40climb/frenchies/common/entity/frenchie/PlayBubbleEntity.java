@@ -12,6 +12,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.InterpolationHandler;
+//? if >=26.3 {
+/*import net.minecraft.world.entity.LinearInterpolationHandler;
+*///?}
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -21,7 +24,9 @@ import net.minecraft.world.phys.Vec3;
 public final class PlayBubbleEntity extends Entity {
     private static final EntityDataAccessor<Integer> NOSE_DOG =
             SynchedEntityData.defineId(PlayBubbleEntity.class, EntityDataSerializers.INT);
+    //? if <26.3 {
     private final InterpolationHandler interpolation = new InterpolationHandler(this, 2);
+    //?}
     private final long expiresAt;
     private int claimant = -1;
     private long landedAt;
@@ -70,10 +75,14 @@ public final class PlayBubbleEntity extends Entity {
     @Override
     public void tick() {
         super.tick();
+        //? if <26.3 {
         if (level().isClientSide()) {
             interpolation.interpolate();
             return;
         }
+        //?} else {
+        /*if (level().isClientSide()) return;
+        *///?}
         if (noseDogId() != -1) {
             if (level().getGameTime() - landedAt > 18 || !(level().getEntity(noseDogId()) instanceof FrenchieEntity dog) || !dog.isAlive()) {
                 pop(false);
@@ -104,7 +113,14 @@ public final class PlayBubbleEntity extends Entity {
         discard();
     }
 
+    //? if <26.3 {
     @Override public InterpolationHandler getInterpolation() { return interpolation; }
+    //?} else {
+    /*@Override
+    protected InterpolationHandler createInterpolationHandler() {
+        return LinearInterpolationHandler.create(this, 2);
+    }
+    *///?}
     @Override public boolean hurtServer(ServerLevel level, DamageSource source, float damage) { return false; }
     @Override protected void readAdditionalSaveData(ValueInput input) {}
     @Override protected void addAdditionalSaveData(ValueOutput output) {}

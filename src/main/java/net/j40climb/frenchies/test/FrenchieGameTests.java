@@ -1,5 +1,8 @@
 package net.j40climb.frenchies.test;
 
+//? if >=26.3 {
+/*import net.minecraft.world.phys.Vec3;
+*///?}
 import io.netty.buffer.Unpooled;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieEntity;
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieVariant;
@@ -9,12 +12,16 @@ import net.j40climb.frenchies.setup.FrenchieRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+//? if <26.3 {
 import net.minecraft.nbt.NbtOps;
+//?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
+//? if <26.3 {
 import net.minecraft.world.entity.EquipmentSlot;
+//?}
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -55,6 +62,7 @@ final class FrenchieGameTests {
         dog.setCustomName(Component.literal("Pip"));
         UUID id = dog.getUUID();
         owner.setShiftKeyDown(true);
+        //? if <26.3 {
         var pack = FrenchieRegistry.FRENCH_FRONTPACK_DATA;
         var item = new ItemStack(FrenchieRegistry.FRONT_PACK.get());
         var mainClick = new PlayerInteractEvent.EntityInteract(owner, InteractionHand.MAIN_HAND, dog);
@@ -72,12 +80,19 @@ final class FrenchieGameTests {
         helper.assertTrue(!dog.isRemoved() && !owner.getData(pack).hasCarriedFrenchie(), "A pack stowed in inventory counted as worn");
         owner.setItemSlot(EquipmentSlot.CHEST, owner.getInventory().removeItemNoUpdate(9));
         FrontpackEvents.onEntityInteract(new PlayerInteractEvent.EntityInteract(owner, InteractionHand.MAIN_HAND, dog));
+        //?} else {
+        /*FrontpackEvents.onEntityInteract(new PlayerInteractEvent.EntityInteract(owner, InteractionHand.MAIN_HAND, dog, Vec3.ZERO));
+        *///?}
         helper.assertTrue(dog.isRemoved(), "Pickup left the original dog in the level");
 
         var respawned = helper.makeMockPlayer(GameType.SURVIVAL);
         respawned.setUUID(owner.getUUID());
         respawned.copyAttachmentsFrom(owner, true);
+        //? if <26.3 {
         respawned.setItemSlot(EquipmentSlot.CHEST, item);
+        //?} else {
+        /*var pack = FrenchieRegistry.FRENCH_FRONTPACK_DATA;
+        *///?}
         helper.assertTrue(respawned.getData(pack).hasCarriedFrenchie(), "Death dropped the packed dog");
 
         BlockPos feet = helper.absolutePos(new BlockPos(0, 1, 0));
@@ -119,12 +134,14 @@ final class FrenchieGameTests {
         saved.put("FrenchieParcel", parcel);
         saved.putString("CustomName", "Pip");
         var full = new FrontpackData(true, saved, 123);
+        //? if <26.3 {
         var disk = (CompoundTag) FrontpackData.CODEC.encodeStart(NbtOps.INSTANCE, full.withReleasePending(true)).getOrThrow();
         helper.assertTrue(FrontpackData.CODEC.parse(NbtOps.INSTANCE, disk).getOrThrow().releasePending(),
                 "Saving and reopening a blocked release must preserve the retry");
         disk.remove("releasePending");
         helper.assertTrue(FrontpackData.CODEC.parse(NbtOps.INSTANCE, disk).getOrThrow().equals(full),
                 "A legacy pack without the retry flag must retain its original contents and remain equipped");
+        //?}
         var bytes = Unpooled.buffer();
         try {
             FrontpackData.STREAM_CODEC.encode(bytes, full);

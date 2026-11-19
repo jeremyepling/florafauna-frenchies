@@ -112,7 +112,11 @@ public final class DeliveryDialog {
                 tell(owner, "home_changed");
                 return true;
             }
+            //? if <26.3 {
             target = offeredBed.pos().getBottomCenter();
+            //?} else {
+            /*target = Vec3.atBottomCenterOf(offeredBed.pos());
+            *///?}
         } else {
             recipient = owner.level().getServer().getPlayerList().getPlayer(UUID.fromString(destination));
             if (recipient == null || !eligiblePlayer(owner, recipient)) {

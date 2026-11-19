@@ -59,7 +59,11 @@ public class FrenchieRenderer extends MobRenderer<FrenchieEntity, FrenchieRender
         renderState.noseBubbleFacing = null;
         if (renderState.playPose == PlayPose.BUBBLE_NOSE) {
             poseStack.pushPose();
+            //? if <26.3 {
             poseStack.mulPose(cameraRenderState.orientation);
+            //?} else {
+            /*poseStack.rotate(cameraRenderState.orientation);
+            *///?}
             renderState.noseBubbleFacing = poseStack.last().copy();
             poseStack.popPose();
         }

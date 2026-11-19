@@ -40,14 +40,21 @@ public final class Frenchies {
     }
 
     private static void creativeTabs(BuildCreativeModeTabContentsEvent event) {
+        //? if <26.3 {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) event.accept(FrenchieRegistry.FRENCHIE_SPAWN_EGG);
+        //?}
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(FrenchieRegistry.FRENCHIE_WHISTLE);
             event.accept(FrenchieRegistry.SQUEAKY_TOY);
             event.accept(FrenchieRegistry.BUBBLE_TOY);
+            //? if <26.3 {
             event.accept(FrenchieRegistry.FRONT_PACK);
             event.accept(FrenchieRegistry.WINGED_FRONT_PACK);
+            //?}
         }
+        //? if >=26.3 {
+        /*if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) event.accept(FrenchieRegistry.FRENCHIE_SPAWN_EGG);
+        *///?}
     }
 
     private static void commands(RegisterCommandsEvent event) {

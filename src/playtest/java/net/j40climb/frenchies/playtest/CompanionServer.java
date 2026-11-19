@@ -10,6 +10,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+//? if >=26.3 {
+/*import net.minecraft.world.item.Items;
+*///?}
 import net.minecraft.world.level.GameType;
 
 import java.nio.file.Files;
@@ -65,7 +68,9 @@ final class CompanionServer {
                 require(dog.getOffhandItem().isEmpty() && visitor.getInventory().countItem(FrenchieRegistry.SQUEAKY_TOY.get()) == 1
                         && Component.literal("The pocket squeaker").equals(visitor.getMainHandItem().get(DataComponents.CUSTOM_NAME)),
                         "Toy handoff lost, changed or duplicated the named toy");
+                //? if <26.3 {
                 owner.setItemSlot(EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.WINGED_FRONT_PACK.get()));
+                //?}
                 owner.teleportTo(level, courier.getX() + 1.3, courier.getY(), courier.getZ(), Set.of(), 90, 15, true);
                 owner.sendSystemMessage(Component.literal("FF flight pickup"));
                 stage = Stage.PICKUP;
@@ -73,6 +78,9 @@ final class CompanionServer {
             case PICKUP -> {
                 if (!owner.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).hasCarriedFrenchie()) return false;
                 require(level.getEntity(DeliveryMultiplayerServer.DOG) == null, "Front-pack pickup left a duplicate courier");
+                //? if >=26.3 {
+                /*owner.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.ELYTRA));
+                *///?}
                 owner.teleportTo(level, 48.5, 275, 0.5, Set.of(), 0, 0, true);
                 visitor.setCamera(owner);
                 owner.sendSystemMessage(Component.literal("FF flight glide"));
@@ -81,7 +89,11 @@ final class CompanionServer {
             }
             case GLIDE -> {
                 if (!frameExists(root, "elytra-gaze-recentered")) return false;
+                //? if <26.3 {
                 require(owner.isFallFlying() && owner.getItemBySlot(EquipmentSlot.CHEST).is(FrenchieRegistry.WINGED_FRONT_PACK.get())
+                //?} else {
+                /*require(owner.isFallFlying() && owner.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA)
+                *///?}
                                 && owner.getData(FrenchieRegistry.FRENCH_FRONTPACK_DATA).hasCarriedFrenchie(),
                         "Completion requires the original carrier still gliding");
                 return true;
