@@ -1,14 +1,17 @@
 #Requires -Version 7.0
 # Two offline development clients observe playful Frenchie poses on a disposable loopback server.
-param([switch]$Offline)
+param([switch]$Offline, [ValidateSet('26.1', '26.3')][string]$Target = '26.1')
 
 $Scenario = 'playful'
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $checkout = Split-Path $PSScriptRoot -Parent
+$targetDir = Join-Path $checkout "versions/${Target}-neoforge"
+$project = ":${Target}-neoforge"
+$buildModdev = Join-Path $targetDir 'build/moddev'
 $runId = [guid]::NewGuid().ToString('N')
-$root = Join-Path $checkout ".tmp/$Scenario-multiplayer/$runId"
+$root = Join-Path $targetDir ".tmp/$Scenario-multiplayer/$runId"
 $roles = 'Server', 'Owner', 'Visitor'
 foreach ($role in $roles) {
     [IO.Directory]::CreateDirectory((Join-Path $root $role)) | Out-Null
@@ -32,11 +35,12 @@ foreach ($role in 'Owner', 'Visitor') {
 
 Push-Location -LiteralPath $checkout
 try {
+    Write-Host "Minecraft target: $Target"
     Write-Host "Multiplayer test world and logs: $root"
     $options = @('--console=plain')
     if ($Offline) { $options += '--offline' }
-    & .\gradlew.bat @options "-PdeliveryTestId=$runId" "-PdeliveryTestPort=$port" "-PmultiplayerScenario=$Scenario" playtestClasses `
-        createDeliveryServerLaunchScript createDeliveryOwnerLaunchScript createDeliveryVisitorLaunchScript *> (Join-Path $root 'prepare.log')
+    & .\gradlew.bat @options "-PdeliveryTestId=$runId" "-PdeliveryTestPort=$port" "-PmultiplayerScenario=$Scenario" "${project}:playtestClasses" `
+        "${project}:createDeliveryServerLaunchScript" "${project}:createDeliveryOwnerLaunchScript" "${project}:createDeliveryVisitorLaunchScript" *> (Join-Path $root 'prepare.log')
     if ($LASTEXITCODE -ne 0) { throw "Could not prepare the multiplayer launchers. See $root/prepare.log" }
 
     # Snapshot the generated launchers and argfiles: later Gradle runs reuse build/moddev.
@@ -45,11 +49,11 @@ try {
     foreach ($role in $roles) {
         foreach ($suffix in 'RunClasspath.txt', 'RunVmArgs.txt', 'RunProgramArgs.txt', 'Log4j2.xml') {
             $name = "delivery$role$suffix"
-            Copy-Item -LiteralPath (Join-Path $checkout "build/moddev/$name") -Destination (Join-Path $launchDir $name)
+            Copy-Item -LiteralPath (Join-Path $buildModdev $name) -Destination (Join-Path $launchDir $name)
         }
         $scriptName = "runDelivery$role.cmd"
-        $script = Get-Content -Raw -LiteralPath (Join-Path $checkout "build/moddev/$scriptName")
-        $script.Replace((Join-Path $checkout 'build\moddev'), $launchDir) | Set-Content -LiteralPath (Join-Path $launchDir $scriptName)
+        $script = Get-Content -Raw -LiteralPath (Join-Path $buildModdev $scriptName)
+        $script.Replace($buildModdev, $launchDir) | Set-Content -LiteralPath (Join-Path $launchDir $scriptName)
     }
 
     $phases = @(1, 2)

@@ -2,6 +2,8 @@
 # Run Minecraft clients against fresh copies of a closed save. Each scenario has its own copy.
 [CmdletBinding(DefaultParameterSetName = 'Selected')]
 param(
+    [ValidateSet('26.1', '26.3')]
+    [string]$Target = '26.1',
     [Parameter(ParameterSetName = 'Selected', Position = 0)]
     [ValidateSet('frenchie', 'frontpack', 'companions', 'delivery')]
     [string[]]$Scenario,
@@ -20,8 +22,10 @@ if ($All) {
     throw 'Choose a client scenario, e.g. -Scenario delivery, or use -All for the full gameplay suite.'
 }
 $checkout = Split-Path $PSScriptRoot -Parent
+$targetDir = Join-Path $checkout "versions/${Target}-neoforge"
+$project = ":${Target}-neoforge"
 if (!$SourceWorld) {
-    $SourceWorld = Join-Path $checkout "run/client-$(Split-Path $checkout -Leaf)/saves/dev"
+    $SourceWorld = Join-Path $targetDir "run/client-$(Split-Path $checkout -Leaf)/saves/dev"
 }
 $world = (Resolve-Path -LiteralPath $SourceWorld).Path
 $accessories = @($AccessoryJar | Where-Object { $_ } | ForEach-Object { (Resolve-Path -LiteralPath $_).Path })
@@ -29,7 +33,7 @@ $level = Join-Path $world 'level.dat'
 if (!(Test-Path -LiteralPath $level -PathType Leaf)) { throw "Missing level.dat in $world" }
 if (@($Scenario | Sort-Object -Unique).Count -ne $Scenario.Count) { throw 'Select each scenario only once.' }
 $runId = [guid]::NewGuid().ToString('N')
-$runRoot = Join-Path $checkout ".tmp/world-playtests/$runId"
+$runRoot = Join-Path $targetDir ".tmp/world-playtests/$runId"
 if ($runRoot.StartsWith($world + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'The test output cannot be inside the source save.'
 }
@@ -40,6 +44,7 @@ if ((Get-Item -LiteralPath $world).Attributes.HasFlag([IO.FileAttributes]::Repar
 $options = @('--console=plain')
 if ($Offline) { $options += '--offline' }
 $hash = (Get-FileHash -LiteralPath $level).Hash
+Write-Host "Minecraft target: $Target"
 Write-Host "Source save: $world"
 Write-Host "Test worlds, logs and results: $runRoot"
 
@@ -78,7 +83,7 @@ try {
         foreach ($phase in $phases) {
             Write-Host "Launching $name phase $phase ..."
             $log = Join-Path $gameDir "phase-$phase.log"
-            & .\gradlew.bat @options "-PplaytestId=$runId" "-PplaytestScenario=$name" "-PplaytestPhase=$phase" runWorldPlaytest *> $log
+            & .\gradlew.bat @options "-PplaytestId=$runId" "-PplaytestScenario=$name" "-PplaytestPhase=$phase" "${project}:runWorldPlaytest" *> $log
             $exitCode = $LASTEXITCODE
             $resultPath = Join-Path $gameDir "phase-$phase.result"
             $result = if (Test-Path -LiteralPath $resultPath) { (Get-Content -Raw -LiteralPath $resultPath).Trim() } else { 'Missing client result' }

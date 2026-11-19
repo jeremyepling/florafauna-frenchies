@@ -2,7 +2,7 @@
 
 Take a French bulldog on your next expedition. It can ride on the bow while you row, carry a bundle to a friend in another dimension, and lead you back to the spot where you dropped your gear. Bring glow berries. Your courier has been known to linger after a delivery.
 
-**Standalone NeoForge mod for Minecraft [26.1](https://github.com/jeremyepling/frenchies/tree/main) and [26.3](https://github.com/jeremyepling/frenchies/tree/26.3).** This guide covers 26.1.
+**Standalone NeoForge mod for Minecraft 26.1 and 26.3.** Both versions build from this checkout. Choose a matching target when launching Minecraft or running a test.
 
 ![A Frenchie wearing an orange life jacket sits at the bow in front of its owner.](docs/images/frenchie-boat-captain.png)
 
@@ -38,7 +38,11 @@ Use `/frenchie recall` anywhere to call back traveling or waiting dogs, includin
 
 ## Carry your copilot
 
-Craft a Frenchie Front Pack with string in the left and right squares of one row and three leather in the row below. Right-click the air with the pack to equip it on your chest. Crouch and right-click your adult Frenchie to pick it up, then crouch and right-click the air to set it down. Carrying pauses its current job.
+In **26.1**, craft a Frenchie Front Pack with string in the left and right squares of one row and three leather in the row below. Right-click the air with the pack to equip it on your chest. Crouch and right-click your adult Frenchie to pick it up, then crouch and right-click the air to set it down. Carrying pauses its current job.
+
+In **26.3**, crouch and right-click your adult Frenchie to carry it on your chest, then crouch and right-click the air to set it down. While you glide, it looks ahead and glances around from the pack.
+
+The wearable front-pack items below are available in **26.1**.
 
 **Pick a color.** Combine the pack with any of the 16 dyes. Multiple dyes blend with the existing color. Wash the pouch in a water cauldron to restore its original color for one level of water.
 
@@ -48,8 +52,8 @@ Craft a Frenchie Front Pack with string in the left and right squares of one row
 
 ## Development
 
-Use Java 25. Run `./gradlew build runGameTestServer` to package the mod and run its dedicated-server behavior tests. The spawn egg models and other runtime resources are checked in. The jar is in `build/libs`.
+Use Java 25 and this checkout's Gradle wrapper. The projects are `:26.1-neoforge` and `:26.3-neoforge`. For example, run `./gradlew :26.1-neoforge:build :26.1-neoforge:runGameTestServer` or replace `26.1` with `26.3`. Run both targets before a release. The spawn egg models and other runtime resources are checked in. Jars are under `versions/<target>-neoforge/build/libs/`.
 
-On Windows with PowerShell 7, run `./scripts/test_dev_world.ps1 -All -SourceWorld <closed-save-directory>` to check sleep, frontpack persistence, status icons and delivery with a real client. Run `./scripts/test_delivery_multiplayer.ps1` to verify courier handoff between two real clients and a dedicated server. Both scripts isolate their worlds in `.tmp/`.
+On Windows with PowerShell 7, run `./scripts/test_dev_world.ps1 -Target 26.1 -All -SourceWorld <closed-save-directory>` to check sleep, front-pack persistence, status icons and delivery with a real client. Use `-Target 26.3` for that version. Run `./scripts/test_delivery_multiplayer.ps1 -Target 26.1` to verify courier handoff between two real clients and a dedicated server, or `./scripts/test_playful_interactions.ps1 -Target 26.1` to inspect playful poses. These scripts accept either target and keep disposable worlds, logs and captures under `versions/<target>-neoforge/.tmp/`. Their default target is 26.1.
 
-To play with all three mods, run `./gradlew -PdevMods=all :26.1-neoforge:runClient` from the FloraFauna checkout. [FloraFauna development setup](https://github.com/jeremyepling/florafauna#play-with-the-hammer-and-frenchies)
+To play with FloraFauna, Hammer and Frenchies together, run `./gradlew -PdevMods=all :26.1-neoforge:runClient` or `:26.3-neoforge:runClient` from a matching FloraFauna checkout. [FloraFauna development setup](https://github.com/jeremyepling/florafauna#play-with-the-hammer-and-frenchies)

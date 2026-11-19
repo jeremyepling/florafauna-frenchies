@@ -37,16 +37,16 @@ jobs:
 
       - name: Compile and run unit tests for a draft
         if: github.event.pull_request.draft == true
-        run: ./gradlew check --no-daemon --max-workers=2 --stacktrace "-Dorg.gradle.jvmargs=$CI_GRADLE_JVMARGS"
+        run: ./gradlew :26.1-neoforge:check :26.3-neoforge:check --no-daemon --max-workers=2 --stacktrace "-Dorg.gradle.jvmargs=$CI_GRADLE_JVMARGS"
 
-      - name: Build the mod and run GameTests
+      - name: Build both versions and run GameTests
         if: github.event.pull_request.draft != true
-        run: ./gradlew build runGameTestServer --no-daemon --max-workers=2 --stacktrace "-Dorg.gradle.jvmargs=$CI_GRADLE_JVMARGS"
+        run: ./gradlew :26.1-neoforge:build :26.1-neoforge:runGameTestServer :26.3-neoforge:build :26.3-neoforge:runGameTestServer --no-daemon --max-workers=2 --stacktrace "-Dorg.gradle.jvmargs=$CI_GRADLE_JVMARGS"
 
       - name: Upload build artifacts
         if: github.event.pull_request.draft != true
         uses: actions/upload-artifact@v4
         with:
           name: florafauna-frenchies
-          path: build/libs/*.jar
+          path: versions/*-neoforge/build/libs/*.jar
           retention-days: 14
