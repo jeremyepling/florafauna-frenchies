@@ -6,13 +6,9 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.context.ContextKey;
-//? if <26.3 {
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
-//?}
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-//? if <26.3 {
 import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
-//?}
 import net.j40climb.frenchies.Frenchies;
 import net.j40climb.frenchies.common.entity.frenchie.frontpack.networking.PutDownFrenchiePayload;
 import net.j40climb.frenchies.setup.FrenchieRegistry;
@@ -38,7 +34,6 @@ public class FrontpackClientEvents {
     private static final Identifier CREEPER_SPRITE = Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frenchie/creeper");
 
     @SubscribeEvent
-    //? if <26.3 {
     public static void registerItemTints(RegisterColorHandlersEvent.ItemTintSources event) {
         event.register(Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "front_pack"), FrontpackTint.CODEC);
     }
@@ -49,15 +44,15 @@ public class FrontpackClientEvents {
     }
 
     @SubscribeEvent
-    //?}
     public static void registerWarningHud(RegisterGuiLayersEvent event) {
         event.registerAboveAll(Identifier.fromNamespaceAndPath(Frenchies.LEGACY_NAMESPACE, "frontpack_warning"), (gui, delta) -> {
             var mc = Minecraft.getInstance();
             //? if <26.3 {
-            if (mc.player == null || mc.options.hideGui || !mc.options.getCameraType().isFirstPerson()) return;
+            boolean hideGui = mc.options.hideGui;
             //?} else {
-            /*if (mc.player == null || mc.gui.hud.isHidden() || !mc.options.getCameraType().isFirstPerson()) return;
+            /*boolean hideGui = mc.gui.hud.isHidden();
             *///?}
+            if (mc.player == null || hideGui || !mc.options.getCameraType().isFirstPerson()) return;
             var warning = mc.player.getExistingDataOrNull(FrenchieRegistry.FRENCHIE_WARNING);
             long now = mc.player.level().getGameTime();
             if (warning == null || !warning.visible(now)) return;
@@ -104,26 +99,18 @@ public class FrontpackClientEvents {
             var warning = avatar.getExistingDataOrNull(FrenchieRegistry.FRENCHIE_WARNING);
             state.setRenderData(ALERT_YAW, warning != null && warning.visible(avatar.level().getGameTime())
                     ? Mth.clamp(Mth.wrapDegrees(warning.bearing() - state.bodyRot), -60F, 60F) : null);
-            //? if <26.3 {
             var pack = FrontpackEquipment.wornBy(avatar);
             state.setRenderData(FrontpackLayer.WORN, !pack.isEmpty());
             state.setRenderData(FrontpackLayer.CARRIED_COAT, data == null || pack.isEmpty() ? null : data.carriedCoat());
             state.setRenderData(FrontpackLayer.FABRIC_TINT, pack.isEmpty() ? null : FrontpackTint.dyedFabric(pack));
-            //?} else {
-            /*state.setRenderData(FrontpackLayer.CARRIED_COAT, data == null ? null : data.carriedCoat());
-            *///?}
         });
     }
 
     @SubscribeEvent
     public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
         Player player = event.getEntity();
-        //? if <26.3 {
         // Minecraft checks the empty main hand before it tries to equip the offhand pack.
         if (player.getOffhandItem().is(FrontpackEquipment.PACKS) || player.getOffhandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) return;
-        //?} else {
-        /*if (player.getOffhandItem().is(FrenchieRegistry.FRENCHIE_WHISTLE.get())) return;
-        *///?}
         var data = player.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
         if (player.isShiftKeyDown() && data != null && data.hasCarriedFrenchie()) {
             ClientPacketDistributor.sendToServer(PutDownFrenchiePayload.INSTANCE);

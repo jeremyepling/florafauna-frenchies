@@ -19,9 +19,11 @@ final class FrontpackEquipment {
         if (chest.is(PACKS)) return chest;
         var accessory = FrontpackAccessorySlots.findEquipped(wearer);
         if (!accessory.isEmpty()) return accessory;
+        //? if <26.3 {
         if (wearer instanceof Avatar avatar && ModList.get().isLoaded("baubles")) {
             return BaublesFrontpack.findEquipped(avatar);
         }
+        //?}
         return ItemStack.EMPTY;
     }
 }

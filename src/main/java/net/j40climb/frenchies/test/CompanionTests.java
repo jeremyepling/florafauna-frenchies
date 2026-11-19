@@ -96,21 +96,13 @@ public final class CompanionTests {
         registerTest(event, defaultEnv, "frenchie_delivery_legacy_bed_pickup", FrenchieDeliveryGameTests::legacyBedPickup);
         registerTest(event, defaultEnv, "frenchie_delivery_respawn_preview", FrenchieBedPreviewGameTest::respawnPreview);
         registerStructureTest(event, defaultEnv, "frenchie_delivery_unloaded_bed",
-                //? if <26.3 {
-                FrenchiePen.STRUCTURE, 1800, FrenchieDeliveryGameTests::unloadedHomeBed);
-                //?} else {
-                /*FrenchiePen.STRUCTURE, 4000, FrenchieDeliveryGameTests::unloadedHomeBed);
-                *///?}
+                FrenchiePen.STRUCTURE, 4000, FrenchieDeliveryGameTests::unloadedHomeBed);
         registerTest(event, defaultEnv, "frenchie_frontpack_respawn_release", FrenchieGameTests::frontpackRespawnRelease);
-        //? if <26.3 {
         registerTest(event, defaultEnv, "frenchie_frontpack_unequip_release", FrenchieDeliveryGameTests::unequipPackedCourier);
-        //?}
         registerTest(event, defaultEnv, "frenchie_frontpack_appearance", FrenchieGameTests::frontpackAppearance);
-        //? if <26.3 {
         registerTest(event, defaultEnv, "frenchie_frontpack_right_click_equip", FrontpackEquipGameTest::equipFromHand);
         registerTest(event, defaultEnv, "frenchie_frontpack_dye", FrontpackDyeGameTest::craftAndWash);
         registerTest(event, defaultEnv, "frenchie_frontpack_elytra", FrontpackElytraGameTest::craftAndRepair);
-        //?}
     }
 
     // Audience scans, production limits, and creeper warnings reach into adjacent structures.

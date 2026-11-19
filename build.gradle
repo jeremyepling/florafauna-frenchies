@@ -60,6 +60,12 @@ stonecutter {
             replace('Minecraft.getInstance().setScreen(', 'Minecraft.getInstance().gui.setScreen(')
             replace('mc.getToastManager()', 'mc.gui.toastManager()')
             replace('monster.Slime;', 'monster.cubemob.Slime;')
+            replace('mc.gameRenderer.getMainCamera()', 'mc.gameRenderer.mainCamera()')
+            replace('Minecraft.getInstance().gameRenderer.getGameRenderState()', 'Minecraft.getInstance().gameRenderer.gameRenderState()')
+            replace('!Minecraft.renderNames()', 'Minecraft.getInstance().gui.hud.isHidden()')
+            replace('Items.RED_DYE', 'Items.DYE.red()')
+            replace('Items.BLUE_DYE', 'Items.DYE.blue()')
+            replace('Items.WHITE_DYE', 'Items.DYE.white()')
             replace('Blocks.RED_BED', 'Blocks.BED.red()')
             replace('Blocks.BLUE_BED', 'Blocks.BED.blue()')
         }
@@ -185,6 +191,9 @@ dependencies {
         compileOnly 'top.theillusivec4.curios:curios-neoforge:15.0.0-beta.1+26.1:api'
         compileOnly 'maven.modrinth:XaT8sLP6:CFk62USu' // Trinkets Updated 4.0.0-alpha.9+26.1
         compileOnly 'maven.modrinth:DHpbnc1G:t4UkCgZP' // Baubles 2, version 1.0
+    } else {
+        compileOnly 'top.theillusivec4.curios:curios-neoforge:17.0.1+26.3:api'
+        compileOnly 'maven.modrinth:XaT8sLP6:lVR1OKgV' // Trinkets Updated 4.2.1+26.3
     }
     testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

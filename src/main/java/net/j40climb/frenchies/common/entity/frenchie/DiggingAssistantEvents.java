@@ -3,11 +3,7 @@ package net.j40climb.frenchies.common.entity.frenchie;
 import java.util.Comparator;
 import net.j40climb.frenchies.Frenchies;
 import net.minecraft.server.level.ServerLevel;
-//? if <26.3 {
-import net.minecraft.world.item.ShovelItem;
-//?} else {
-/*import net.minecraft.tags.ItemTags;
-*///?}
+import net.minecraft.tags.ItemTags;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 //? if <26.3 {
@@ -27,11 +23,7 @@ public final class DiggingAssistantEvents {
     /*public static void ownerDigs(BreakBlockEvent event) {
     *///?}
         if (event.isCanceled() || !(event.getLevel() instanceof ServerLevel level)
-                //? if <26.3 {
-                || !(event.getPlayer().getMainHandItem().getItem() instanceof ShovelItem)
-                //?} else {
-                /*|| !event.getPlayer().getMainHandItem().is(ItemTags.SHOVELS)
-                *///?}
+                || !event.getPlayer().getMainHandItem().is(ItemTags.SHOVELS)
                 || !DiggingAssistantGoal.diggable(event.getState())
                 || level.getRandom().nextInt(5) != 0) return;
         level.getEntitiesOfClass(FrenchieEntity.class, event.getPlayer().getBoundingBox().inflate(7),

@@ -26,12 +26,8 @@ public final class FrontpackStatusLabel {
     public static void extractLabel(RegisterRenderStateModifiersEvent event) {
         event.registerEntityModifier(new TypeToken<AvatarRenderer<?>>() {}, (avatar, state) -> {
             var pack = avatar.getExistingDataOrNull(FrenchieRegistry.FRENCH_FRONTPACK_DATA);
-            //? if <26.3 {
             if (pack == null || !pack.hasCarriedFrenchie() || state.isInvisible || !Minecraft.renderNames()) return;
             if (FrontpackEquipment.wornBy(avatar).isEmpty()) return;
-            //?} else {
-            /*if (pack == null || !pack.hasCarriedFrenchie() || state.isInvisible || Minecraft.getInstance().gui.hud.isHidden()) return;
-            *///?}
             var warning = avatar.getExistingDataOrNull(FrenchieRegistry.FRENCHIE_WARNING);
             var appearance = pack.frenchieNBT();
             FrenchieStatusIcon icon;
@@ -51,11 +47,7 @@ public final class FrontpackStatusLabel {
         if (label == null || state.distanceToCameraSq >= 4096) return;
         // Vanilla adds half a block above this attachment before billboarding the text.
         var attachment = Vec3.directionFromRotation(0, state.bodyRot).scale(0.46).add(0, state.eyeHeight - 0.65, 0);
-        //? if <26.3 {
         var camera = Minecraft.getInstance().gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
-        //?} else {
-        /*var camera = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
-        *///?}
         event.getSubmitNodeCollector().submitNameTag(event.getPoseStack(), attachment, 0, label, !state.isDiscrete,
                 //? if <26.3 {
                 state.lightCoords, state.distanceToCameraSq, camera);

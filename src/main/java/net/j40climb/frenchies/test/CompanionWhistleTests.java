@@ -141,9 +141,7 @@ final class CompanionWhistleTests {
                             && ItemStack.matches(parcel, dog.getParcel()),
                     "Confirmation did not transfer the component-bearing bundle to the dog");
             if (pack) {
-                //? if <26.3 {
                 owner.setItemSlot(EquipmentSlot.CHEST, new ItemStack(FrenchieRegistry.FRONT_PACK.get()));
-                //?}
                 owner.setShiftKeyDown(true);
                 owner.interactOn(dog, HAND, Vec3.ZERO);
                 owner.setShiftKeyDown(false);

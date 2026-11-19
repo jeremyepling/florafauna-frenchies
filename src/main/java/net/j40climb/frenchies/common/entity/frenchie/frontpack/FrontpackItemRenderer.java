@@ -24,8 +24,13 @@ record FrontpackItemRenderer(ModelPart carrier) implements SpecialModelRenderer<
                        int light, int overlay, boolean foil, int outline) {
         // The undyed fabric occupies the same UVs on both Frenchie coat textures.
         var texture = tint == null ? FrontpackLayer.FAWN_TEXTURE : FrontpackLayer.FABRIC;
+        //? if <26.3 {
         collector.submitModelPart(carrier, pose, RenderTypes.entityCutout(texture), light, overlay,
                 null, false, foil, tint == null ? -1 : tint, null, outline);
+        //?} else {
+        /*var layer = foil ? RenderTypes.itemCutoutGlint(texture) : RenderTypes.entityCutout(texture);
+        collector.submitModelPart(carrier, pose, layer, light, overlay, null, tint == null ? -1 : tint, outline);
+        *///?}
     }
 
     @Override

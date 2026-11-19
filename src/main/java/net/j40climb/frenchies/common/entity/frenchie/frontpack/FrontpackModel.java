@@ -1,22 +1,14 @@
 package net.j40climb.frenchies.common.entity.frenchie.frontpack;
 
 import net.j40climb.frenchies.Frenchies;
-//? if <26.3 {
 import net.j40climb.frenchies.common.entity.frenchie.FrenchieTravelGesture;
-//?}
 import net.minecraft.client.animation.KeyframeAnimation;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-//? if >=26.3 {
-/*import net.j40climb.frenchies.common.entity.frenchie.FrenchieTravelGesture;
-*///?}
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
-//? if >=26.3 {
-/*import net.minecraft.world.entity.Pose;
-*///?}
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.AnimationState;
 
@@ -33,41 +25,24 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
     private final KeyframeAnimation idlingAnimation;
     private final AnimationState idleAnimationState = new AnimationState();
 
-    //? if <26.3 {
     // Model pixels in front of the player's chest. The original pouch projected 2 pixels.
     private static final float POUCH_PROJECTION = 4.0F;
     // Restore some of the packed pose's 0.6 depth scale along the player's front-to-back axis.
     private static final float DOG_DEPTH_SCALE = 0.8F / 0.6F;
 
     private final ModelPart root;
-    //?} else {
-    /*private final ModelPart frenchie;
-    *///?}
     private final ModelPart head;
-    //? if <26.3 {
     private final boolean fabricOnly;
-    //?} else {
-    /*private final ModelPart pouch;
-    *///?}
 
     public FrontpackModel(ModelPart root) {
-    //? if <26.3 {
         this(root, false);
     }
 
     FrontpackModel(ModelPart root, boolean fabricOnly) {
-    //?}
         super(root);
-        //? if <26.3 {
         this.fabricOnly = fabricOnly;
         this.root = root.getChild("root");
         this.head = this.root.getChild("carried_dog").getChild("frenchie").getChild("body").getChild("head");
-        //?} else {
-        /*ModelPart pack = root.getChild("root");
-        this.frenchie = pack.getChild("frenchie");
-        this.head = frenchie.getChild("body").getChild("head");
-        this.pouch = pack.getChild("carrier").getChild("pouch");
-        *///?}
 
         // Bake the idle animation - converts the AnimationDefinition to a KeyframeAnimation
         this.idlingAnimation = FrontpackAnimations.ANIM_IDLE.bake(root);
@@ -83,80 +58,37 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 24.0F, 0.0F));
 
         PartDefinition carrier = root.addOrReplaceChild("carrier", CubeListBuilder.create(), PartPose.offset(2.7F, -9.0F, -1.1F));
-        //? if <26.3 {
         // Anchor the top of the original six-pixel texture and extend the hem just below the rump.
         carrier.addOrReplaceChild("pouch", CubeListBuilder.create().texOffs(44, 0).addBox(-6.2F, 0, -3.0F, 7.0F, 6.0F, 3.0F),
                 PartPose.ZERO.scaled(1, 6.75F / 6, (1 + POUCH_PROJECTION) / 3).translated(0, 2.0F, 0.1F));
-        //?} else {
-        /*carrier.addOrReplaceChild("pouch", CubeListBuilder.create().texOffs(44, 0)
-                .addBox(-6.2F, 2.0F, -3.0F, 7.0F, 6.0F, 3.0F), PartPose.offset(0, 0, 0.1F));
-        *///?}
 
-        //? if <26.3 {
         addShoulderStrap(carrier, "strap_left", 1);
         addShoulderStrap(carrier, "strap_right", -1);
-        //?} else {
-        /*carrier.addOrReplaceChild("strap_left", CubeListBuilder.create().texOffs(49, 2).addBox(-1.0F, -2.6F, -0.45F, 1.0F, 5.1F, 0.2F, new CubeDeformation(0.0F))
-                .texOffs(47, 1).addBox(-1.0F, -2.8F, -0.2F, 1.0F, 0.2F, 4.6F, new CubeDeformation(0.0F))
-                .texOffs(55, 0).addBox(-1.0F, -3.1F, 4.2F, 1.0F, 9.1F, 0.2F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
-        *///?}
 
-        //? if <26.3 {
         carrier.addOrReplaceChild("strap_waist", CubeListBuilder.create().texOffs(47, 1).addBox(-0.2F, -1.0F, -3.3F, 0.2F, 1.0F, 3.75F, new CubeDeformation(0.0F))
-        //?} else {
-        /*carrier.addOrReplaceChild("strap_right", CubeListBuilder.create().texOffs(49, 2).addBox(-1.2F, -2.6F, -0.7F, 1.0F, 5.1F, 0.2F, new CubeDeformation(0.0F))
-                .texOffs(47, 1).addBox(-1.2F, -2.8F, -0.2F, 1.0F, 0.2F, 4.6F, new CubeDeformation(0.0F))
-                .texOffs(55, 0).addBox(-1.2F, -3.1F, 4.2F, 1.0F, 9.1F, 0.2F, new CubeDeformation(0.0F)), PartPose.offset(-4.2F, 0.0F, 0.0F));
-
-        carrier.addOrReplaceChild("strap_waist", CubeListBuilder.create().texOffs(47, 1).addBox(-0.2F, -1.0F, -3.3F, 0.2F, 1.0F, 4.6F, new CubeDeformation(0.0F))
-        *///?}
                 .texOffs(58, 5).addBox(0.0F, -1.0F, -3.3F, 1.1F, 1.0F, 0.2F, new CubeDeformation(0.0F))
-                //? if <26.3 {
                 .texOffs(46, 7).addBox(0.0F, -1.0F, 0.25F, 8.2F, 1.0F, 0.2F, new CubeDeformation(0.0F))
-                //?} else {
-                /*.texOffs(46, 7).addBox(0.0F, -1.0F, 1.1F, 8.2F, 1.0F, 0.2F, new CubeDeformation(0.0F))
-                *///?}
                 .texOffs(58, 5).mirror().addBox(7.1F, -1.0F, -3.3F, 1.1F, 1.0F, 0.2F, new CubeDeformation(0.0F)).mirror(false)
-                //? if <26.3 {
                 .texOffs(47, 1).addBox(8.2F, -1.0F, -3.3F, 0.2F, 1.0F, 3.75F, new CubeDeformation(0.0F)), PartPose.offset(-6.8F, 7.0F, 3.1F));
-                //?} else {
-                /*.texOffs(47, 1).addBox(8.2F, -1.0F, -3.3F, 0.2F, 1.0F, 4.6F, new CubeDeformation(0.0F)), PartPose.offset(-6.8F, 7.0F, 3.1F));
-                *///?}
 
-        //? if <26.3 {
         // Map the old pouch front (Z = -4) onto the new one. The paws stay on its face
         // as the dog's body fills out, independently of the upright tilt of its pose.
         float pouchFrontZ = -2 - POUCH_PROJECTION;
         PartDefinition carriedDog = root.addOrReplaceChild("carried_dog", CubeListBuilder.create(),
                 PartPose.ZERO.scaled(1, 1, DOG_DEPTH_SCALE).translated(0, 0, pouchFrontZ + 4 * DOG_DEPTH_SCALE));
         PartDefinition frenchie = carriedDog.addOrReplaceChild("frenchie", CubeListBuilder.create(), PartPose.offsetAndRotation(-0.5F, -6.0F, 0.0F, -1.4835F, 0.0F, 0.0F));
-        //?} else {
-        /*PartDefinition frenchie = root.addOrReplaceChild("frenchie", CubeListBuilder.create(), PartPose.offsetAndRotation(-0.5F, -6.0F, 0.0F, -1.4835F, 0.0F, 0.0F));
-        *///?}
 
         PartDefinition body = frenchie.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
         PartDefinition head = body.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 29).addBox(-2.983F, -3.3875F, -3.875F, 6.0F, 6.0F, 4.0F, new CubeDeformation(0.0F))
-                //? if <26.3 {
                 .texOffs(30, 21).addBox(-1.983F, -0.3875F, -4.875F, 4.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.483F, 1.2582F, -4.2464F, 1.0908F, 0.0F, 0.0F));
-                //?} else {
-                /*.texOffs(30, 21).addBox(-1.983F, -0.3875F, -4.875F, 4.0F, 3.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.483F, 1.3761F, -4.3865F, 1.0908F, 0.0F, 0.0F));
-                *///?}
 
-        //? if <26.3 {
         PartDefinition earR = head.addOrReplaceChild("earR", CubeListBuilder.create(), PartPose.offset(-2.733F, -3.0498F, -5.8337F));
-        //?} else {
-        /*PartDefinition earR = head.addOrReplaceChild("earR", CubeListBuilder.create(), PartPose.offset(-2.733F, -3.0498F, -3.8337F));
-        *///?}
 
         earR.addOrReplaceChild("earR_behind_r1", CubeListBuilder.create().texOffs(1, 21).mirror().addBox(-1.0F, -2.8377F, 2.9587F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)).mirror(false)
                 .texOffs(1, 24).mirror().addBox(-1.0F, -2.8377F, 2.9087F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, -0.2618F));
 
-        //? if <26.3 {
         PartDefinition earL = head.addOrReplaceChild("earL", CubeListBuilder.create(), PartPose.offset(0.767F, -3.3498F, -5.8337F));
-        //?} else {
-        /*PartDefinition earL = head.addOrReplaceChild("earL", CubeListBuilder.create(), PartPose.offset(0.767F, -3.3498F, -3.8337F));
-        *///?}
 
         earL.addOrReplaceChild("earL_behind_r1", CubeListBuilder.create().texOffs(1, 21).addBox(0.0F, -2.8377F, 2.9587F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F))
                 .texOffs(1, 24).addBox(0.0F, -2.8377F, 2.9087F, 3.0F, 3.0F, 0.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.2618F));
@@ -165,12 +97,8 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
 
         PartDefinition chest = body.addOrReplaceChild("chest", CubeListBuilder.create().texOffs(1, 1).addBox(-3.5F, -4.25F, -5.5F, 7.0F, 7.0F, 11.0F, new CubeDeformation(0.0F)), PartPose.offset(0.5F, 1.25F, 1.5F));
 
-        //? if <26.3 {
         // In the upright pose the nub emerges under the pouch, clear of the player's torso.
         chest.addOrReplaceChild("tail", CubeListBuilder.create().texOffs(30, 8).addBox(-1.0F, -0.5F, 0.25F, 2.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 1.0F, 5.25F));
-        //?} else {
-        /*chest.addOrReplaceChild("tail", CubeListBuilder.create().texOffs(30, 8).addBox(-1.0F, -0.5F, 0.25F, 2.0F, 1.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -2.75F, 5.25F));
-        *///?}
 
         body.addOrReplaceChild("leg_front_left", CubeListBuilder.create().texOffs(21, 21).addBox(-1.0F, 1.0F, -1.0F, 2.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(3.0F, 3.0F, -2.0F));
 
@@ -183,7 +111,6 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
 
-    //? if <26.3 {
     private static void addShoulderStrap(PartDefinition carrier, String name, int side) {
         // Both ends share the shoulder's centerline and tuck into the pouch and waist belt.
         carrier.addOrReplaceChild(name, CubeListBuilder.create()
@@ -193,50 +120,25 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
                 PartPose.offset(side * 2.85F - 2.7F, -2.45F, 1.1F));
     }
 
-    //?}
     @Override
     public void setupAnim(AvatarRenderState renderState) {
         super.setupAnim(renderState);
-        //? if <26.3 {
         boolean carrying = renderState.getRenderData(FrontpackLayer.CARRIED_COAT) != null;
         var carrier = root.getChild("carrier");
         var dog = root.getChild("carried_dog");
         carrier.visible = fabricOnly || renderState.getRenderData(FrontpackLayer.FABRIC_TINT) == null;
         dog.visible = carrying && !fabricOnly;
         if (!carrying) return;
-        //?}
 
-        //? if <26.3 {
         float glide = renderState.isFallFlying ? renderState.fallFlyingScale() : 0F;
         if (glide > 0F) {
             // Raise the rim to the shoulders without lifting the seam under the rump.
             var pouch = carrier.getChild("pouch");
             pouch.y -= 2.28F * glide;
-        //?} else {
-        /*// Apply the idle animation (static pose that's always active)
-        // Using the KeyframeAnimation.apply() method like in FrenchieModel
-        this.idlingAnimation.apply(this.idleAnimationState, renderState.ageInTicks, 1.0F);
-        boolean gliding = renderState.isFallFlying;
-        head.getChild("tongue").visible = gliding;
-        Float alertYaw = renderState.getRenderData(FrontpackClientEvents.ALERT_YAW);
-        if (gliding) {
-            float glide = renderState.fallFlyingScale();
-            // The dog's weight settles into the front of the pouch while the straps stay on the torso.
-            frenchie.z -= 3.8F * glide;
-            // Extend the pouch from its bottom seam to the dog's shoulders.
-        *///?}
             pouch.yScale += 0.38F * glide;
-            //? if >=26.3 {
-            /*pouch.y -= 8.0F * 0.38F * glide;
-            *///?}
             pouch.zScale += 1.6F * glide;
-            //? if <26.3 {
             dog.z -= 3.8F * glide;
-            //?} else {
-            /*FrenchieTravelGesture.applyInFlight(head, renderState.ageInTicks, renderState.id, glide);
-            *///?}
         }
-        //? if <26.3 {
         if (fabricOnly) return;
         this.idlingAnimation.apply(this.idleAnimationState, renderState.ageInTicks, 1.0F);
         var tongue = head.getChild("tongue");
@@ -255,10 +157,6 @@ public class FrontpackModel extends EntityModel<AvatarRenderState> {
         Float yaw = renderState.getRenderData(FrontpackClientEvents.ALERT_YAW);
         if (yaw != null) {
             head.yRot = (float) Math.toRadians(yaw);
-        //?} else {
-        /*if (alertYaw != null) {
-            head.yRot = (float) Math.toRadians(alertYaw);
-        *///?}
             head.getChild("earR").zRot -= 0.2F;
             head.getChild("earL").zRot += 0.2F;
         }
