@@ -50,6 +50,7 @@ final class FrontpackPlaytest {
     private static final BlockPos PEN = new BlockPos(0, 201, 0);
     private static final AABB TEST_AREA = new AABB(PEN).inflate(8);
     private static final FrenchieVariant COAT = FrenchieVariant.BRINDLE;
+    private static final int NOON_TICKS = 6000;
 
     private static void setHudHidden(Minecraft mc, boolean hidden) {
         //? if <26.3 {
@@ -105,6 +106,17 @@ final class FrontpackPlaytest {
                     p.teleportTo(p.level().getServer().overworld(), 0.5, 201, 2.5, Set.of(), 180, 0, true));
             return;
         }
+        t.server("Hold the copied world's lighting at clear noon for the visual checks", p -> {
+            var level = p.level();
+            var clock = level.dimensionType().defaultClock().orElseThrow();
+            var clocks = level.getServer().clockManager();
+            clocks.setPaused(clock, true);
+            clocks.setTotalTicks(clock, NOON_TICKS);
+            level.getServer().setWeatherParameters(24000, 0, false, false);
+        });
+        t.awaitClient("Wait for the clear noon lighting to reach the client", mc ->
+                mc.level.getDefaultClockTime() == NOON_TICKS && mc.level.getRainLevel(1F) == 0F
+                        && mc.level.getThunderLevel(1F) == 0F);
         t.awaitClient("Verify the red chest pack survived rejoin", mc ->
                 hasDye(mc.player.getItemBySlot(EquipmentSlot.CHEST), DyeColor.RED));
         framePlayer(t);
