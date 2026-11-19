@@ -38,17 +38,13 @@ Use `/frenchie recall` anywhere to call back traveling or waiting dogs, includin
 
 ## Carry your copilot
 
-In **26.1**, craft a Frenchie Front Pack with string in the left and right squares of one row and three leather in the row below. Right-click the air with the pack to equip it on your chest. Crouch and right-click your adult Frenchie to pick it up, then crouch and right-click the air to set it down. Carrying pauses its current job.
-
-In **26.3**, crouch and right-click your adult Frenchie to carry it on your chest, then crouch and right-click the air to set it down. While you glide, it looks ahead and glances around from the pack.
-
-The wearable front-pack items below are available in **26.1**.
+Craft a Frenchie Front Pack with string in the left and right squares of one row and three leather in the row below. Right-click the air with the pack to equip it on your chest. Crouch and right-click your adult Frenchie to pick it up, then crouch and right-click the air to set it down. Carrying pauses its current job.
 
 **Pick a color.** Combine the pack with any of the 16 dyes. Multiple dyes blend with the existing color. Wash the pouch in a water cauldron to restore its original color for one level of water.
 
 **Give it wings.** Combine a front pack and an elytra anywhere in the crafting grid. Wear the winged pack on your chest to glide with your dog's head peeking out in front. The recipe keeps the dye, remaining wing durability, and enchantments from both items, taking the higher level for matching enchantments. You can still dye the pouch and repair the wings with a phantom membrane at an anvil.
 
-**Wear it with armor.** A regular pack also fits the **Body** slot in Curios or Baubles 2, or the **Cape** slot in Trinkets Updated. If you wear two, the chest-slot pack supplies the visible color. Removing the last pack releases your dog when there's safe ground and room nearby. For NeoForge 26.1.0.19-beta, use Trinkets Updated 4.0.0-alpha.9+26.1.
+**Wear it with armor.** A regular pack also fits the **Body** slot in Curios or the **Cape** slot in Trinkets Updated. Baubles 2 provides a **Body** slot on 26.1. If you wear two, the chest-slot pack supplies the visible color. Removing the last pack releases your dog when there's safe ground and room nearby. For NeoForge 26.1.0.19-beta, use Trinkets Updated 4.0.0-alpha.9+26.1.
 
 ## Development
 

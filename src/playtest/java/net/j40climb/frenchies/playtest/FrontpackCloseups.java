@@ -1,7 +1,11 @@
 package net.j40climb.frenchies.playtest;
 
 import net.minecraft.client.CameraType;
+//? if <26.3 {
 import net.minecraft.world.entity.EntityType;
+//?} else {
+/*import net.minecraft.world.entity.EntityTypes;
+*///?}
 import net.minecraft.world.entity.Marker;
 import net.minecraft.world.phys.Vec3;
 

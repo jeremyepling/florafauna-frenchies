@@ -36,6 +36,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -49,6 +50,14 @@ final class FrontpackPlaytest {
     private static final BlockPos PEN = new BlockPos(0, 201, 0);
     private static final AABB TEST_AREA = new AABB(PEN).inflate(8);
     private static final FrenchieVariant COAT = FrenchieVariant.BRINDLE;
+
+    private static void setHudHidden(Minecraft mc, boolean hidden) {
+        //? if <26.3 {
+        mc.options.hideGui = hidden;
+        //?} else {
+        /*if (mc.gui.hud.isHidden() != hidden) mc.gui.hud.toggle();
+        *///?}
+    }
 
     static void steps(Playtest t, int phase) {
         if (phase == 1) {
@@ -126,7 +135,7 @@ final class FrontpackPlaytest {
             var water = Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 2);
             p.level().setBlockAndUpdate(pos, water);
             p.gameMode.useItemOn(p, p.level(), p.getOffhandItem(), InteractionHand.OFF_HAND,
-                    new BlockHitResult(pos.getCenter(), Direction.UP, pos, false));
+                    new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
             Playtest.require(p.level().getBlockState(pos).getValue(LayeredCauldronBlock.LEVEL) == 1, "Wash did not use one water level");
         });
         t.awaitClient("Wait for the undyed offhand pack", mc -> mc.player.getOffhandItem().is(FrenchieRegistry.FRONT_PACK.get())
@@ -137,7 +146,7 @@ final class FrontpackPlaytest {
         framePlayer(t);
         t.screenshot("frontpack-washed");
         t.client("Open the inventory to stow the packs", mc -> {
-            mc.options.hideGui = false;
+            setHudHidden(mc, false);
             mc.setScreen(new InventoryScreen(mc.player));
         });
         swapHotbar(t, InventoryMenu.ARMOR_SLOT_START + 1, 2);
@@ -160,8 +169,13 @@ final class FrontpackPlaytest {
             var inventory = (InventoryScreen) mc.screen;
             var slot = inventory.getMenu().getSlot(InventoryMenu.USE_ROW_SLOT_START + 1);
             int scale = mc.getWindow().getGuiScale();
+            //? if <26.3 {
             dyedSlot[0] = (inventory.getGuiLeft() + slot.x) * scale;
             dyedSlot[1] = (inventory.getGuiTop() + slot.y) * scale;
+            //?} else {
+            /*dyedSlot[0] = (inventory.getLeftPos() + slot.x) * scale;
+            dyedSlot[1] = (inventory.getTopPos() + slot.y) * scale;
+            *///?}
             dyedSlot[2] = scale;
         });
         t.client("Close the inventory", mc -> mc.player.closeContainer());
@@ -308,7 +322,7 @@ final class FrontpackPlaytest {
             int[] settle = new int[1];
             t.client("Face north in first person looking " + angle, mc -> {
                 mc.options.keyShift.setDown(false);
-                mc.options.hideGui = false;
+                setHudHidden(mc, false);
                 mc.options.setCameraType(CameraType.FIRST_PERSON);
                 mc.setCameraEntity(mc.player);
                 mc.player.setYRot(180);
@@ -417,7 +431,7 @@ final class FrontpackPlaytest {
         int[] settle = new int[1];
         t.client("Frame the standing player's chest from the front", mc -> {
             mc.options.keyShift.setDown(false);
-            mc.options.hideGui = true;
+            setHudHidden(mc, true);
             mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
             mc.player.setXRot(0);
             mc.player.setYRot(180);

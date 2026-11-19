@@ -13,8 +13,10 @@ import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
+//? if <26.3 {
 import tld.unknown.baubles.api.BaubleType;
 import tld.unknown.baubles.api.Baubles;
+//?}
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
 
@@ -32,7 +34,9 @@ final class AccessoryFrontpackPlaytest {
 
     static void addInstalledProviders(Playtest t) {
         if (ModList.get().isLoaded("curios")) steps(t, "curios", new CuriosBody());
+        //? if <26.3 {
         if (ModList.get().isLoaded("baubles")) steps(t, "baubles", new BaublesBody());
+        //?}
         if (ModList.get().isLoaded("trinkets_updated")) steps(t, "trinkets", new TrinketsCape());
     }
 
@@ -140,6 +144,7 @@ final class AccessoryFrontpackPlaytest {
         }
     }
 
+    //? if <26.3 {
     private static final class BaublesBody implements Slot {
         public ItemStack get(Player p) { return Baubles.API.getBaublesInventory(p).getBaubleInSlot(BaubleType.BODY); }
         public void set(Player p, ItemStack stack) {
@@ -147,6 +152,8 @@ final class AccessoryFrontpackPlaytest {
                     && Baubles.API.getBaublesInventory(p).setBaubleInSlot(BaubleType.BODY, stack), "Baubles Body rejected the slot change");
         }
     }
+
+    //?}
 
     private static final class TrinketsCape implements Slot {
         public ItemStack get(Player p) { return TrinketsApi.getAttachment(p).getSlotAccess("chest/cape", 0).get(); }

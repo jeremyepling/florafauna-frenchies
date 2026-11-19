@@ -37,7 +37,11 @@ final class FrontpackFlightPosePlaytest {
             int phase = Math.floorMod(mc.level.getGameTime() + 37L * mc.player.getId(), 360);
             if (!mc.player.isFallFlying() || phase < tick || phase > tick + 12) return false;
             samples[index] = pose(mc);
+            //? if <26.3 {
             Screenshot.grab(mc.gameDirectory, filename, mc.getMainRenderTarget(), 1, ignored -> written.set(true));
+            //?} else {
+            /*Screenshot.grab(mc.gameDirectory, filename, mc.gameRenderer.mainRenderTarget(), 1, ignored -> written.set(true));
+            *///?}
             return false;
         });
     }
